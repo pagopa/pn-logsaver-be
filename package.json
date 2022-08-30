@@ -1,0 +1,21 @@
+{
+  "name": "pn-logsaver-be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test-build": "npm run-script test && npm run-script coverage && npm run-script sonar && npm run-script build",
+    "build": "npm prune --production && rm -f ./function.zip && zip -r ./function.zip . -x './src/test/*' -x '*.md' -x '*.env'  -x '*.gitignore'",
+    "test": "nyc --reporter=html --reporter=text mocha './src/test/**/*.test.js' --recursive --timeout=3000 --exit",
+    "coverage": "nyc report --reporter=lcov",
+    "sonar": "node sonarqube-scanner.js -Dsonar.login=${SONAR_TOKEN}",
+    "postbuild": "dependency-check package.json --no-dev --missing ./dist/**/*.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {},
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.32.0",
+    "@aws-sdk/client-dynamodb": "^3.160.0"
+  }
+}
