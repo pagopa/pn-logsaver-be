@@ -1,8 +1,4 @@
-//import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
-//import { PutItemCommand } from "@aws-sdk/client-dynamodb";
 const s3ListObject = require('./s3ListObject.js')
-//import { ddbClient } from "./ddbClient.js";
-//import { s3Client } from "./s3Client.js";
 
 const BUCKET_NAME = process.env.BUCKET_NAME
 const TABLE_NAME = process.env.TABLE_NAME

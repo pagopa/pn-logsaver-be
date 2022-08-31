@@ -1,6 +1,5 @@
-//import { S3Client } from "@aws-sdk/client-s3";
-//const AWSXRay = require('aws-xray-sdk-core');
-const AWS = require('aws-sdk');
+const AWSXRay = require('aws-xray-sdk-core');
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
 const s3Client = new AWS.S3();
 
 module.exports = {
