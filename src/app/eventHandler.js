@@ -3,21 +3,45 @@ import { PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { ddbClient } from "./ddbClient.js";
 import { s3Client } from "./s3Client.js";
 
+const BUCKET_NAME = process.env.BUCKET_NAME
+const TABLE_NAME = process.env.TABLE_NAME
+
 export const bucketParams = {
-    Bucket: "BUCKET_NAME",
+    Bucket: BUCKET_NAME,
     Key: "KEY",
 };
 
 export const params = {
-    TableName: "TABLE_NAME",
+    TableName: TABLE_NAME,
     Item: {
         CUSTOMER_ID: { N: "001" },
         CUSTOMER_NAME: { S: "Richard Roe" },
     },
 };
 
+const event_example = {
+    "id": "cdc73f9d-aea9-11e3-9d5a-835b769c0d9c",
+    "detail-type": "Scheduled Event",
+    "source": "aws.events",
+    "account": "123456789012",
+    "time": "1970-01-01T00:00:00Z",
+    "region": "us-east-1",
+    "resources": [
+        "arn:aws:events:us-east-1:123456789012:rule/ExampleRule"
+    ],
+    "detail": {}
+}
+
 module.exports = {
     async handleEvent(event){
+        const parsingDate = Date.parse(event.time);
+
+        
+        let year = parsingDate.getFullYear();
+        let month = parsingDate.getMonth();
+        let day = parsingDate.getDay();
+
+
         const stringFile = getFileFromS3(bucketParams);
         const data = putItem(params);
     }
