@@ -1,17 +1,18 @@
-import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { ddbClient } from "./ddbClient.js";
-import { s3Client } from "./s3Client.js";
+//import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
+//import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+const s3ListObject = require('./s3ListObject.js')
+//import { ddbClient } from "./ddbClient.js";
+//import { s3Client } from "./s3Client.js";
 
 const BUCKET_NAME = process.env.BUCKET_NAME
 const TABLE_NAME = process.env.TABLE_NAME
 
-export const bucketParams = {
+const bucketParams = {
     Bucket: BUCKET_NAME,
     Key: "KEY",
 };
 
-export const params = {
+const params = {
     TableName: TABLE_NAME,
     Item: {
         CUSTOMER_ID: { N: "001" },
@@ -34,21 +35,68 @@ const event_example = {
 
 module.exports = {
     async handleEvent(event){
-        const parsingDate = Date.parse(event.time);
-
+        console.log(event)
+        const parsingDate = new Date(event.time);
+        
         
         let year = parsingDate.getFullYear();
         let month = parsingDate.getMonth();
-        let day = parsingDate.getDay();
+        let day = parsingDate.getDay() - 1;
+        let prefix = "logs/ecs/pnDelivery/" + year + "/" + month + "/" + day + "/";
 
+        var result = await s3ListObject.listObjectFromS3( BUCKET_NAME, prefix );
+        console.log(result);
 
-        const stringFile = getFileFromS3(bucketParams);
-        const data = putItem(params);
+        /*try {
+            // Set the AWS Region.
+            const REGION = "us-east-1";
+            // Create an Amazon S3 service client object.
+            const s3Client = new S3Client({ region: REGION });
+            
+            const streamToString = (stream) =>
+            new Promise((resolve, reject) => {
+                const chunks = [];
+                stream.on("data", (chunk) => chunks.push(chunk));
+                stream.on("error", reject);
+                stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+            });
+            
+            const data = await s3Client.send(new GetObjectCommand(bucketParams));
+            const bodyContents = await streamToString(data.Body);
+            console.log(bodyContents);
+        } catch (err) {
+            console.log("Error", err);
+        } */
+        
+        // (logs|cdc) (pnDelivery|pnDeliveryPush|pnExternalRegistry|pnMandate|pnUserAttributes)
+        // da inviare tramite detail nell'evento ricevuto
+        
+        let example_key = "logs/ecs/pnDelivery/2022/07/27/12/pn-pnDelivery-ecs-delivery-stream-1-2022-07-27-12-00-41-dd70d7b0-f319-46a7-a76c-4bcb1b698068"
+        
+        
+        //const listObject = listObjectFromS3(prefix);
+        //const stringFile = getFileFromS3(bucketParams);
+        //const data = putItem(params);
+    }
+}
+
+/*function putItem(params) {
+    try {
+        const data = await ddbClient.send(new PutItemCommand(params));
+        console.log(data);
+        return data;
+    } catch (err) {
+        console.error(err);
     }
 }
 
 function getFileFromS3(bucketParams) {
     try {
+        // Set the AWS Region.
+        const REGION = "us-east-1";
+        // Create an Amazon S3 service client object.
+        const s3Client = new S3Client({ region: REGION });
+        
         const streamToString = (stream) =>
         new Promise((resolve, reject) => {
             const chunks = [];
@@ -60,18 +108,8 @@ function getFileFromS3(bucketParams) {
         const data = await s3Client.send(new GetObjectCommand(bucketParams));
         const bodyContents = await streamToString(data.Body);
         console.log(bodyContents);
-        return bodyContents;
+        return bodyContents.promise();
     } catch (err) {
         console.log("Error", err);
-    }
-}
-
-function putItem(params) {
-    try {
-        const data = await ddbClient.send(new PutItemCommand(params));
-        console.log(data);
-        return data;
-    } catch (err) {
-        console.error(err);
-    }
-}
+    } 
+}*/
