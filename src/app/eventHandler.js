@@ -1,4 +1,6 @@
 const s3ListObject = require('./s3ListObject.js')
+const s3GetObject = require('./s3GetObject.js')
+var moment = require('moment');
 
 const BUCKET_NAME = process.env.BUCKET_NAME
 const TABLE_NAME = process.env.TABLE_NAME
@@ -31,18 +33,42 @@ const event_example = {
 
 module.exports = {
     async handleEvent(event){
-        console.log(event)
-        const parsingDate = new Date(event.time);
+        console.log(event.time); // 1970-01-01T00:00:00Z
+        const parsingDate = moment.utc(event.time);
+        console.log('parsingDate: '+ parsingDate.utc().format());
+        const extractionDate = parsingDate.subtract(1, 'days').utc().format().split('T')[0];
+        console.log('extractionDate: '+ extractionDate);
+        var dateParts = extractionDate.split('-');
+        console.log( 'year: '+ dateParts[0], 'month: '+dateParts[1], 'day: '+dateParts[2]  );
         
         
-        let year = parsingDate.getFullYear();
-        let month = parsingDate.getMonth();
-        let day = parsingDate.getDay() - 1;
+        let year = dateParts[0];
+        
+        let month = dateParts[1];
+        
+        let day = dateParts[2];
+        
+        //logs/ecs/pnDelivery/2022/07/11/12/pn-pnDelivery-ecs-delivery-stream-1-2022-07-11-12-56-15-53414149-a1c3-4053-bb1a-318423ee8ddf
+        
         let prefix = "logs/ecs/pnDelivery/" + year + "/" + month + "/" + day + "/";
-
-        var result = await s3ListObject.listObjectFromS3( BUCKET_NAME, prefix );
-        console.log(result);
-
+    
+        console.log(prefix)
+        
+        try{
+            var result = await s3ListObject.listObjectFromS3( BUCKET_NAME, prefix );
+            //console.log('Result: ',result);
+            var listKeys = [];
+            for(var i=0; i < result.Contents.length;i++) {
+                listKeys.push(result.Contents[i].Key);
+            }
+            console.log('listKeys', listKeys[0]);
+            var result = await s3GetObject.getObjectFromS3( BUCKET_NAME, listKeys[0] );
+            console.log('result', result);
+        } catch(err) {
+            console.log(err);
+        }
+        
+        
         /*try {
             // Set the AWS Region.
             const REGION = "us-east-1";

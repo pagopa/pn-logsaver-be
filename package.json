@@ -8,15 +8,15 @@
     "build": "npm prune --production && rm -f ./function.zip && zip -r ./function.zip . -x './src/test/*' -x '*.md' -x '*.env'  -x '*.gitignore'",
     "test": "nyc --reporter=html --reporter=text mocha './src/test/**/*.test.js' --recursive --timeout=3000 --exit",
     "coverage": "nyc report --reporter=lcov",
-    "sonar": "node sonarqube-scanner.js -Dsonar.login=${SONAR_TOKEN}",
-    "postbuild": "dependency-check package.json --no-dev --missing ./dist/**/*.js"
+    "sonar": "node sonarqube-scanner.js -Dsonar.login=${SONAR_TOKEN}"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {},
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.160.0",
     "aws-sdk": "^2.1066.0",
     "aws-xray-sdk-core": "^3.3.6",
-    "@aws-sdk/client-dynamodb": "^3.160.0"
+    "moment": "^2.29.4"
   }
 }
