@@ -1,6 +1,7 @@
 const s3ListObject = require('./s3ListObject.js')
 const s3GetObject = require('./s3GetObject.js')
 var moment = require('moment');
+const { ungzip } = require('node-gzip');
 
 const BUCKET_NAME = process.env.BUCKET_NAME
 const TABLE_NAME = process.env.TABLE_NAME
@@ -64,6 +65,16 @@ module.exports = {
             console.log('listKeys', listKeys[0]);
             var result = await s3GetObject.getObjectFromS3( BUCKET_NAME, listKeys[0] );
             console.log('result', result);
+            //var body = result.Body.toString('utf-8');
+            //console.log('body', body);
+            const unzipped = (await ungzip(result.Body)).toString();
+            console.log('unzipped', unzipped);
+            let js = JSON.parse( unzipped );
+            console.log('parsed' ,js);
+
+            //var decryptedBody = await s3Decrypt.decryptObject( body );
+            
+            //console.log('decryptedBody', decryptedBody);
         } catch(err) {
             console.log(err);
         }
