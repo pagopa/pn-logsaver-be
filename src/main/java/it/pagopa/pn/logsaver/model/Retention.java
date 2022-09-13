@@ -5,14 +5,16 @@ import lombok.Getter;
 @Getter
 public enum Retention {
 
-  AUDIT10Y("10y", 10), AUDIT5Y("5y", 5), AUDIT2Y("2y", 2);
+  AUDIT10Y("10y", "'audit-log-10y-'yyyy-MM-dd'.zip'"), AUDIT5Y("5y",
+      "'audit-log-5y-'yyyy-MM-dd'.zip'"), GENERIC("120d", "'developers-log-y'yyy-MM-dd'.zip'");
 
   private String folder;
 
-  private int retentionYears;
+  private String zipNameFormat;
 
-  Retention(String folder, int retentionYears) {
+
+  Retention(String folder, String zipNameFormat) {
     this.folder = folder;
-    this.retentionYears = retentionYears;
+    this.zipNameFormat = zipNameFormat;
   }
 }

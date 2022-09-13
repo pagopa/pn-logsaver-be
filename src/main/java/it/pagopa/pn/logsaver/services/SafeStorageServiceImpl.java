@@ -1,8 +1,6 @@
 package it.pagopa.pn.logsaver.services;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.OffsetTime;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.safestorage.PnSafeStorageClient;
@@ -11,7 +9,6 @@ import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.UpdateF
 import it.pagopa.pn.logsaver.model.ArchiveInfo;
 import it.pagopa.pn.logsaver.model.FileCreationResponseInt;
 import it.pagopa.pn.logsaver.model.FileCreationWithContentRequest;
-import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,14 +35,14 @@ public class SafeStorageServiceImpl implements SafeStorageService {
 
   private void send(ArchiveInfo file) {
 
-    OffsetDateTime retentionUntil = computeRetention(file.getLogDate(), file.getRetention());
+    // OffsetDateTime retentionUntil = computeRetention(file.getLogDate(), file.getRetention());
     FileCreationWithContentRequest fileCreationRequest = new FileCreationWithContentRequest();
     fileCreationRequest.setContent(FilesUtils.fileToByteArray(file.getFilePath()));
     fileCreationRequest.setContentType(MEDIATYPE_ZIP);
     fileCreationRequest.setDocumentType(PN_LEGAL_FACTS);
     fileCreationRequest.setStatus(SAVED);
 
-    createAndUploadContent(fileCreationRequest, retentionUntil);
+    createAndUploadContent(fileCreationRequest, null);
   }
 
   private FileCreationResponseInt createAndUploadContent(
@@ -77,9 +74,9 @@ public class SafeStorageServiceImpl implements SafeStorageService {
     return fileCreationResponseInt;
   }
 
-  private OffsetDateTime computeRetention(LocalDate logDate, Retention retention) {
-    return logDate.plusYears(retention.getRetentionYears()).atTime(OffsetTime.now());
-  }
-
+  /*
+   * private OffsetDateTime computeRetention(LocalDate logDate, Retention retention) { return
+   * logDate.plusYears(retention.getRetentionYears()).atTime(OffsetTime.now()); }
+   */
 
 }

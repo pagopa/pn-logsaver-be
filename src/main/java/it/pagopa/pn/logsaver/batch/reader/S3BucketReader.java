@@ -10,16 +10,16 @@ import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
-import it.pagopa.pn.logsaver.model.ItemLog;
+import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-public class S3BucketReader implements ItemReader<ItemLog> {
+public class S3BucketReader implements ItemReader<Item> {
 
 
-  private final Iterator<ItemLog> items;
+  private final Iterator<Item> items;
 
   private StepExecution stepExecution;
 
@@ -34,11 +34,11 @@ public class S3BucketReader implements ItemReader<ItemLog> {
   }
 
   @Override
-  public ItemLog read()
+  public Item read()
       throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 
     if (items.hasNext()) {
-      ItemLog current = items.next();
+      Item current = items.next();
       if (!items.hasNext()) {
         stepExecution.getExecutionContext().put("readerExhausted", Boolean.TRUE);
       }

@@ -3,7 +3,7 @@ package it.pagopa.pn.logsaver.model;
 import lombok.Getter;
 
 @Getter
-public enum LogType {
+public enum ItemType {
   cdc("cdc/", "%s/%s/%s"), logs("logs/ecs/", "%s/ecs/%s/%s");
 
   private String subFolfer;
@@ -11,7 +11,7 @@ public enum LogType {
   private String dailyFolferPattern;
 
 
-  private LogType(String subFolfer, String dailyFolferPattern) {
+  private ItemType(String subFolfer, String dailyFolferPattern) {
     this.subFolfer = subFolfer;
     this.dailyFolferPattern = dailyFolferPattern;
   }

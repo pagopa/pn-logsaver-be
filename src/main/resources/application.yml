@@ -1,0 +1,31 @@
+spring:
+  main:
+    allow-bean-definition-overriding: 'true'
+  batch:
+    job:
+      enabled: 'false'
+
+
+pn:
+  middleware:
+    init:
+      aws: 'true'
+  env:
+    runtime: DEVELOPMENT
+  safe-storage-base-url: https://14ej9p2krd.execute-api.eu-south-1.amazonaws.com/dev
+  safe-storage-cx-id: '810417419632'
+  
+  
+  
+log-parser:
+  tmp-folder: /tmp/logparser/
+aws:
+  bucket-name: pn-logs-bucket-eu-south-1-558518206506-001
+  profile-name: ${PN_AWS_PROFILE_NAME:default}
+  region-code: eu-south-1
+  cdc-root-path-template:
+  cdc-tables:
+  logs-root-path-template:
+  logs-microservice:
+
+  

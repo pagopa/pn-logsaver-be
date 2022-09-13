@@ -1,6 +1,5 @@
 package it.pagopa.pn.logsaver.utils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -70,23 +69,23 @@ public class FilesUtils {
 
   }
 
-  public static byte[] decompressGzipToBytes(InputStream zip) {
+  public static void decompressGzipToBytes(InputStream in, OutputStream output) {
 
-    try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-      decompressGzipToBytes(zip, output);
-
-      return output.toByteArray();
+    try (GZIPInputStream gis = new GZIPInputStream(in)) {
+      // IOUtils.copy(gis, output);
+      gis.transferTo(output);
     } catch (IOException e) {
+
       throw new FileSystemException("", e);
     }
 
   }
 
-
-  public static void decompressGzipToBytes(InputStream in, OutputStream output) {
+  public static InputStream unzip(InputStream in) {
 
     try (GZIPInputStream gis = new GZIPInputStream(in)) {
-      IOUtils.copy(gis, output);
+
+      return gis;
     } catch (IOException e) {
 
       throw new FileSystemException("", e);

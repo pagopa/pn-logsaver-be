@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import it.pagopa.pn.logsaver.batch.processor.S3LogsProcessor;
 import it.pagopa.pn.logsaver.batch.reader.S3BucketReader;
 import it.pagopa.pn.logsaver.batch.writer.SafeStorageWriter;
-import it.pagopa.pn.logsaver.model.ItemLog;
+import it.pagopa.pn.logsaver.model.Item;
 
 @Configuration
 public class JobConfiguration {
@@ -43,7 +43,7 @@ public class JobConfiguration {
   }
 
   private Step logSaverJobStep() {
-    return stepBuilderFactory.get("step1").<ItemLog, ItemLog>chunk(1).reader(s3BucketReader)
+    return stepBuilderFactory.get("step1").<Item, Item>chunk(1).reader(s3BucketReader)
         .processor(s3LogsProcessor).writer(safeStorageWriter).build();
   }
 
