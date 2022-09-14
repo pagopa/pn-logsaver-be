@@ -17,7 +17,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
-import it.pagopa.pn.logsaver.services.LogSaverService;
+import it.pagopa.pn.logsaver.services.AuditSaverService;
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
@@ -33,7 +33,7 @@ public class LogSaverApplication implements // CommandLineRunner,
   private Job logSaverJob;
 
   @Autowired
-  private LogSaverService logSaver;
+  private AuditSaverService logSaver;
 
   @Autowired
   private ConfigurableApplicationContext ctx;

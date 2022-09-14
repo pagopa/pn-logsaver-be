@@ -1,8 +1,8 @@
 package it.pagopa.pn.logsaver.springbootcfg;
 
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -11,6 +11,7 @@ import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.Item.ItemChildren;
 import it.pagopa.pn.logsaver.model.ItemType;
@@ -23,34 +24,36 @@ import lombok.Getter;
 @Getter
 public class LogSaverCfg {
 
-  private LocalDate logDate2;
 
-  @Value("${log-parser.tmp-folder}")
+  @Value("${log-saver.tmp-folder}")
   private String tmpBasePath;
 
-  // private Map<Retention, Path> retentionTmpPath = new LinkedHashMap<>();
+  @Value("${log-saver.logs-root-path-template}")
+  private String logsRootPathTemplate;
 
-  // private Path tmpDailyPath;
+  @Value("${log-saver.logs-microservice}")
+  private List<String> logsMicroservice;
+
+  @Value("${log-saver.cdc-root-path-template}")
+  private String cdcRootPathTemplate;
+
+  @Value("${log-saver.cdc-tables:}")
+  private List<String> cdcTables;
+
 
   private Map<ItemType, BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>>> itemFilterFunction =
       new LinkedHashMap<>();
 
 
-  /*
-   * @Autowired private void setLogDate(@Value("${logDate}") String date) { logDate =
-   * DateUtils.parse(date); if (Objects.isNull(logDate)) { logDate = DateUtils.yesterday(); } }
-   */
-
-
-
   @Autowired
-  private void initFilter() { //
+  private void initFilters() {
     itemFilterFunction.put(ItemType.cdc,
         (in, cfg) -> Stream.of(new ItemChildren(Retention.AUDIT10Y, in)));
     itemFilterFunction.put(ItemType.logs, new LogProcessFunction());
   }
 
-  public BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> getFilterFunction(Item item) {
+  public BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> getFilterFunction(
+      Item item) {
     return itemFilterFunction.get(item.getType());
   }
 
@@ -58,7 +61,7 @@ public class LogSaverCfg {
 
   @PostConstruct
   private void initConfiguration() {
-
+    System.out.println();
   }
 
 

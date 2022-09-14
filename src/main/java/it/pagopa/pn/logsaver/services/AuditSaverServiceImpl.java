@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.model.ArchiveInfo;
+import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.Item;
-import it.pagopa.pn.logsaver.springbootcfg.DailyContextCfg;
 import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.AllArgsConstructor;
@@ -13,12 +13,12 @@ import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
-public class AuditSaverServiceImpl implements LogSaverService {
+public class AuditSaverServiceImpl implements AuditSaverService {
 
 
   private final ItemReaderService readerService;
   private final ItemProcessorServiceImpl service;
-  private final SafeStorageService storageService;
+  private final StorageService storageService;
   private final LogSaverCfg cfg;
 
   @Override
@@ -38,7 +38,7 @@ public class AuditSaverServiceImpl implements LogSaverService {
 
       List<ArchiveInfo> archives = service.zipAllItemsByRetention(dailyCtx);
 
-      // storageService.send(archives);
+      storageService.send(archives);
 
       return Boolean.TRUE;
 

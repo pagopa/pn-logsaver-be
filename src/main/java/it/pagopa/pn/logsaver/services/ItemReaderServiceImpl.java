@@ -5,12 +5,14 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -23,15 +25,21 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 public class ItemReaderServiceImpl implements ItemReaderService {
 
   private final S3BucketClient clientS3;
-
+  private final LogSaverCfg cfg;
 
   @Override
   public List<Item> findItems(ItemType type, LocalDate date) {
-
+    log.info("Start search {} items.", type.name());
     final List<Item> ret = new ArrayList<>();
 
-    List<String> apps = clientS3.findSubFolders(type.getSubFolfer());
+    List<String> apps = ItemType.cdc == type ? cfg.getCdcTables() : cfg.getLogsMicroservice();
+
+    if (Objects.isNull(apps) || apps.isEmpty()) {
+      apps = clientS3.findSubFolders(type.getSubFolfer());
+    }
+
     apps.stream().forEach(appName -> handleItems(ret, appName, type, date));
+    log.info("Found {} items.", ret.size());
     return ret;
   }
 
@@ -42,7 +50,7 @@ public class ItemReaderServiceImpl implements ItemReaderService {
 
     Stream.of(ItemType.values()).flatMap(type -> findItems(type, date).stream())
         .collect(Collectors.toCollection(() -> ret));
-
+    log.info("Total items {}", ret.size());
     return ret;
   }
 
@@ -55,6 +63,7 @@ public class ItemReaderServiceImpl implements ItemReaderService {
   private void handleItems(List<Item> itemList, String appName, ItemType type, LocalDate date) {
 
     String prefix = handleDailyPrefix(appName, type, date);
+    log.info("Search {} items for subfolder {}", type.name(), prefix);
     List<S3Object> objList = clientS3.findObjects(prefix);
     objList.stream().map(obj -> Item.builder().s3Key(obj.key()).type(type).logDate(date).build())
         .collect(Collectors.toCollection(() -> itemList));
@@ -62,9 +71,10 @@ public class ItemReaderServiceImpl implements ItemReaderService {
   }
 
   private String handleDailyPrefix(String appName, ItemType type, LocalDate date) {
-
-    String dateSuffix = date.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-    return String.format(type.getDailyFolferPattern(), type.name(), appName, dateSuffix);
+    String dailyTmpPattern =
+        ItemType.cdc == type ? cfg.getCdcRootPathTemplate() : cfg.getLogsRootPathTemplate();
+    return String.format(date.format(DateTimeFormatter.ofPattern(dailyTmpPattern)), appName);
   }
+
 
 }

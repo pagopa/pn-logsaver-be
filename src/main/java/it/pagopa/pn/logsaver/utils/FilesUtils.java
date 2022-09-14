@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
@@ -109,7 +110,7 @@ public class FilesUtils {
     try {
 
       for (File filePath : dir.toFile().listFiles()) {
-        log.info("Zipping " + filePath.getPath());
+        log.debug("Zipping " + filePath.getPath());
         if (filePath.isDirectory()) {
           _zipDirectory(filePath.toPath(), zos);
         } else {
@@ -184,11 +185,19 @@ public class FilesUtils {
     return Base64Utils.encodeToString(hash);
   }
 
-  public static byte[] fileToByteArray(Path file) {
+
+  public static String computeSha256(Path filepath) {
     try {
-      return Files.readAllBytes(file);
-    } catch (IOException e) {
-      throw new FileSystemException("", e);
+      MessageDigest md = MessageDigest.getInstance("SHA-256");
+      InputStream fileStream = new FileInputStream(filepath.toFile());
+      try (DigestInputStream dis = new DigestInputStream(fileStream, md)) {
+        while (dis.read() != -1); // empty loop to clear the data
+        md = dis.getMessageDigest();
+      }
+      byte[] encodedhash = md.digest();
+      return bytesToBase64(encodedhash);
+    } catch (NoSuchAlgorithmException | IOException exc) {
+      throw new PnInternalException("cannot compute sha256", exc);
     }
   }
 }

@@ -2,7 +2,7 @@ package it.pagopa.pn.logsaver.services;
 
 
 
-public interface LogSaverService {
+public interface AuditSaverService {
 
   Boolean saveLogs();
 

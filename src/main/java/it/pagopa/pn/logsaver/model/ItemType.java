@@ -8,11 +8,11 @@ public enum ItemType {
 
   private String subFolfer;
 
-  private String dailyFolferPattern;
+  private String dailyFolferPattern2;
 
 
   private ItemType(String subFolfer, String dailyFolferPattern) {
     this.subFolfer = subFolfer;
-    this.dailyFolferPattern = dailyFolferPattern;
+    this.dailyFolferPattern2 = dailyFolferPattern;
   }
 }

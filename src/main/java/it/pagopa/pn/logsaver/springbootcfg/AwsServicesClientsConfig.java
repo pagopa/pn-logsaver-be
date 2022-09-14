@@ -13,11 +13,11 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
-public class AwsServicesClientsConfigActivation {
+public class AwsServicesClientsConfig {
 
   private final AwsConfigs props;
 
-  public AwsServicesClientsConfigActivation(AwsConfigs props) {
+  public AwsServicesClientsConfig(AwsConfigs props) {
     this.props = props;
   }
 

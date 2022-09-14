@@ -14,6 +14,7 @@ public class AwsConfigs {
   private String profileName;
   private String regionCode;
   private String bucketName;
+
   private String endpointUrl;
   private Boolean useAwsKeyspace;
 

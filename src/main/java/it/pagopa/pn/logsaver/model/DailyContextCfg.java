@@ -1,4 +1,4 @@
-package it.pagopa.pn.logsaver.springbootcfg;
+package it.pagopa.pn.logsaver.model;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import lombok.Getter;
 import lombok.NonNull;

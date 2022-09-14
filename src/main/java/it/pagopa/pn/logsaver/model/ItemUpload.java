@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @Data
 @Builder
 @Accessors(fluent = true)
-public class ArchiveInfo {
+public class ItemUpload {
 
   private Retention retention;
 
@@ -17,4 +17,13 @@ public class ArchiveInfo {
 
   private LocalDate logDate;
 
+  private String econdedSHA256;
+
+  private String uploadKey;
+
+
+  public static ItemUpload from(ArchiveInfo arc) {
+    return ItemUpload.builder().retention(arc.retention()).filePath(arc.filePath())
+        .logDate(arc.logDate()).build();
+  }
 }
