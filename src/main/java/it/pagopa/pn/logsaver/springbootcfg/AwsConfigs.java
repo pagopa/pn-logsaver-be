@@ -11,12 +11,14 @@ import lombok.Setter;
 @Setter
 public class AwsConfigs {
 
-  private String profileName;
-  private String regionCode;
-  private String bucketName;
+  private String s3ProfileName;
+  private String s3RegionCode;
+  private String s3BucketName;
 
-  private String endpointUrl;
-  private Boolean useAwsKeyspace;
+  private String dynamoDbProfileName;
+  private String dynamoDbRegionCode;
+  private String dynamoDbBucketName;
+  private String dynamoDbEndpointUrl;
 
 
 }

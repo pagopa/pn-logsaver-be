@@ -32,7 +32,7 @@ public class S3BucketClientImpl implements S3BucketClient {
   @Override
   public List<S3Object> findObjects(String prefix) {
     ListObjectsV2Response response = clientS3.listObjectsV2(
-        ListObjectsV2Request.builder().bucket(awsCfg.getBucketName()).prefix(prefix).build());
+        ListObjectsV2Request.builder().bucket(awsCfg.getS3BucketName()).prefix(prefix).build());
     return response.contents().stream()
         // .map(item -> item.key())
         .collect(Collectors.toList());
@@ -42,7 +42,7 @@ public class S3BucketClientImpl implements S3BucketClient {
   @Override
   public List<String> findSubFolders(String prefix) {
     ListObjectsV2Response response = clientS3.listObjectsV2(ListObjectsV2Request.builder()
-        .bucket(awsCfg.getBucketName()).prefix(prefix).delimiter("/").build());
+        .bucket(awsCfg.getS3BucketName()).prefix(prefix).delimiter("/").build());
     return response.commonPrefixes().stream()
         .map(item -> StringUtils.removeStart(item.prefix(), prefix))
         .map(item -> StringUtils.removeEnd(item, "/")).collect(Collectors.toList());
@@ -52,7 +52,7 @@ public class S3BucketClientImpl implements S3BucketClient {
   @Override
   public InputStream getObjectContent(String key) {
     ResponseInputStream<GetObjectResponse> response = clientS3
-        .getObject(GetObjectRequest.builder().bucket(awsCfg.getBucketName()).key(key).build());
+        .getObject(GetObjectRequest.builder().bucket(awsCfg.getS3BucketName()).key(key).build());
 
     return response;
 

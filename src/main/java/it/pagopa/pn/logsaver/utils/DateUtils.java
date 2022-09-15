@@ -48,6 +48,12 @@ public class DateUtils {
     return LocalDate.parse(date, formatter);
   }
 
+  public static String format(LocalDate date) {
+    DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
+    return date.format(formatter);
+  }
+
+
   public static LocalDate yesterday() {
     return LocalDate.now(italianZoneId).minusDays(1);
   }

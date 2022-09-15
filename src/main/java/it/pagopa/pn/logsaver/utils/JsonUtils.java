@@ -68,7 +68,7 @@ public class JsonUtils {
     } catch (Throwable e) {
       log.warn("error parsing log event message unknow format: " + logEvt.toString());
     }
-    return Retention.GENERIC;
+    return Retention.DEVELOPER;
 
   }
 

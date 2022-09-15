@@ -1,5 +1,8 @@
 package it.pagopa.pn.logsaver.model;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.EnumUtils;
 import lombok.Getter;
 
 @Getter
@@ -14,5 +17,10 @@ public enum ItemType {
   private ItemType(String subFolfer, String dailyFolferPattern) {
     this.subFolfer = subFolfer;
     this.dailyFolferPattern2 = dailyFolferPattern;
+  }
+
+  public static List<String> valuesAsString() {
+    return EnumUtils.getEnumList(ItemType.class).stream().map(ItemType::name)
+        .collect(Collectors.toList());
   }
 }

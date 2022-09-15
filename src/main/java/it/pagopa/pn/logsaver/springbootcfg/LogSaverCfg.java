@@ -60,9 +60,7 @@ public class LogSaverCfg {
 
 
   @PostConstruct
-  private void initConfiguration() {
-    System.out.println();
-  }
+  private void initConfiguration() {}
 
 
 
