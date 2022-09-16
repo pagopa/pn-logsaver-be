@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @Data
 @Builder
 @Accessors(fluent = true)
-public class ArchiveInfo {
+public class AuditContainer {
 
   private Retention retention;
 

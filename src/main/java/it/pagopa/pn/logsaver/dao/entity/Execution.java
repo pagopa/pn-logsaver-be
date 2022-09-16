@@ -16,7 +16,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LatestSuccessStorage {
+public class Execution {
 
   @Getter(onMethod = @__({@DynamoDbPartitionKey}))
   private String type;
@@ -26,7 +26,7 @@ public class LatestSuccessStorage {
 
 
   @Getter
-  private LocalDate latestSuccessDate;
+  private LocalDate latestExecutionDate;
 
   @Getter
   private List<String> typesProcessed;

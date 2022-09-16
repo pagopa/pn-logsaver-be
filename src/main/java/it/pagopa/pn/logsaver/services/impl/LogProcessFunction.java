@@ -1,4 +1,4 @@
-package it.pagopa.pn.logsaver.services;
+package it.pagopa.pn.logsaver.services.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

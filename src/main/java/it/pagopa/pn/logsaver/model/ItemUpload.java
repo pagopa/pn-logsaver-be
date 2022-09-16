@@ -22,7 +22,7 @@ public class ItemUpload {
   private String uploadKey;
 
 
-  public static ItemUpload from(ArchiveInfo arc) {
+  public static ItemUpload from(AuditContainer arc) {
     return ItemUpload.builder().retention(arc.retention()).filePath(arc.filePath())
         .logDate(arc.logDate()).build();
   }

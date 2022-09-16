@@ -23,4 +23,12 @@ public enum ItemType {
     return EnumUtils.getEnumList(ItemType.class).stream().map(ItemType::name)
         .collect(Collectors.toList());
   }
+
+  public static List<String> valuesAsString(List<ItemType> list) {
+    return list.stream().map(ItemType::name).collect(Collectors.toList());
+  }
+
+  public static List<ItemType> values(List<String> list) {
+    return list.stream().map(ItemType::valueOf).collect(Collectors.toList());
+  }
 }

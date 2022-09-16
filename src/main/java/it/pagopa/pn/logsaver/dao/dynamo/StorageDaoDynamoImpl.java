@@ -4,12 +4,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorage;
 import it.pagopa.pn.logsaver.dao.entity.ExtraType;
-import it.pagopa.pn.logsaver.dao.entity.LatestSuccessStorage;
+import it.pagopa.pn.logsaver.dao.entity.Execution;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
@@ -20,6 +19,7 @@ import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 @Component
@@ -33,7 +33,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   @Override
-  public List<AuditStorage> getItems(LocalDate dateFrom, LocalDate dateTo,
+  public List<AuditStorage> getAudits(LocalDate dateFrom, LocalDate dateTo,
       List<Retention> retentions) {
 
     List<AuditStorage> retList = new ArrayList<>();
@@ -52,6 +52,16 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   }
+
+  @Override
+  public void insertAudit(AuditStorage as) {
+
+    DynamoDbTable<AuditStorage> auditStorageTable =
+        enhancedClient.table(TABLE, TableSchema.fromBean(AuditStorage.class));
+
+    auditStorageTable.putItem(as);
+  }
+
 
   private void findItemInPartion(LocalDate dateFrom, LocalDate dateTo,
       DynamoDbTable<AuditStorage> auditStorageTable, Retention retention,
@@ -76,70 +86,37 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   @Override
-  public LatestSuccessStorage latestSuccess() {
+  public Execution latestExecution() {
 
-    DynamoDbTable<LatestSuccessStorage> auditStorageTable =
-        enhancedClient.table(TABLE, TableSchema.fromBean(LatestSuccessStorage.class));
+    DynamoDbTable<Execution> auditStorageTable =
+        enhancedClient.table(TABLE, TableSchema.fromBean(Execution.class));
 
-    LatestSuccessStorage last = auditStorageTable.getItem(Key.builder()
-        .partitionValue(ExtraType.LATEST_SUCCESS.name()).sortValue(FIRST_START_DAY).build());
-
-    if (Objects.isNull(last)) {
-      last = insertLatestSuccess(auditStorageTable, DateUtils.parse(FIRST_START_DAY),
-          ItemType.valuesAsString());
+    Iterator<Execution> results = auditStorageTable.query(QueryEnhancedRequest
+        .builder()
+        .queryConditional(QueryConditional
+            .keyEqualTo(Key.builder().partitionValue(ExtraType.LATEST_EXECUTION.name()).build()))
+        .scanIndexForward(false).limit(Integer.valueOf(1)).build()).items().iterator();
+    if (results.hasNext()) {
+      return results.next();
     }
-
-    return last;
+    return updateLatestExecution(DateUtils.parse(FIRST_START_DAY), ItemType.valuesAsString());
   }
 
 
-
   @Override
-  public LatestSuccessStorage updateLatestSuccess(LocalDate latestSuccessDay, List<String> types) {
+  public Execution updateLatestExecution(LocalDate day, List<String> types) {
 
-    DynamoDbTable<LatestSuccessStorage> auditStorageTable =
-        enhancedClient.table(TABLE, TableSchema.fromBean(LatestSuccessStorage.class));
+    DynamoDbTable<Execution> auditStorageTable =
+        enhancedClient.table(TABLE, TableSchema.fromBean(Execution.class));
 
-    LatestSuccessStorage last = LatestSuccessStorage.builder().type(ExtraType.LATEST_SUCCESS.name())
-        .logDate(FIRST_START_DAY).latestSuccessDate(latestSuccessDay).typesProcessed(types).build();
+    Execution last =
+        Execution.builder().type(ExtraType.LATEST_EXECUTION.name())
+            .logDate(FIRST_START_DAY).latestExecutionDate(day).typesProcessed(types).build();
 
     auditStorageTable.updateItem(last);
     return last;
 
   }
 
-
-  // public LatestSuccessStorage insertLatestSuccess(LocalDate latestSuccessDay, List<String> types)
-  // {
-  //
-  // try {
-  //
-  // DynamoDbTable<LatestSuccessStorage> auditStorageTable =
-  // enhancedClient.table(TABLE, TableSchema.fromBean(LatestSuccessStorage.class));
-  //
-  // LatestSuccessStorage last = insertLatestSuccess(auditStorageTable, latestSuccessDay, types);
-  //
-  //
-  // return last;
-  //
-  // } catch (DynamoDbException e) {
-  // System.err.println(e.getMessage());
-  // throw e;
-  // }
-  // }
-
-
-  private LatestSuccessStorage insertLatestSuccess(
-      DynamoDbTable<LatestSuccessStorage> auditStorageTable, LocalDate latestSuccessDay,
-      List<String> types) {
-
-    LatestSuccessStorage last = LatestSuccessStorage.builder().type(ExtraType.LATEST_SUCCESS.name())
-        .logDate(FIRST_START_DAY).latestSuccessDate(latestSuccessDay).typesProcessed(types).build();
-
-    auditStorageTable.putItem(last);
-
-    return last;
-
-  }
 
 }

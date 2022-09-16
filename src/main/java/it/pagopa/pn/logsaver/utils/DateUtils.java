@@ -3,15 +3,16 @@ package it.pagopa.pn.logsaver.utils;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
+import lombok.experimental.UtilityClass;
 
+@UtilityClass
 public class DateUtils {
 
   private static final ZoneId italianZoneId = ZoneId.of("Europe/Rome");
-
-  private DateUtils() {}
-
 
   public static String formatDate(Instant instant) {
     if (instant == null)
@@ -21,31 +22,8 @@ public class DateUtils {
     return LocalDate.ofInstant(instant, italianZoneId).format(formatter);
   }
 
-  public static String formatTime(ZonedDateTime datetime) {
-    DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-    return datetime.format(formatter.withZone(italianZoneId));
-  }
-  /*
-   * public static ZonedDateTime parseDate(String date) { DateTimeFormatter formatter =
-   * DateTimeFormatter.ISO_DATE; LocalDate locdate = LocalDate.parse(date, formatter);
-   * 
-   * return locdate.atStartOfDay(italianZoneId); }
-   */
-
-  public static ZonedDateTime atStartOfDay(Instant instant) {
-    LocalDate locdate = LocalDate.ofInstant(instant, italianZoneId);
-    return locdate.atStartOfDay(italianZoneId);
-  }
-
-  public static ZonedDateTime parseTime(String date) {
-    DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-    return formatter.parse(date, ZonedDateTime::from);
-  }
-
-
   public static LocalDate parse(String date) {
-    DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
-    return LocalDate.parse(date, formatter);
+    return StringUtils.isEmpty(date) ? null : LocalDate.parse(date, DateTimeFormatter.ISO_DATE);
   }
 
   public static String format(LocalDate date) {
@@ -58,4 +36,7 @@ public class DateUtils {
     return LocalDate.now(italianZoneId).minusDays(1);
   }
 
+  public static List<LocalDate> getDatesRange(LocalDate startDate, LocalDate endDate) {
+    return startDate.plusDays(1).datesUntil(endDate).collect(Collectors.toList());
+  }
 }

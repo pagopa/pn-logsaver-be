@@ -1,4 +1,4 @@
-package it.pagopa.pn.logsaver.services;
+package it.pagopa.pn.logsaver.services.impl;
 
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.services.ItemReaderService;
 import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

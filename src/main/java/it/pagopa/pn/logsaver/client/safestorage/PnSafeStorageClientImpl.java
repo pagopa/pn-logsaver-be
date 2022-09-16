@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import it.pagopa.pn.logsaver.exceptions.PnInternalException;
+import it.pagopa.pn.logsaver.exceptions.InternalException;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.ApiClient;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.api.FileUploadApi;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationRequest;
@@ -80,14 +80,14 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
       ResponseEntity<String> res = restTemplate.exchange(url, method, req, String.class);
 
       if (res.getStatusCodeValue() != org.springframework.http.HttpStatus.OK.value()) {
-        throw new PnInternalException("File upload failed");
+        throw new InternalException("File upload failed");
       }
-    } catch (PnInternalException ee) {
+    } catch (InternalException ee) {
       log.error("uploadContent PnInternalException uploading file", ee);
       throw ee;
     } catch (Exception ee) {
       log.error("uploadContent Exception uploading file", ee);
-      throw new PnInternalException("Exception uploading file", ee);
+      throw new InternalException("Exception uploading file", ee);
     }
   }
 

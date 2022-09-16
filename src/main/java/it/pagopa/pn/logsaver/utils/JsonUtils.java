@@ -12,11 +12,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import it.pagopa.pn.logsaver.model.Retention;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@UtilityClass
 public class JsonUtils {
-
 
 
   public static Map<Retention, JsonObject> groupByRetention(JsonObject parent) {

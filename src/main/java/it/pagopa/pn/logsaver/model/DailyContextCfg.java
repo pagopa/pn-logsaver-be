@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
@@ -20,6 +21,9 @@ public class DailyContextCfg {
   private LocalDate logDate;
   @NonNull
   private String tmpBasePath;
+
+  @NonNull
+  private List<ItemType> types;
 
   private Map<Retention, Path> retentionTmpPath = new LinkedHashMap<>();
 

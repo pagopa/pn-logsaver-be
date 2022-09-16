@@ -1,74 +1,19 @@
 package it.pagopa.pn.logsaver;
 
-import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.JobParametersInvalidException;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
-import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
-import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
-import org.springframework.batch.core.repository.JobRestartException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.context.ConfigurableApplicationContext;
-import it.pagopa.pn.logsaver.services.AuditSaverService;
-import lombok.extern.slf4j.Slf4j;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableBatchProcessing
-@Slf4j
-public class LogSaverApplication implements // CommandLineRunner,
-    ApplicationRunner {
-
-  @Autowired
-  private JobLauncher jobLauncher;
-
-  @Autowired
-  private Job logSaverJob;
-
-  @Autowired
-  private AuditSaverService logSaver;
-
-  @Autowired
-  private ConfigurableApplicationContext ctx;
+public class LogSaverApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(LogSaverApplication.class, args);
   }
 
 
-  @SuppressWarnings("unused")
-  private int lunnchJob() throws JobExecutionAlreadyRunningException, JobRestartException,
-      JobInstanceAlreadyCompleteException, JobParametersInvalidException {
 
-    JobExecution jobExecution =
-        jobLauncher.run(logSaverJob, new JobParametersBuilder().toJobParameters());
-
-    log.debug("Batch job ends with status as {}", jobExecution.getStatus());
-    return BatchStatus.COMPLETED == jobExecution.getStatus() ? 0 : 1;
-  }
-
-
-  @Override
-  public void run(ApplicationArguments args) throws Exception {
-    // int result = lunnchJob();
-    int result = lunnchApp();
-    SpringApplication.exit(ctx, () -> result);
-
-  }
-
-  private int lunnchApp() {
-
-    Boolean res = logSaver.saveLogs();
-
-    log.debug("Applicantion ends with status as {}", res);
-    return res ? 0 : 1;
-  }
 }
 

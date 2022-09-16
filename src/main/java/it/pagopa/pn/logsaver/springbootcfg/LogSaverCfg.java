@@ -14,9 +14,9 @@ import org.springframework.context.annotation.Configuration;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.Item.ItemChildren;
+import it.pagopa.pn.logsaver.services.impl.LogProcessFunction;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
-import it.pagopa.pn.logsaver.services.LogProcessFunction;
 import lombok.Getter;
 
 

@@ -1,5 +1,8 @@
 package it.pagopa.pn.logsaver.dao.entity;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
@@ -7,6 +10,9 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 
 @DynamoDbBean
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AuditStorage {
 
   private String type;

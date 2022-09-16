@@ -1,4 +1,4 @@
-package it.pagopa.pn.logsaver.services;
+package it.pagopa.pn.logsaver.services.impl;
 
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -9,10 +9,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
-import it.pagopa.pn.logsaver.model.ArchiveInfo;
+import it.pagopa.pn.logsaver.model.AuditContainer;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.services.ItemProcessorService;
+import it.pagopa.pn.logsaver.services.ItemReaderService;
 import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import lombok.NonNull;
@@ -22,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class ItemProcessorServiceImpl {
+public class ItemProcessorServiceImpl implements ItemProcessorService {
 
   @NonNull
   private final LogSaverCfg cfg;
@@ -31,6 +33,7 @@ public class ItemProcessorServiceImpl {
 
 
 
+  @Override
   public Item process(Item log, DailyContextCfg dailyCxt) {
     // TODO chiudere gli stream
     InputStream content = s3Service.getItemContent(log.getS3Key());
@@ -51,12 +54,13 @@ public class ItemProcessorServiceImpl {
     }
   }
 
-  public List<ArchiveInfo> zipAllItemsByRetention(DailyContextCfg dailyCxt) {
+  @Override
+  public List<AuditContainer> groupByRetention(DailyContextCfg dailyCxt) {
     return dailyCxt.getRetentionTmpPath().entrySet().stream()
         .map(entry -> this.createZipFile(entry, dailyCxt)).collect(Collectors.toList());
   }
 
-  private ArchiveInfo createZipFile(Entry<Retention, Path> entry, DailyContextCfg dailyCxt) {
+  private AuditContainer createZipFile(Entry<Retention, Path> entry, DailyContextCfg dailyCxt) {
 
     String fileName = dailyCxt.getLogDate()
         .format(DateTimeFormatter.ofPattern(entry.getKey().getZipNameFormat()));
@@ -64,7 +68,7 @@ public class ItemProcessorServiceImpl {
 
 
     FilesUtils.zipDirectory(entry.getValue(), fileZipOut);
-    return ArchiveInfo.builder().filePath(fileZipOut).logDate(dailyCxt.getLogDate())
+    return AuditContainer.builder().filePath(fileZipOut).logDate(dailyCxt.getLogDate())
         .retention(entry.getKey()).build();
   }
 

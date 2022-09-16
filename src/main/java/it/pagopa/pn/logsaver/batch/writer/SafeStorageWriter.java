@@ -7,7 +7,7 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.model.Item;
-import it.pagopa.pn.logsaver.services.ItemProcessorServiceImpl;
+import it.pagopa.pn.logsaver.services.ItemProcessorService;
 import it.pagopa.pn.logsaver.services.StorageService;
 
 @Component
@@ -16,10 +16,10 @@ public class SafeStorageWriter implements ItemWriter<Item> {
 
 
   private StepExecution stepExecution;
-  private final ItemProcessorServiceImpl service;
+  private final ItemProcessorService service;
   private final StorageService storageService;
 
-  public SafeStorageWriter(ItemProcessorServiceImpl service, StorageService storageService) {
+  public SafeStorageWriter(ItemProcessorService service, StorageService storageService) {
     this.service = service;
     this.storageService = storageService;
   }

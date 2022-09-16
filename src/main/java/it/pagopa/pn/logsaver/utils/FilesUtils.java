@@ -22,10 +22,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.util.Base64Utils;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
-import it.pagopa.pn.logsaver.exceptions.PnInternalException;
+import it.pagopa.pn.logsaver.exceptions.InternalException;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@UtilityClass
 public class FilesUtils {
 
 
@@ -177,7 +179,7 @@ public class FilesUtils {
       byte[] encodedhash = digest.digest(content);
       return bytesToBase64(encodedhash);
     } catch (NoSuchAlgorithmException exc) {
-      throw new PnInternalException("cannot compute sha256", exc);
+      throw new InternalException("cannot compute sha256", exc);
     }
   }
 
@@ -197,7 +199,7 @@ public class FilesUtils {
       byte[] encodedhash = md.digest();
       return bytesToBase64(encodedhash);
     } catch (NoSuchAlgorithmException | IOException exc) {
-      throw new PnInternalException("cannot compute sha256", exc);
+      throw new InternalException("cannot compute sha256", exc);
     }
   }
 }
