@@ -8,6 +8,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.Data;
@@ -24,6 +25,8 @@ public class ClApplicationArguments {
   private List<LocalDate> dateList;
 
   private List<ItemType> types;
+
+  private ExportType exportType;
 
 
   @Autowired
@@ -46,6 +49,12 @@ public class ClApplicationArguments {
   void initTypeList(
       @Value("${types:}#{T(java.util.Collections).emptyList()}") List<String> typeListStr) {
     this.types = typeListStr.stream().map(ItemType::valueOf).collect(Collectors.toList());
+  }
+
+  @Autowired
+  void initExportType(
+      @Value("${exportType:}#{T(it.pagopa.pn.logsaver.model.ExportType).PDF.name()}") String exportType) {
+    this.exportType = ExportType.valueOf(exportType);
   }
 
   @PostConstruct

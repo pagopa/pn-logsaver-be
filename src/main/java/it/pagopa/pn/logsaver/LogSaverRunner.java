@@ -48,14 +48,14 @@ public class LogSaverRunner implements ApplicationRunner {
     if (Objects.nonNull(appArgs.getDateFrom()) && Objects.nonNull(appArgs.getDateTo())) {
 
       logSaver.dailyListSaver(DateUtils.getDatesRange(appArgs.getDateFrom(), appArgs.getDateTo()),
-          types);
+          types, appArgs.getExportType());
     } else if (Objects.nonNull(appArgs.getDateList()) && !appArgs.getDateList().isEmpty()) {
 
-      logSaver.dailyListSaver(appArgs.getDateList(), types);
+      logSaver.dailyListSaver(appArgs.getDateList(), types, appArgs.getExportType());
 
     } else {
 
-      logSaver.dailySaverFromLatestExecutionToYesterday();
+      logSaver.dailySaverFromLatestExecutionToYesterday(appArgs.getExportType());
     }
 
     log.debug("Applicantion ends with status as {}", res);

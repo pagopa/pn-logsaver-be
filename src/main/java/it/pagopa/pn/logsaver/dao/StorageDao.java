@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
+import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.Retention;
 
 
@@ -14,7 +15,8 @@ public interface StorageDao {
 
   ExecutionEntity latestExecution();
 
-  ExecutionEntity updateExecution(LocalDate latestExecutionsDay, List<String> types);
+  ExecutionEntity updateExecution(LocalDate latestExecutionsDay, List<String> types,
+      ExportType typeExport);
 
   void insertAudit(AuditStorageEntity as);
 

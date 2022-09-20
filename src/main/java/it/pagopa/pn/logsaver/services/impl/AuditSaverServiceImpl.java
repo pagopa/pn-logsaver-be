@@ -9,6 +9,7 @@ import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.model.DailySaverResult.DailySaverResultBuilder;
+import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.StorageExecution;
@@ -34,7 +35,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
   private final LogSaverCfg cfg;
 
   @Override
-  public List<DailySaverResult> dailySaverFromLatestExecutionToYesterday() {
+  public List<DailySaverResult> dailySaverFromLatestExecutionToYesterday(ExportType exportType) {
 
     List<DailySaverResult> resList = new ArrayList<>();
     LocalDate yesterday = DateUtils.yesterday();
@@ -49,12 +50,13 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     if (!dateExecutionList.isEmpty()) {
       log.info("Date of last execution {}. There are {} previous days to be processed",
           lastExecDate.toString(), dateExecutionList.size());
-      dailyListSaver(dateExecutionList, latestExec.getTypesProcessed(), resList);
+      dailyListSaver(dateExecutionList, latestExec.getTypesProcessed(), latestExec.getExportType(),
+          resList);
     }
 
     if (yesterday.isAfter(lastExecDate)) {
-      resList.add(dailySaver(
-          DailyContextCfg.of(yesterday, cfg.getTmpBasePath(), List.of(ItemType.values()))));
+      resList.add(dailySaver(DailyContextCfg.of(yesterday, cfg.getTmpBasePath(),
+          List.of(ItemType.values()), exportType)));
 
     } else {
       log.warn("Date of last execution {} is after or equal of yesterday {}",
@@ -67,14 +69,14 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
   @Override
   public List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList,
-      List<ItemType> types) {
-    return dailyListSaver(dateExecutionList, types, new ArrayList<>());
+      List<ItemType> types, ExportType exportType) {
+    return dailyListSaver(dateExecutionList, types, null, new ArrayList<>());
   }
 
   private List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList,
-      List<ItemType> types, List<DailySaverResult> resList) {
+      List<ItemType> types, ExportType exportType, List<DailySaverResult> resList) {
     return dateExecutionList.stream()
-        .map(date -> dailySaver(DailyContextCfg.of(date, cfg.getTmpBasePath(), types)))
+        .map(date -> dailySaver(DailyContextCfg.of(date, cfg.getTmpBasePath(), types, exportType)))
         .collect(Collectors.toCollection(() -> resList));
 
   }
@@ -100,9 +102,10 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
     } catch (Exception e) {
       log.error("Error processing audit for day {}", dailyCtx.getLogDate().toString());
+      log.error("Error stacktrace", e);
       return resBuilder.error(e).build();
     } finally {
-      dailyCtx.destroy();
+      // dailyCtx.destroy();
     }
   }
 }

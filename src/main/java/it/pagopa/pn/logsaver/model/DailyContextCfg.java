@@ -28,7 +28,8 @@ public class DailyContextCfg {
   private Map<Retention, Path> retentionTmpPath = new LinkedHashMap<>();
 
   private Path tmpDailyPath;
-
+  @NonNull
+  private ExportType exportType;
 
   public DailyContextCfg initContext() {
     this.tmpDailyPath = Paths.get(getTmpBasePath(), getLogDate().toString());

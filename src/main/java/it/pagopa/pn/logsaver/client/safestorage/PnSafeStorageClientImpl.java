@@ -25,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Slf4j
 public class PnSafeStorageClientImpl implements PnSafeStorageClient {
-  public static final String MEDIATYPE_PDF = "application/pdf";
   public static final String PN_LEGAL_FACTS = "PN_LEGAL_FACTS";
   public static final String SAVED = "SAVED";
   public static final String PN_AAR = "PN_AAR";
@@ -49,13 +48,13 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
 
     String sha256 = FilesUtils.computeSha256(itemUpd.filePath());
-
+    String mediaType = itemUpd.exportType().getMediaType();
     try {
       log.info("Send fileCreationRequest for file {}", itemUpd.filePath().toString());
-      FileCreationResponse res = createFile(sha256);
+      FileCreationResponse res = createFile(sha256, mediaType);
 
       log.info("Send fileContent to recevide url {}", res.getUploadUrl());
-      this.uploadContent(res, sha256, null);
+      this.uploadContent(res, sha256, itemUpd.filePath(), mediaType);
 
       log.info("File sent successfully. SafeStorage key {}", res.getKey());
 
@@ -69,9 +68,9 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
   }
 
 
-  private FileCreationResponse createFile(String sha256) {
+  private FileCreationResponse createFile(String sha256, String mediaType) {
     FileCreationRequest fileCreationRequest = new FileCreationRequest();;
-    fileCreationRequest.setContentType(MEDIATYPE_PDF);
+    fileCreationRequest.setContentType(mediaType);
     fileCreationRequest.setDocumentType(PN_LEGAL_FACTS);
     fileCreationRequest.setStatus(SAVED);
     try {
@@ -86,12 +85,12 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
   }
 
   private void uploadContent(FileCreationResponse fileCreationResponse, String sha256,
-      Path resource) {
+      Path resource, String mediaType) {
 
     try {
 
       MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
-      headers.add("Content-type", MEDIATYPE_PDF);
+      headers.add("Content-type", mediaType);
       headers.add("x-amz-checksum-sha256", sha256);
       headers.add("x-amz-meta-secret", fileCreationResponse.getSecret());
 

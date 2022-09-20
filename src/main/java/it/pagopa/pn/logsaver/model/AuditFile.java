@@ -21,4 +21,6 @@ public class AuditFile {
 
   private LocalDate logDate;
 
+  private ExportType exportType;
+
 }

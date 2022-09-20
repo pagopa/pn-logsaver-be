@@ -18,12 +18,15 @@ public class ExecutionEntity extends AuditStorageBase {
 
   private List<String> typesProcessed;
 
+  private String exportType;
+
   @Builder
   public ExecutionEntity(String type, String logDate, LocalDate latestExecutionDate,
-      List<String> typesProcessed) {
+      List<String> typesProcessed, String exportType) {
     super(type, logDate);
     this.latestExecutionDate = latestExecutionDate;
     this.typesProcessed = typesProcessed;
+    this.exportType = exportType;
   }
 
 }

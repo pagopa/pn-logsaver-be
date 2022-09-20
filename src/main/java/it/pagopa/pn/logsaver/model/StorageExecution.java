@@ -11,13 +11,12 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
 public class StorageExecution {
 
-  @Getter
   private LocalDate latestExecutionDate;
 
-  @Getter
   private List<ItemType> typesProcessed;
 
-
+  private ExportType exportType;
 }

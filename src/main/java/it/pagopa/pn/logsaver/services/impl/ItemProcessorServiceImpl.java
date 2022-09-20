@@ -13,13 +13,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
+import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.Item;
+import it.pagopa.pn.logsaver.model.Item.ItemChildren;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.services.ItemProcessorService;
 import it.pagopa.pn.logsaver.services.ItemReaderService;
 import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
-import it.pagopa.pn.logsaver.utils.PdfUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,77 +38,67 @@ public class ItemProcessorServiceImpl implements ItemProcessorService {
 
   @Override
   public List<AuditFile> process(List<Item> items, DailyContextCfg dailyCtx) {
-
+    log.info("Start process files");
     LocalDateTime start = LocalDateTime.now();
     items.stream().parallel().map(item -> process(item, dailyCtx)).collect(Collectors.toList());
     Duration duration = Duration.between(start, LocalDateTime.now());
-    log.trace("Time execution processs: {}", duration.toString());
-
+    log.debug("Execution time process: {}", duration.toString());
+    log.info("Start grouping by retention");
     start = LocalDateTime.now();
-    List<AuditFile> grouped = groupByRetention(dailyCtx);
+    List<AuditFile> groupedAudit = groupByRetention(dailyCtx);
     duration = Duration.between(start, LocalDateTime.now());
-    log.trace("Time execution creation pdf: {}", duration.toString());
-    return grouped;
+    log.debug("Execution time creation pdf: {}", duration.toString());
+    return groupedAudit;
 
   }
 
 
 
-  @Override
-  public Item process(Item log, DailyContextCfg dailyCtx) {
-    try (InputStream content = s3Service.getItemContent(log.getS3Key());) {
-      String fileName = FilenameUtils.getBaseName(log.getS3Key());
+  private Item process(Item itemLog, DailyContextCfg dailyCtx) {
+    log.debug("Begin process file {}", itemLog.getS3Key());
+    try (InputStream content = s3Service.getItemContent(itemLog.getS3Key());) {
 
-      cfg.getFilterFunction(log).apply(content, dailyCtx).forEach(item -> {
-        try (InputStream isItem = item.getContent();) {
-          writeLog(isItem, fileName, item.getRetention(), dailyCtx);
-        } catch (IOException e) {
-          // Nothing to do
-        }
-      });
+      String fileName = FilenameUtils.getBaseName(itemLog.getS3Key());
+      cfg.filter(itemLog.getType(), content, dailyCtx)
+          .forEach(item -> writeLog(item, fileName, dailyCtx));
 
     } catch (IOException e) {
-      // Nothing to do
+      log.warn("Unexpected error closing input stream");
     }
-    return log;
+    return itemLog;
   }
 
 
-  private void writeLog(InputStream content, String fileName, Retention retention,
-      DailyContextCfg dailyCxt) {
-    if (Objects.nonNull(retention)) {
-      Path path = dailyCxt.getRetentionTmpPath().get(retention);
-      FilesUtils.writeFile(content, fileName, path);
+  private void writeLog(ItemChildren item, String fileName, DailyContextCfg dailyCxt) {
+    try (InputStream isItem = item.getContent();) {
+      if (Objects.nonNull(item.getRetention())) {
+        Path path = dailyCxt.getRetentionTmpPath().get(item.getRetention());
+        FilesUtils.writeFile(isItem, fileName, path);
+      }
+    } catch (IOException e) {
+      log.warn("Unexpected error closing input stream");
     }
+
   }
 
   @Override
   public List<AuditFile> groupByRetention(DailyContextCfg dailyCxt) {
     return dailyCxt.getRetentionTmpPath().entrySet().stream()
-        .map(entry -> this.createPdfFile(entry.getKey(), entry.getValue(), dailyCxt))
+        .map(entry -> this.createAuditFile(entry.getKey(), entry.getValue(), dailyCxt))
         .collect(Collectors.toList());
   }
 
-  private AuditFile createZipFile(Retention retention, Path path, DailyContextCfg dailyCxt) {
+  private AuditFile createAuditFile(Retention retention, Path path, DailyContextCfg dailyCxt) {
+    ExportType exportType = dailyCxt.getExportType();
+    String fileName =
+        dailyCxt.getLogDate().format(DateTimeFormatter.ofPattern(retention.getNameFormat()))
+            .concat(exportType.getExtension());
+    Path fileOut = Path.of(dailyCxt.getTmpDailyPath().toString(), fileName);
 
-    String fileName = dailyCxt.getLogDate()
-        .format(DateTimeFormatter.ofPattern(retention.getNameFormat())).concat(".zip");
-    Path fileZipOut = Path.of(dailyCxt.getTmpDailyPath().toString(), fileName);
+    exportType.write(path, fileOut, retention, dailyCxt.getLogDate());
 
-    FilesUtils.zipDirectory(path, fileZipOut);
-    return AuditFile.builder().filePath(fileZipOut).logDate(dailyCxt.getLogDate())
-        .retention(retention).build();
-  }
-
-  private AuditFile createPdfFile(Retention retention, Path path, DailyContextCfg dailyCxt) {
-
-    String fileName = dailyCxt.getLogDate()
-        .format(DateTimeFormatter.ofPattern(retention.getNameFormat())).concat(".pdf");
-    Path fileZipOut = Path.of(dailyCxt.getTmpDailyPath().toString(), fileName);
-
-    PdfUtils.createPdf(path, fileZipOut, retention, dailyCxt.getLogDate());
-    return AuditFile.builder().filePath(fileZipOut).logDate(dailyCxt.getLogDate())
-        .retention(retention).build();
+    return AuditFile.builder().filePath(fileOut).logDate(dailyCxt.getLogDate())
+        .exportType(exportType).retention(retention).build();
   }
 
 }

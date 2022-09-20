@@ -6,8 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
+import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.experimental.UtilityClass;
 
@@ -24,9 +24,11 @@ public class AuditStorageMapper {
   }
 
   public static AuditStorage toModel(AuditStorageEntity entity) {
-    return AuditStorage.builder().retention(Retention.valueOf(entity.getType()))
-        .logDate(DateUtils.parse(entity.getLogDate()))
-        .filePath(StringUtils.isEmpty(entity.getTmpPath()) ? null : Path.of(entity.getTmpPath()))
-        .status(AuditStorageStatus.valueOf(entity.getResult())).build();
+    return Objects.isNull(entity) ? null
+        : AuditStorage.builder().retention(Retention.valueOf(entity.getType()))
+            .logDate(DateUtils.parse(entity.getLogDate()))
+            .filePath(
+                StringUtils.isEmpty(entity.getTmpPath()) ? null : Path.of(entity.getTmpPath()))
+            .status(AuditStorageStatus.valueOf(entity.getResult())).build();
   }
 }

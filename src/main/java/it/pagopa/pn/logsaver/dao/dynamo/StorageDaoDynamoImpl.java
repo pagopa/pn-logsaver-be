@@ -9,10 +9,12 @@ import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExtraType;
+import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
@@ -24,6 +26,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 @Component
 @AllArgsConstructor
+@Slf4j
 public class StorageDaoDynamoImpl implements StorageDao {
   private final String TABLE = "audit_storage";
   private final String FIRST_START_DAY = "2022-07-10";
@@ -97,33 +100,27 @@ public class StorageDaoDynamoImpl implements StorageDao {
     return auditStorageTable
         .query(QueryEnhancedRequest.builder().queryConditional(queryConditional)
             .scanIndexForward(false).limit(Integer.valueOf(1)).build())
-        .items().stream().findFirst()
-        .orElse(updateExecution(DateUtils.parse(FIRST_START_DAY), ItemType.valuesAsString()));
+        .items().stream().findFirst().orElseGet(() -> {
+          log.warn("No execution date in the table. Insert first execution with date {}",
+              FIRST_START_DAY);
+          return updateExecution(DateUtils.parse(FIRST_START_DAY), ItemType.valuesAsString(),
+              ExportType.PDF);
+        });
   }
 
 
   @Override
-  public ExecutionEntity updateExecution(LocalDate day, List<String> types) {
+  public ExecutionEntity updateExecution(LocalDate day, List<String> types, ExportType typeExport) {
 
     DynamoDbTable<ExecutionEntity> auditStorageTable =
         enhancedClient.table(TABLE, TableSchema.fromBean(ExecutionEntity.class));
 
     ExecutionEntity last = ExecutionEntity.builder().type(ExtraType.LOG_SAVER_EXECUTION.name())
-        .logDate(DateUtils.format(day)).latestExecutionDate(day).typesProcessed(types).build();
+        .logDate(DateUtils.format(day)).latestExecutionDate(day).typesProcessed(types)
+        .exportType(typeExport.name()).build();
 
     auditStorageTable.updateItem(last);
     return last;
-
-  }
-
-
-  public void insertAudit_test(AuditStorageEntity as) {
-
-    DynamoDbTable<AuditStorageEntity> auditStorageTable =
-        enhancedClient.table(TABLE, TableSchema.fromBean(AuditStorageEntity.class));
-    // MappedTableResource<AuditStorage>
-    // TransactWriteItemsEnhancedRequest request =
-    // TransactWriteItemsEnhancedRequest.builder().enhancedClient.transactWriteItems();
 
   }
 

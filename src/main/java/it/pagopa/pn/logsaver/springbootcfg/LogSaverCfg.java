@@ -12,11 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
-import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.Item.ItemChildren;
-import it.pagopa.pn.logsaver.services.impl.LogProcessFunction;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.services.impl.LogProcessFunction;
 import lombok.Getter;
 
 
@@ -52,12 +51,9 @@ public class LogSaverCfg {
     itemFilterFunction.put(ItemType.logs, new LogProcessFunction());
   }
 
-  public BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> getFilterFunction(
-      Item item) {
-    return itemFilterFunction.get(item.getType());
+  public Stream<ItemChildren> filter(ItemType type, InputStream content, DailyContextCfg cfg) {
+    return itemFilterFunction.get(type).apply(content, cfg);
   }
-
-
 
   @PostConstruct
   private void initConfiguration() {}

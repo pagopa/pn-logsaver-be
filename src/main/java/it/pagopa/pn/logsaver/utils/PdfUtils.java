@@ -12,7 +12,6 @@ import java.time.LocalDate;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import com.lowagie.text.Document;
-import com.lowagie.text.DocumentException;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.pdf.PdfWriter;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
@@ -25,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PdfUtils {
   private static final String START_XML_AUDIT =
       "<audit date=\"%s\" fileName=\"%s\" retention=\"%s\"><![CDATA[";
-  private static final byte[] END_XML_AUDIT = "]]</audit>".getBytes();
+  private static final byte[] END_XML_AUDIT = "]]></audit>".getBytes();
 
   private final static String TITLE = "PagoPa - Piattaforma Notifiche";
   private final static String SUBJECT = "File di Audit - Retention %s del %s";
@@ -35,7 +34,7 @@ public class PdfUtils {
 
 
   public static void createPdf(Path folder, Path file, Retention retention, LocalDate logDate) {
-
+    log.info("Start create pdf {} for folder {}", file.getFileName().toString(), folder.toString());
     try (Document document = new Document();) {
       // PDF-stream to a file
       PdfWriter.getInstance(document, new FileOutputStream(file.toFile()));
@@ -54,10 +53,10 @@ public class PdfUtils {
 
       document.open();
       document.add(new Paragraph(PARAGRAPH));
-    } catch (DocumentException | IOException de) {
+    } catch (IOException de) {
       log.error("Error create pdf {} for folder {}", file.getFileName().toString(),
           folder.toString());
-      throw new FileSystemException("");
+      throw new FileSystemException("Error create pdf.", de);
     }
   }
 

@@ -13,6 +13,7 @@ import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
+import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
@@ -43,7 +44,7 @@ public class StorageServiceImpl implements StorageService {
     ExecutionEntity exec = storageDao.latestExecution();
 
     return new StorageExecution(exec.getLatestExecutionDate(),
-        ItemType.values(exec.getTypesProcessed()));
+        ItemType.values(exec.getTypesProcessed()), ExportType.valueOf(exec.getExportType()));
   }
 
 
@@ -53,22 +54,28 @@ public class StorageServiceImpl implements StorageService {
 
     List<AuditStorage> auditStored = files.stream().map(this::send).collect(Collectors.toList());
 
-    storageDao.updateExecution(cfg.getLogDate(), ItemType.valuesAsString(cfg.getTypes()));
+    log.info("Update log-saver execution");
+    storageDao.updateExecution(cfg.getLogDate(), ItemType.valuesAsString(cfg.getTypes()),
+        cfg.getExportType());
     return auditStored;
   }
 
   private AuditStorage send(AuditFile file) {
 
+    log.info("Sending Audit file {} ", file.filePath().getFileName().toString());
     AuditStorageEntity auditStorage = AuditStorageMapper.toEntity(file);
     AuditStorage itemUpd = safeStorageClient.uploadFile(AuditStorage.from(file));
 
     if (itemUpd.sendingError()) {
+      log.info("Upload audit file in error");
       auditStorage.setResult(AuditStorageStatus.CREATED.name());
       auditStorage.setTmpPath(file.filePath().toString());
     } else {
+      log.info("File upload successfully");
       auditStorage.setResult(AuditStorageStatus.SENT.name());
       auditStorage.setStorageKey(itemUpd.uploadKey());
     }
+    log.info("Insert file audit references in db");
     storageDao.insertAudit(auditStorage);
     return AuditStorageMapper.toModel(auditStorage);
 

@@ -19,11 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 public class JsonUtils {
 
+  private final static String FIELD_LOG_EVENTS = "logEvents";
+  private final static String FIELD_LOG_MESSAGE = "message";
+  private final static String FIELD_LOG_TAGS = "tags";
 
   public static Map<Retention, JsonObject> groupByRetention(JsonObject parent) {
     Map<Retention, JsonObject> groupedLog = new LinkedHashMap<>();
 
-    JsonArray logEvents = parent.getAsJsonArray("logEvents");
+    JsonArray logEvents = parent.getAsJsonArray(FIELD_LOG_EVENTS);
     if (Objects.nonNull(logEvents)) {
       logEvents
           .forEach(logEvent -> splitLogByRetention(parent, groupedLog, logEvent.getAsJsonObject()));
@@ -38,7 +41,7 @@ public class JsonUtils {
       Retention retention = getRetention(logEvent);
       JsonObject objByRetention =
           groupedLog.computeIfAbsent(retention, ret -> createEmptyLog(parent.getAsJsonObject()));
-      objByRetention.getAsJsonArray("logEvents").add(logEvent);
+      objByRetention.getAsJsonArray(FIELD_LOG_EVENTS).add(logEvent);
     } catch (Exception e) {
       log.warn("error parsing log events");
     }
@@ -48,13 +51,13 @@ public class JsonUtils {
   private static Retention getRetention(JsonElement logEvt) {
 
     try {
-      String logEvtMsgStr = logEvt.getAsJsonObject().getAsJsonPrimitive("message").getAsString();
+      String logEvtMsgStr =
+          logEvt.getAsJsonObject().getAsJsonPrimitive(FIELD_LOG_MESSAGE).getAsString();
 
       JsonObject logEvtMsg = JsonParser.parseString(logEvtMsgStr).getAsJsonObject();
 
-
       Type listType = new TypeToken<List<String>>() {}.getType();
-      JsonArray tags = logEvtMsg.getAsJsonArray("tags");
+      JsonArray tags = logEvtMsg.getAsJsonArray(FIELD_LOG_TAGS);
 
       if (Objects.nonNull(tags) && !tags.isEmpty()) {
 
@@ -75,7 +78,7 @@ public class JsonUtils {
 
   private static JsonObject createEmptyLog(JsonObject jsonEl) {
     JsonObject template = jsonEl.deepCopy();
-    template.add("logEvents", new JsonArray());
+    template.add(FIELD_LOG_EVENTS, new JsonArray());
     return template;
   }
 
