@@ -19,6 +19,7 @@ import it.pagopa.pn.logsaver.services.ItemProcessorService;
 import it.pagopa.pn.logsaver.services.ItemReaderService;
 import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
+import it.pagopa.pn.logsaver.utils.PdfUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +84,7 @@ public class ItemProcessorServiceImpl implements ItemProcessorService {
   @Override
   public List<AuditFile> groupByRetention(DailyContextCfg dailyCxt) {
     return dailyCxt.getRetentionTmpPath().entrySet().stream()
-        .map(entry -> this.createZipFile(entry.getKey(), entry.getValue(), dailyCxt))
+        .map(entry -> this.createPdfFile(entry.getKey(), entry.getValue(), dailyCxt))
         .collect(Collectors.toList());
   }
 
@@ -98,5 +99,15 @@ public class ItemProcessorServiceImpl implements ItemProcessorService {
         .retention(retention).build();
   }
 
+  private AuditFile createPdfFile(Retention retention, Path path, DailyContextCfg dailyCxt) {
+
+    String fileName = dailyCxt.getLogDate()
+        .format(DateTimeFormatter.ofPattern(retention.getNameFormat())).concat(".pdf");
+    Path fileZipOut = Path.of(dailyCxt.getTmpDailyPath().toString(), fileName);
+
+    PdfUtils.createPdf(path, fileZipOut, retention, dailyCxt.getLogDate());
+    return AuditFile.builder().filePath(fileZipOut).logDate(dailyCxt.getLogDate())
+        .retention(retention).build();
+  }
 
 }

@@ -1,17 +1,21 @@
 package it.pagopa.pn.logsaver.utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -20,12 +24,19 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.util.Base64Utils;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
+import it.pagopa.pn.logsaver.model.Retention;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @UtilityClass
 public class FilesUtils {
+
+  private static final String START_XML_AUDIT =
+      "<audit date=\"%s\" fileName=\"%s\" retention=\"%s\"><![CDATA[";
+  private static final byte[] END_XML_AUDIT = "]]</audit>".getBytes();
+  private static final int END_XML_AUDIT_SIZE = "]]</audit>".length();
+
 
   public static void remove(Path path) {
 
@@ -105,6 +116,34 @@ public class FilesUtils {
     } catch (IOException e) {
       throw new FileSystemException("", e);
     }
+  }
+
+
+
+  public static void writeXMLFile(InputStream content, String fileName, Path path,
+      Retention retention, LocalDate logDate) {
+    try {
+
+      Path fullPathFile = Path.of(path.toString(), fileName);
+      FileOutputStream fileOut = new FileOutputStream(fullPathFile.toFile(), true);
+      if (Files.size(fullPathFile) == 0) {
+        InputStream start = new ByteArrayInputStream(
+            String.format(START_XML_AUDIT, logDate.toString(), fileName, retention.getNameFormat())
+                .getBytes());
+        content = new SequenceInputStream(start, content);
+      } else {
+        FileChannel fl = fileOut.getChannel();
+        fl.truncate(fl.size() - END_XML_AUDIT_SIZE);
+      }
+
+      IOUtils.copy(new SequenceInputStream(content, new ByteArrayInputStream(END_XML_AUDIT)),
+          fileOut);
+
+      fileOut.close();
+    } catch (IOException e) {
+      throw new FileSystemException("Error writing xml file", e);
+    }
+
   }
 
 
