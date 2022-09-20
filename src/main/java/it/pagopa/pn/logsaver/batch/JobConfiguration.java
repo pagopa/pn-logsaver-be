@@ -7,12 +7,14 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import it.pagopa.pn.logsaver.batch.processor.S3LogsProcessor;
 import it.pagopa.pn.logsaver.batch.reader.S3BucketReader;
 import it.pagopa.pn.logsaver.batch.writer.SafeStorageWriter;
 import it.pagopa.pn.logsaver.model.Item;
 
 @Configuration
+@Profile("experiment")
 public class JobConfiguration {
 
   private final JobBuilderFactory jobBuilderFactory;

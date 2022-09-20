@@ -2,13 +2,13 @@ package it.pagopa.pn.logsaver.dao.dynamo;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.dao.StorageDao;
-import it.pagopa.pn.logsaver.dao.entity.AuditStorage;
+import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
+import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExtraType;
-import it.pagopa.pn.logsaver.dao.entity.Execution;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
@@ -33,13 +33,13 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   @Override
-  public List<AuditStorage> getAudits(LocalDate dateFrom, LocalDate dateTo,
+  public List<AuditStorageEntity> getAudits(LocalDate dateFrom, LocalDate dateTo,
       List<Retention> retentions) {
 
-    List<AuditStorage> retList = new ArrayList<>();
+    List<AuditStorageEntity> retList = new ArrayList<>();
 
-    DynamoDbTable<AuditStorage> auditStorageTable =
-        enhancedClient.table(TABLE, TableSchema.fromBean(AuditStorage.class));
+    DynamoDbTable<AuditStorageEntity> auditStorageTable =
+        enhancedClient.table(TABLE, TableSchema.fromBean(AuditStorageEntity.class));
 
     Expression expression = Expression.builder().expression("#result = :result")
         .putExpressionValue(":result", AttributeValue.builder().s("SUCCESS").build())
@@ -49,74 +49,82 @@ public class StorageDaoDynamoImpl implements StorageDao {
         retention, retList, expression));
 
     return retList;
-
-
   }
 
   @Override
-  public void insertAudit(AuditStorage as) {
+  public AuditStorageEntity getAudit(LocalDate dateLog, Retention retention) {
+    DynamoDbTable<AuditStorageEntity> auditStorageTable =
+        enhancedClient.table(TABLE, TableSchema.fromBean(AuditStorageEntity.class));
 
-    DynamoDbTable<AuditStorage> auditStorageTable =
-        enhancedClient.table(TABLE, TableSchema.fromBean(AuditStorage.class));
+    return auditStorageTable.getItem(Key.builder().partitionValue(retention.name())
+        .sortValue(DateUtils.format(dateLog)).build());
+  }
+
+
+  @Override
+  public void insertAudit(AuditStorageEntity as) {
+
+    DynamoDbTable<AuditStorageEntity> auditStorageTable =
+        enhancedClient.table(TABLE, TableSchema.fromBean(AuditStorageEntity.class));
 
     auditStorageTable.putItem(as);
   }
 
 
   private void findItemInPartion(LocalDate dateFrom, LocalDate dateTo,
-      DynamoDbTable<AuditStorage> auditStorageTable, Retention retention,
-      List<AuditStorage> retList, Expression expression) {
-
+      DynamoDbTable<AuditStorageEntity> auditStorageTable, Retention retention,
+      List<AuditStorageEntity> retList, Expression expression) {
 
     QueryConditional queryConditional = QueryConditional.sortBetween(
         Key.builder().partitionValue(retention.name()).sortValue(DateUtils.format(dateFrom))
             .build(),
         Key.builder().partitionValue(retention.name()).sortValue(DateUtils.format(dateTo)).build());
 
-    Iterator<AuditStorage> results = auditStorageTable
-        .query(r -> r.queryConditional(queryConditional).filterExpression(expression)).items()
-        .iterator();
-
-    while (results.hasNext()) {
-      AuditStorage rec = results.next();
-      retList.add(rec);
-    }
-
+    auditStorageTable.query(r -> r.queryConditional(queryConditional).filterExpression(expression))
+        .items().stream().collect(Collectors.toCollection(() -> retList));
   }
 
 
   @Override
-  public Execution latestExecution() {
+  public ExecutionEntity latestExecution() {
 
-    DynamoDbTable<Execution> auditStorageTable =
-        enhancedClient.table(TABLE, TableSchema.fromBean(Execution.class));
+    DynamoDbTable<ExecutionEntity> auditStorageTable =
+        enhancedClient.table(TABLE, TableSchema.fromBean(ExecutionEntity.class));
 
-    Iterator<Execution> results = auditStorageTable.query(QueryEnhancedRequest
-        .builder()
-        .queryConditional(QueryConditional
-            .keyEqualTo(Key.builder().partitionValue(ExtraType.LATEST_EXECUTION.name()).build()))
-        .scanIndexForward(false).limit(Integer.valueOf(1)).build()).items().iterator();
-    if (results.hasNext()) {
-      return results.next();
-    }
-    return updateLatestExecution(DateUtils.parse(FIRST_START_DAY), ItemType.valuesAsString());
+    QueryConditional queryConditional = QueryConditional
+        .keyEqualTo(Key.builder().partitionValue(ExtraType.LOG_SAVER_EXECUTION.name()).build());
+
+    return auditStorageTable
+        .query(QueryEnhancedRequest.builder().queryConditional(queryConditional)
+            .scanIndexForward(false).limit(Integer.valueOf(1)).build())
+        .items().stream().findFirst()
+        .orElse(updateExecution(DateUtils.parse(FIRST_START_DAY), ItemType.valuesAsString()));
   }
 
 
   @Override
-  public Execution updateLatestExecution(LocalDate day, List<String> types) {
+  public ExecutionEntity updateExecution(LocalDate day, List<String> types) {
 
-    DynamoDbTable<Execution> auditStorageTable =
-        enhancedClient.table(TABLE, TableSchema.fromBean(Execution.class));
+    DynamoDbTable<ExecutionEntity> auditStorageTable =
+        enhancedClient.table(TABLE, TableSchema.fromBean(ExecutionEntity.class));
 
-    Execution last =
-        Execution.builder().type(ExtraType.LATEST_EXECUTION.name())
-            .logDate(FIRST_START_DAY).latestExecutionDate(day).typesProcessed(types).build();
+    ExecutionEntity last = ExecutionEntity.builder().type(ExtraType.LOG_SAVER_EXECUTION.name())
+        .logDate(DateUtils.format(day)).latestExecutionDate(day).typesProcessed(types).build();
 
     auditStorageTable.updateItem(last);
     return last;
 
   }
 
+
+  public void insertAudit_test(AuditStorageEntity as) {
+
+    DynamoDbTable<AuditStorageEntity> auditStorageTable =
+        enhancedClient.table(TABLE, TableSchema.fromBean(AuditStorageEntity.class));
+    // MappedTableResource<AuditStorage>
+    // TransactWriteItemsEnhancedRequest request =
+    // TransactWriteItemsEnhancedRequest.builder().enhancedClient.transactWriteItems();
+
+  }
 
 }

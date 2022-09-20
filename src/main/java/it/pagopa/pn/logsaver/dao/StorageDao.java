@@ -2,19 +2,22 @@ package it.pagopa.pn.logsaver.dao;
 
 import java.time.LocalDate;
 import java.util.List;
-import it.pagopa.pn.logsaver.dao.entity.AuditStorage;
-import it.pagopa.pn.logsaver.dao.entity.Execution;
+import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
+import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.model.Retention;
 
 
 public interface StorageDao {
 
-  List<AuditStorage> getAudits(LocalDate dateFrom, LocalDate dateTo, List<Retention> retentions);
+  List<AuditStorageEntity> getAudits(LocalDate dateFrom, LocalDate dateTo,
+      List<Retention> retentions);
 
-  Execution latestExecution();
+  ExecutionEntity latestExecution();
 
-  Execution updateLatestExecution(LocalDate latestExecutionsDay, List<String> types);
+  ExecutionEntity updateExecution(LocalDate latestExecutionsDay, List<String> types);
 
-  void insertAudit(AuditStorage as);
+  void insertAudit(AuditStorageEntity as);
+
+  AuditStorageEntity getAudit(LocalDate dateLog, Retention retention);
 
 }

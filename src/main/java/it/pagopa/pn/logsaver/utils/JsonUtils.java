@@ -67,7 +67,7 @@ public class JsonUtils {
         }
       }
     } catch (Throwable e) {
-      log.warn("error parsing log event message unknow format: " + logEvt.toString());
+      log.trace("error parsing log event message unknow format: " + logEvt.toString());
     }
     return Retention.DEVELOPER;
 

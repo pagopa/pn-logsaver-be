@@ -2,7 +2,9 @@ package it.pagopa.pn.logsaver.springbootcfg;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -38,5 +40,21 @@ public class ClApplicationArguments {
   void initDateList(
       @Value("${dateList:}#{T(java.util.Collections).emptyList()}") List<String> dateListStr) {
     this.dateList = dateListStr.stream().map(DateUtils::parse).collect(Collectors.toList());
+  }
+
+  @Autowired
+  void initTypeList(
+      @Value("${types:}#{T(java.util.Collections).emptyList()}") List<String> typeListStr) {
+    this.types = typeListStr.stream().map(ItemType::valueOf).collect(Collectors.toList());
+  }
+
+  @PostConstruct
+  void validate() {
+    if (Objects.nonNull(dateFrom) && Objects.nonNull(dateTo)) {
+      if (dateFrom.isAfter(dateTo) || dateTo.isAfter(DateUtils.yesterday())) {
+        throw new IllegalArgumentException(
+            "Argument dateFrom must be less than or equal to date. Argument dateTo must be less than yesterday's date.");
+      }
+    }
   }
 }

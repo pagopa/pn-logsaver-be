@@ -5,11 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
-import it.pagopa.pn.logsaver.model.AuditContainer;
+import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.model.DailySaverResult.DailySaverResultBuilder;
-import it.pagopa.pn.logsaver.model.DailySaverResult.DailySaverStatus;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.StorageExecution;
@@ -40,26 +39,20 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     List<DailySaverResult> resList = new ArrayList<>();
     LocalDate yesterday = DateUtils.yesterday();
 
-    log.info("Start LogSaver for day {}. Check for last execution...", yesterday.toString());
+    log.info("Start LogSaver from latest execution to Yesterday {}. Check for last execution...",
+        yesterday.toString());
     StorageExecution latestExec = storageService.latestStorageExecution();
 
     LocalDate lastExecDate = latestExec.getLatestExecutionDate();
     List<LocalDate> dateExecutionList = DateUtils.getDatesRange(lastExecDate, yesterday);
 
-
     if (!dateExecutionList.isEmpty()) {
       log.info("Date of last execution {}. There are {} previous days to be processed",
           lastExecDate.toString(), dateExecutionList.size());
-      dailyListSaver(dateExecutionList, latestExec.getTypesProcessed());
-      dateExecutionList.stream()
-          .map(date -> dailySaver(
-              DailyContextCfg.of(date, cfg.getTmpBasePath(), latestExec.getTypesProcessed())))
-          .collect(Collectors.toCollection(() -> resList));
+      dailyListSaver(dateExecutionList, latestExec.getTypesProcessed(), resList);
     }
 
-
     if (yesterday.isAfter(lastExecDate)) {
-
       resList.add(dailySaver(
           DailyContextCfg.of(yesterday, cfg.getTmpBasePath(), List.of(ItemType.values()))));
 
@@ -75,32 +68,35 @@ public class AuditSaverServiceImpl implements AuditSaverService {
   @Override
   public List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList,
       List<ItemType> types) {
-    return dateExecutionList.stream()
-        .map(date -> dailySaver(DailyContextCfg.of(date, cfg.getTmpBasePath(), types)))
-        .collect(Collectors.toList());
+    return dailyListSaver(dateExecutionList, types, new ArrayList<>());
   }
 
+  private List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList,
+      List<ItemType> types, List<DailySaverResult> resList) {
+    return dateExecutionList.stream()
+        .map(date -> dailySaver(DailyContextCfg.of(date, cfg.getTmpBasePath(), types)))
+        .collect(Collectors.toCollection(() -> resList));
 
+  }
 
   @Override
   public DailySaverResult dailySaver(DailyContextCfg dailyCtx) {
+
     DailySaverResultBuilder resBuilder = DailySaverResult.builder();
     try {
 
+      log.info("Start execution for day {}", dailyCtx.getLogDate());
 
       dailyCtx.initContext();
 
       List<Item> items = readerService.findItems(dailyCtx.getLogDate());
 
-      items.stream().map(item -> service.process(item, dailyCtx)).collect(Collectors.toList());
-
-      List<AuditContainer> grouped = service.groupByRetention(dailyCtx);
-
-      resBuilder.auditList(grouped).result(DailySaverStatus.GENERATED);
+      List<AuditFile> grouped = service.process(items, dailyCtx);
 
       storageService.store(grouped, dailyCtx);
+      log.info("End execution for day {}", dailyCtx.getLogDate());
 
-      return resBuilder.result(DailySaverStatus.SENDED).build();
+      return resBuilder.auditList(grouped).build();
 
     } catch (Exception e) {
       log.error("Error processing audit for day {}", dailyCtx.getLogDate().toString());

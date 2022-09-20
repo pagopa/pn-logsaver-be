@@ -4,12 +4,14 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.services.ItemProcessorService;
 
 @Component
 @StepScope
+@Profile("experiment")
 public class S3LogsProcessor implements ItemProcessor<Item, Item> {
 
   private StepExecution stepExecution;

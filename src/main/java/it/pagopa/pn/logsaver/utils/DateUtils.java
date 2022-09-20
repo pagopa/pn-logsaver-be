@@ -33,7 +33,8 @@ public class DateUtils {
 
 
   public static LocalDate yesterday() {
-    return LocalDate.now(italianZoneId).minusDays(1);
+    return parse("2022-07-12");
+    // return LocalDate.now(italianZoneId).minusDays(1);
   }
 
   public static List<LocalDate> getDatesRange(LocalDate startDate, LocalDate endDate) {

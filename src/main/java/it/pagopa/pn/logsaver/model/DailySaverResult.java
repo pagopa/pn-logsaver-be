@@ -8,16 +8,11 @@ import lombok.Data;
 @Builder
 public class DailySaverResult {
 
-  public enum DailySaverStatus {
-    GENERATED, SENDED
-  };
+  private List<AuditFile> auditList;
 
-  private List<AuditContainer> auditList;
+  private List<AuditStorage> auditUploadList;
 
-  private List<ItemUpload> auditUploadList;
-  // private Map<LocalDate, List<ItemType>>;
-
-  private DailySaverStatus result;
+  private Boolean success;
 
   private Throwable error;
 

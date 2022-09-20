@@ -6,16 +6,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
@@ -30,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 public class FilesUtils {
 
-
   public static void remove(Path path) {
 
     try {
@@ -38,7 +34,7 @@ public class FilesUtils {
     } catch (FileNotFoundException | NullPointerException e) {
       // Nothing todo
     } catch (IOException e) {
-      throw new RuntimeException();
+      throw new FileSystemException("", e);
     }
   }
 
@@ -54,7 +50,7 @@ public class FilesUtils {
 
     } catch (IOException e) {
 
-      throw new RuntimeException();
+      throw new FileSystemException("", e);
     }
   }
 
@@ -72,29 +68,7 @@ public class FilesUtils {
 
   }
 
-  public static void decompressGzipToBytes(InputStream in, OutputStream output) {
 
-    try (GZIPInputStream gis = new GZIPInputStream(in)) {
-      // IOUtils.copy(gis, output);
-      gis.transferTo(output);
-    } catch (IOException e) {
-
-      throw new FileSystemException("", e);
-    }
-
-  }
-
-  public static InputStream unzip(InputStream in) {
-
-    try (GZIPInputStream gis = new GZIPInputStream(in)) {
-
-      return gis;
-    } catch (IOException e) {
-
-      throw new FileSystemException("", e);
-    }
-
-  }
 
   public static void zipDirectory(Path dir, Path zipPathout) {
 
@@ -112,7 +86,7 @@ public class FilesUtils {
     try {
 
       for (File filePath : dir.toFile().listFiles()) {
-        log.debug("Zipping " + filePath.getPath());
+        log.trace("Zipping " + filePath.getPath());
         if (filePath.isDirectory()) {
           _zipDirectory(filePath.toPath(), zos);
         } else {
@@ -133,32 +107,6 @@ public class FilesUtils {
     }
   }
 
-  /*
-   * 
-   * private static void compressDirectoryToZipfile(String rootDir, String sourceDir,
-   * ZipOutputStream out) throws IOException, FileNotFoundException { String dir =
-   * Paths.get(rootDir, sourceDir).toString(); for (File file : new File(dir).listFiles()) { if
-   * (file.isDirectory()) { compressDirectoryToZipfile(rootDir,
-   * Paths.get(sourceDir,file.getName()).toString(), out); } else { ZipEntry entry = new
-   * ZipEntry(Paths.get(sourceDir,file.getName()).toString()); out.putNextEntry(entry);
-   * 
-   * FileInputStream in = new FileInputStream(Paths.get(rootDir, sourceDir,
-   * file.getName()).toString()); IOUtils.copy(in, out); IOUtils.closeQuietly(in); } } }
-   */
-
-
-  public static void writeFile(byte[] content, String fileName, Path path) {
-    try {
-
-      Files.write(Paths.get(path.toString(), fileName), content, StandardOpenOption.CREATE,
-          StandardOpenOption.APPEND);
-
-    } catch (IOException e) {
-
-      throw new FileSystemException("", e);
-    }
-
-  }
 
 
   public static void writeFile(InputStream content, String fileName, Path path) {
@@ -193,7 +141,7 @@ public class FilesUtils {
       MessageDigest md = MessageDigest.getInstance("SHA-256");
       InputStream fileStream = new FileInputStream(filepath.toFile());
       try (DigestInputStream dis = new DigestInputStream(fileStream, md)) {
-        while (dis.read() != -1); // empty loop to clear the data
+        while (dis.read() != -1);
         md = dis.getMessageDigest();
       }
       byte[] encodedhash = md.digest();

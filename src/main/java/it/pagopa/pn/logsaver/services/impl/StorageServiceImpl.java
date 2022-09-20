@@ -1,19 +1,22 @@
 package it.pagopa.pn.logsaver.services.impl;
 
+import java.time.LocalDate;
 import java.util.List;
-import org.apache.commons.io.FilenameUtils;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.safestorage.PnSafeStorageClient;
+import it.pagopa.pn.logsaver.dao.AuditStorageMapper;
 import it.pagopa.pn.logsaver.dao.StorageDao;
-import it.pagopa.pn.logsaver.dao.entity.AuditStorage;
-import it.pagopa.pn.logsaver.dao.entity.Execution;
-import it.pagopa.pn.logsaver.model.AuditContainer;
+import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
+import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
+import it.pagopa.pn.logsaver.model.AuditFile;
+import it.pagopa.pn.logsaver.model.AuditStorage;
+import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.ItemType;
-import it.pagopa.pn.logsaver.model.ItemUpload;
+import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.services.StorageService;
-import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,38 +30,48 @@ public class StorageServiceImpl implements StorageService {
   private final StorageDao storageDao;
 
 
+  public AuditStorage get(Retention type, LocalDate logDate) {
+
+    AuditStorageEntity auditStoreEntity = storageDao.getAudit(logDate, type);
+
+    return AuditStorageMapper.toModel(auditStoreEntity);
+  }
+
   @Override
   public StorageExecution latestStorageExecution() {
 
-    Execution exec = storageDao.latestExecution();
+    ExecutionEntity exec = storageDao.latestExecution();
 
     return new StorageExecution(exec.getLatestExecutionDate(),
         ItemType.values(exec.getTypesProcessed()));
-
   }
 
 
 
   @Override
-  public void store(List<AuditContainer> files, DailyContextCfg cfg) {
+  public List<AuditStorage> store(List<AuditFile> files, DailyContextCfg cfg) {
 
-    files.stream().forEach(this::send);
+    List<AuditStorage> auditStored = files.stream().map(this::send).collect(Collectors.toList());
 
-    storageDao.updateLatestExecution(cfg.getLogDate(), ItemType.valuesAsString(cfg.getTypes()));
-
+    storageDao.updateExecution(cfg.getLogDate(), ItemType.valuesAsString(cfg.getTypes()));
+    return auditStored;
   }
 
-  private void send(AuditContainer file) {
+  private AuditStorage send(AuditFile file) {
 
-    ItemUpload itemUpd = safeStorageClient.uploadFile(ItemUpload.from(file));
+    AuditStorageEntity auditStorage = AuditStorageMapper.toEntity(file);
+    AuditStorage itemUpd = safeStorageClient.uploadFile(AuditStorage.from(file));
 
-    AuditStorage auditStorage =
-        AuditStorage.builder().fileName(FilenameUtils.getName(file.filePath().toString()))
-            .logDate(DateUtils.format(file.logDate())).type(file.retention().name())
-            .storageKey(itemUpd.uploadKey()).build();
-
+    if (itemUpd.sendingError()) {
+      auditStorage.setResult(AuditStorageStatus.CREATED.name());
+      auditStorage.setTmpPath(file.filePath().toString());
+    } else {
+      auditStorage.setResult(AuditStorageStatus.SENT.name());
+      auditStorage.setStorageKey(itemUpd.uploadKey());
+    }
     storageDao.insertAudit(auditStorage);
-    // TODO UPD DynamoDb
+    return AuditStorageMapper.toModel(auditStorage);
+
   }
 
 
