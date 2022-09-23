@@ -1,7 +1,7 @@
 package it.pagopa.pn.logsaver.dao.entity;
 
-import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,19 +14,23 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 @NoArgsConstructor
 public class ExecutionEntity extends AuditStorageBase {
 
-  private LocalDate latestExecutionDate;
+  private List<String> itemTypes;
 
-  private List<String> typesProcessed;
+  private List<String> exportTypes;
 
-  private String exportType;
+  private List<String> retentions;
+
+  // private List<RetentionResult> retentionResult;
+
+  private Map<String, RetentionResult> retentionResult;
 
   @Builder
-  public ExecutionEntity(String type, String logDate, LocalDate latestExecutionDate,
-      List<String> typesProcessed, String exportType) {
-    super(type, logDate);
-    this.latestExecutionDate = latestExecutionDate;
-    this.typesProcessed = typesProcessed;
-    this.exportType = exportType;
+  public ExecutionEntity(String logDate, Map<String, RetentionResult> retentionResult,
+      List<String> itemTypes, List<String> exportTypes, List<String> retentions) {
+    super(ExtraType.LOG_SAVER_EXECUTION.name(), logDate);
+    this.retentionResult = retentionResult;
+    this.itemTypes = itemTypes;
+    this.exportTypes = exportTypes;
+    this.retentions = retentions;
   }
-
 }

@@ -1,5 +1,6 @@
 package it.pagopa.pn.logsaver.model;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,11 +12,12 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Accessors(fluent = true)
 @SuperBuilder(toBuilder = true)
+@EqualsAndHashCode(callSuper = true)
 public class AuditStorage extends AuditFile {
 
   public enum AuditStorageStatus {
     CREATED, SENT
-  };
+  }
 
   private String uploadKey;
 

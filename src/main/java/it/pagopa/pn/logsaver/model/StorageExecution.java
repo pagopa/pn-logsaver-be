@@ -2,6 +2,8 @@ package it.pagopa.pn.logsaver.model;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,9 +16,21 @@ import lombok.Setter;
 @Getter
 public class StorageExecution {
 
-  private LocalDate latestExecutionDate;
+  private LocalDate logDate;
 
-  private List<ItemType> typesProcessed;
+  private Set<ItemType> typesProcessed;
 
-  private ExportType exportType;
+  private Set<ExportType> exportTypes;
+
+  private List<ExecutionDetails> details;
+
+
+  @Setter
+  @Getter
+  @AllArgsConstructor
+  public static final class ExecutionDetails {
+    private Retention retention;
+    private AuditStorageStatus status;
+    private ExportType exportType;
+  }
 }

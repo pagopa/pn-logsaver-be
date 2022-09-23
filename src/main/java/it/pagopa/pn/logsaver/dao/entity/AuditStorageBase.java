@@ -12,7 +12,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 @NoArgsConstructor
 @AllArgsConstructor
 public abstract class AuditStorageBase {
-
+  public static final String KEY_SEPARATOR = "$";
   @Getter(onMethod = @__({@DynamoDbPartitionKey}))
   private String type;
 

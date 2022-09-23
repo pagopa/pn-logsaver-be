@@ -1,5 +1,8 @@
 package it.pagopa.pn.logsaver.dao.entity;
 
+import org.apache.commons.lang3.StringUtils;
+import it.pagopa.pn.logsaver.model.ExportType;
+import it.pagopa.pn.logsaver.model.Retention;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,16 +21,25 @@ public class AuditStorageEntity extends AuditStorageBase {
 
   private String result;
 
-  private String tmpPath;
 
   @Builder
-  public AuditStorageEntity(String type, String logDate, String fileName, String storageKey,
-      String result, String tmpPath) {
-    super(type, logDate);
+  public AuditStorageEntity(Retention retention, ExportType expType, String logDate,
+      String fileName, String storageKey, String result) {
+    super(handlePKey(retention, expType), logDate);
     this.fileName = fileName;
     this.storageKey = storageKey;
     this.result = result;
-    this.tmpPath = tmpPath;
   }
 
+  private static String handlePKey(Retention retention, ExportType expType) {
+    return String.join(KEY_SEPARATOR, retention.name(), expType.name());
+  }
+
+  public String getExportType() {
+    return StringUtils.substringAfter(this.getType(), KEY_SEPARATOR);
+  }
+
+  public String getRetention() {
+    return StringUtils.substringBefore(this.getType(), KEY_SEPARATOR);
+  }
 }

@@ -2,6 +2,8 @@ package it.pagopa.pn.logsaver.services.impl;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.safestorage.PnSafeStorageClient;
@@ -11,10 +13,7 @@ import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
-import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.services.StorageService;
@@ -43,8 +42,7 @@ public class StorageServiceImpl implements StorageService {
 
     ExecutionEntity exec = storageDao.latestExecution();
 
-    return new StorageExecution(exec.getLatestExecutionDate(),
-        ItemType.values(exec.getTypesProcessed()), ExportType.valueOf(exec.getExportType()));
+    return AuditStorageMapper.toModel(exec);
   }
 
 
@@ -54,31 +52,33 @@ public class StorageServiceImpl implements StorageService {
 
     List<AuditStorage> auditStored = files.stream().map(this::send).collect(Collectors.toList());
 
+    List<AuditStorageEntity> auditStoredEntity =
+        auditStored.stream().map(AuditStorageMapper::toEntity).collect(Collectors.toList());
     log.info("Update log-saver execution");
-    storageDao.updateExecution(cfg.getLogDate(), ItemType.valuesAsString(cfg.getTypes()),
-        cfg.getExportType());
+    storageDao.updateExecution(auditStoredEntity, cfg.logDate(), cfg.itemTypes(), cfg.exportTypes(),
+        cfg.retentions());
+
     return auditStored;
   }
 
   private AuditStorage send(AuditFile file) {
 
     log.info("Sending Audit file {} ", file.filePath().getFileName().toString());
-    AuditStorageEntity auditStorage = AuditStorageMapper.toEntity(file);
     AuditStorage itemUpd = safeStorageClient.uploadFile(AuditStorage.from(file));
+    log.info("Success {} ", !itemUpd.sendingError());
+    return itemUpd;
 
-    if (itemUpd.sendingError()) {
-      log.info("Upload audit file in error");
-      auditStorage.setResult(AuditStorageStatus.CREATED.name());
-      auditStorage.setTmpPath(file.filePath().toString());
-    } else {
-      log.info("File upload successfully");
-      auditStorage.setResult(AuditStorageStatus.SENT.name());
-      auditStorage.setStorageKey(itemUpd.uploadKey());
-    }
-    log.info("Insert file audit references in db");
-    storageDao.insertAudit(auditStorage);
-    return AuditStorageMapper.toModel(auditStorage);
+  }
 
+  @Override
+  public LocalDate latestContinuosExecutionDate() {
+    return storageDao.latestContinuosExecution();
+  }
+
+  @Override
+  public Map<LocalDate, StorageExecution> storageExecutionBetween(LocalDate from, LocalDate to) {
+    return storageDao.executionBetween(from, to).stream().map(AuditStorageMapper::toModel)
+        .collect(Collectors.toMap(StorageExecution::getLogDate, Function.identity()));
   }
 
 

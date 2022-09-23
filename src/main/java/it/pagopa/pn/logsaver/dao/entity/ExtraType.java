@@ -1,7 +1,7 @@
 package it.pagopa.pn.logsaver.dao.entity;
 
 public enum ExtraType {
-  
-  DAILY_REPORT, LOG_SAVER_EXECUTION;
+
+  CONTINUOS_EXECUTION, LOG_SAVER_EXECUTION;
 
 }

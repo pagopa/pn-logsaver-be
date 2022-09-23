@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -19,36 +20,40 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 public class JsonUtils {
 
-  private final static String FIELD_LOG_EVENTS = "logEvents";
-  private final static String FIELD_LOG_MESSAGE = "message";
-  private final static String FIELD_LOG_TAGS = "tags";
+  private static final String FIELD_LOG_EVENTS = "logEvents";
+  private static final String FIELD_LOG_MESSAGE = "message";
+  private static final String FIELD_LOG_TAGS = "tags";
 
-  public static Map<Retention, JsonObject> groupByRetention(JsonObject parent) {
+  public static Map<Retention, JsonObject> groupByRetention(JsonObject parent,
+      Set<Retention> retentionToExport) {
+
     Map<Retention, JsonObject> groupedLog = new LinkedHashMap<>();
 
     JsonArray logEvents = parent.getAsJsonArray(FIELD_LOG_EVENTS);
     if (Objects.nonNull(logEvents)) {
-      logEvents
-          .forEach(logEvent -> splitLogByRetention(parent, groupedLog, logEvent.getAsJsonObject()));
+      logEvents.forEach(logEvent -> splitLogByRetention(parent, groupedLog,
+          logEvent.getAsJsonObject(), retentionToExport));
     }
 
     return groupedLog;
   }
 
   private static void splitLogByRetention(JsonObject parent, Map<Retention, JsonObject> groupedLog,
-      JsonObject logEvent) {
+      JsonObject logEvent, Set<Retention> retentionToExport) {
     try {
-      Retention retention = getRetention(logEvent);
-      JsonObject objByRetention =
-          groupedLog.computeIfAbsent(retention, ret -> createEmptyLog(parent.getAsJsonObject()));
-      objByRetention.getAsJsonArray(FIELD_LOG_EVENTS).add(logEvent);
+      Retention retention = getRetention(logEvent, retentionToExport);
+      if (Objects.nonNull(retention)) {
+        JsonObject objByRetention =
+            groupedLog.computeIfAbsent(retention, ret -> createEmptyLog(parent.getAsJsonObject()));
+        objByRetention.getAsJsonArray(FIELD_LOG_EVENTS).add(logEvent);
+      }
     } catch (Exception e) {
       log.warn("error parsing log events");
     }
 
   }
 
-  private static Retention getRetention(JsonElement logEvt) {
+  private static Retention getRetention(JsonElement logEvt, Set<Retention> retentionToExport) {
 
     try {
       String logEvtMsgStr =
@@ -63,16 +68,18 @@ public class JsonUtils {
 
         List<String> strList = new Gson().fromJson(tags, listType);
 
-        if (strList.contains(Retention.AUDIT10Y.name())) {
+        if (retentionToExport.contains(Retention.AUDIT10Y)
+            && strList.contains(Retention.AUDIT10Y.name())) {
           return Retention.AUDIT10Y;
-        } else if (strList.contains(Retention.AUDIT5Y.name())) {
+        } else if (retentionToExport.contains(Retention.AUDIT5Y)
+            && strList.contains(Retention.AUDIT5Y.name())) {
           return Retention.AUDIT5Y;
         }
       }
-    } catch (Throwable e) {
-      log.trace("error parsing log event message unknow format: " + logEvt.toString());
+    } catch (Exception e) {
+      log.trace("error parsing log event message unknow format: {} ", logEvt.toString());
     }
-    return Retention.DEVELOPER;
+    return retentionToExport.contains(Retention.AUDIT5Y) ? Retention.DEVELOPER : null;
 
   }
 

@@ -1,17 +1,15 @@
 package it.pagopa.pn.logsaver;
 
 import java.util.List;
-import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.services.AuditSaverService;
 import it.pagopa.pn.logsaver.springbootcfg.ClApplicationArguments;
-import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
@@ -31,33 +29,23 @@ public class LogSaverRunner implements ApplicationRunner {
   @Override
   public void run(ApplicationArguments args) throws Exception {
 
-
-
-    SpringApplication.exit(ctx, () -> lunnchApp(args));
+    SpringApplication.exit(ctx, this::lunnchApp);
 
   }
 
-  private int lunnchApp(ApplicationArguments args) {
+  private int lunnchApp() {
 
-    Boolean res = true;
+    boolean res;
+    List<DailySaverResult> results = logSaver.dailySaverFromLatestExecutionToYesterday(
+        appArgs.getItemTypes(), appArgs.getRetentionExportTypesMap());
 
-
-    List<ItemType> types =
-        appArgs.getTypes().isEmpty() ? List.of(ItemType.values()) : appArgs.getTypes();
-
-    if (Objects.nonNull(appArgs.getDateFrom()) && Objects.nonNull(appArgs.getDateTo())) {
-
-      logSaver.dailyListSaver(DateUtils.getDatesRange(appArgs.getDateFrom(), appArgs.getDateTo()),
-          types, appArgs.getExportType());
-    } else if (Objects.nonNull(appArgs.getDateList()) && !appArgs.getDateList().isEmpty()) {
-
-      logSaver.dailyListSaver(appArgs.getDateList(), types, appArgs.getExportType());
-
-    } else {
-
-      logSaver.dailySaverFromLatestExecutionToYesterday(appArgs.getExportType());
-    }
-
+    res = results.stream().map(resDaily -> {
+      log.info(resDaily.toString());
+      return resDaily;
+    }).filter(resDaily -> !resDaily.isSuccess()).map(resDaily -> {
+      log.info("Error Message: {}", resDaily.getError().getCause().getMessage());
+      return resDaily;
+    }).count() == 0;
     log.debug("Applicantion ends with status as {}", res);
     return res ? 0 : 1;
   }

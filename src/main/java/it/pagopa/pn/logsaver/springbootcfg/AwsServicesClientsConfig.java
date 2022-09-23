@@ -17,8 +17,6 @@ public class AwsServicesClientsConfig {
     this.props = props;
   }
 
-
-
   @Bean
   public DynamoDbClient dynamoDbClient() {
     return DynamoDbClient.builder()

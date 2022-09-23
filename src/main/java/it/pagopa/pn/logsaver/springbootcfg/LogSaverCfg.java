@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
@@ -44,25 +42,16 @@ public class LogSaverCfg {
       new LinkedHashMap<>();
 
 
-  @Autowired
-  private void initFilters() {
-    itemFilterFunction.put(ItemType.cdc,
-        (in, cfg) -> Stream.of(new ItemChildren(Retention.AUDIT10Y, in)));
-    itemFilterFunction.put(ItemType.logs, new LogProcessFunction());
-  }
-
-  public Stream<ItemChildren> filter(ItemType type, InputStream content, DailyContextCfg cfg) {
-    return itemFilterFunction.get(type).apply(content, cfg);
-  }
-
   @PostConstruct
-  private void initConfiguration() {}
-
-
-
-  @PreDestroy
-  public void destroy() {
-
+  private void initFilters() {
+    itemFilterFunction.put(ItemType.CDC,
+        (in, cfg) -> Stream.of(new ItemChildren(Retention.AUDIT10Y, in)));
+    itemFilterFunction.put(ItemType.LOGS, new LogProcessFunction());
   }
+
+  public Stream<ItemChildren> filter(ItemType type, DailyContextCfg ctx, InputStream content) {
+    return itemFilterFunction.get(type).apply(content, ctx);
+  }
+
 
 }

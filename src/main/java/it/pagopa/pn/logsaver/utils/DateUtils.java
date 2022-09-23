@@ -1,8 +1,6 @@
 package it.pagopa.pn.logsaver.utils;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,16 +9,6 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class DateUtils {
-
-  private static final ZoneId italianZoneId = ZoneId.of("Europe/Rome");
-
-  public static String formatDate(Instant instant) {
-    if (instant == null)
-      return null;
-
-    DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
-    return LocalDate.ofInstant(instant, italianZoneId).format(formatter);
-  }
 
   public static LocalDate parse(String date) {
     return StringUtils.isEmpty(date) ? null : LocalDate.parse(date, DateTimeFormatter.ISO_DATE);
@@ -31,7 +19,9 @@ public class DateUtils {
     return date.format(formatter);
   }
 
-
+  /*
+   * TODO Rimuovere la data cablata
+   */
   public static LocalDate yesterday() {
     return parse("2022-07-12");
     // return LocalDate.now(italianZoneId).minusDays(1);

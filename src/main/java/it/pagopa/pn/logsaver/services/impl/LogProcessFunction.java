@@ -27,21 +27,25 @@ public class LogProcessFunction
     implements BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> {
 
 
+  @Override
+  public Stream<ItemChildren> apply(InputStream content, DailyContextCfg ctx) {
+    return filter(content, ctx);
+  }
 
-  private Stream<ItemChildren> filter(InputStream content, DailyContextCfg dailyCxt) {
+  private Stream<ItemChildren> filter(InputStream content, DailyContextCfg ctx) {
 
     try {
 
       Reader reader = new InputStreamReader(new GZIPInputStream(content));
       Iterator<JsonElement> sourceIterator = new JsonStreamParser(reader);
 
-      // TODO valutare se consumare lo stream come Flux reactor
       Stream<JsonElement> targetStream =
           StreamSupport.stream(((Iterable<JsonElement>) () -> sourceIterator).spliterator(), false);
 
 
-      return targetStream.map(JsonElement::getAsJsonObject).map(JsonUtils::groupByRetention)
-          .map(Map::entrySet).flatMap(Set::stream).map(item -> {
+      return targetStream.map(JsonElement::getAsJsonObject)
+          .map(json -> JsonUtils.groupByRetention(json, ctx.retentions())).map(Map::entrySet)
+          .flatMap(Set::stream).map(item -> {
             String logToWrite = item.getValue().toString();
             return new ItemChildren(item.getKey(), new ByteArrayInputStream(logToWrite.getBytes()));
           });
@@ -50,15 +54,10 @@ public class LogProcessFunction
 
     } catch (Exception e) {
       log.error("Log filtering error. The content of the file is not valid json-stream", e);
-      throw new LogFilterException("", e);
+      throw new LogFilterException("Filter error. The content of the file is not valid json-stream",
+          e);
     }
 
-
   }
 
-
-  @Override
-  public Stream<ItemChildren> apply(InputStream content, DailyContextCfg cfg) {
-    return filter(content, cfg);
-  }
 }

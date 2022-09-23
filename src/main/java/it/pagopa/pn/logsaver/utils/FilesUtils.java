@@ -141,6 +141,7 @@ public class FilesUtils {
 
       fileOut.close();
     } catch (IOException e) {
+      log.error("Error writing log file {}", fileName);
       throw new FileSystemException("Error writing xml file", e);
     }
 
@@ -149,12 +150,12 @@ public class FilesUtils {
 
 
   public static void writeFile(InputStream content, String fileName, Path path) {
-    try {
-      IOUtils.copy(content,
-          new FileOutputStream(Paths.get(path.toString(), fileName).toFile(), true));
+    try (FileOutputStream fileOut =
+        new FileOutputStream(Paths.get(path.toString(), fileName).toFile(), true);) {
+      IOUtils.copy(content, fileOut);
     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      log.error("Error writing log file {}", fileName);
+      throw new FileSystemException("Error writing log file", e);
     }
 
   }

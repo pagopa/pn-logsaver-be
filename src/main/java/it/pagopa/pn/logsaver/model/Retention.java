@@ -1,5 +1,8 @@
 package it.pagopa.pn.logsaver.model;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 
 @Getter
@@ -20,5 +23,18 @@ public enum Retention {
     this.folder = folder;
     this.nameFormat = nameFormat;
     this.text = text;
+  }
+
+
+  public static List<String> valuesAsString() {
+    return IEnum.valuesAsString(Retention.class);
+  }
+
+  public static List<String> valuesAsString(Collection<Retention> list) {
+    return IEnum.valuesAsString(list);
+  }
+
+  public static Set<Retention> values(List<String> list) {
+    return IEnum.values(list, Retention.class);
   }
 }

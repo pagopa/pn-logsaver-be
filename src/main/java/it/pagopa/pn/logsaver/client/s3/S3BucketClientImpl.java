@@ -8,10 +8,8 @@ import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -31,16 +29,16 @@ public class S3BucketClientImpl implements S3BucketClient {
 
   @Override
   public List<S3Object> findObjects(String prefix) {
+    log.debug("Call s3 bucket for list object with prefix {}", prefix);
     ListObjectsV2Response response = clientS3.listObjectsV2(
         ListObjectsV2Request.builder().bucket(awsCfg.getS3BucketName()).prefix(prefix).build());
-    return response.contents().stream()
-        // .map(item -> item.key())
-        .collect(Collectors.toList());
+    return response.contents().stream().collect(Collectors.toList());
   }
 
 
   @Override
   public List<String> findSubFolders(String prefix) {
+    log.debug("Call s3 bucket for list subfolders with prefix {}", prefix);
     ListObjectsV2Response response = clientS3.listObjectsV2(ListObjectsV2Request.builder()
         .bucket(awsCfg.getS3BucketName()).prefix(prefix).delimiter("/").build());
     return response.commonPrefixes().stream()
@@ -51,11 +49,9 @@ public class S3BucketClientImpl implements S3BucketClient {
 
   @Override
   public InputStream getObjectContent(String key) {
-    ResponseInputStream<GetObjectResponse> response = clientS3
+    log.debug("Call s3 bucket for read content object with key {}", key);
+    return clientS3
         .getObject(GetObjectRequest.builder().bucket(awsCfg.getS3BucketName()).key(key).build());
-
-    return response;
-
   }
 
 

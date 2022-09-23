@@ -26,15 +26,15 @@ public class PdfUtils {
       "<audit date=\"%s\" fileName=\"%s\" retention=\"%s\"><![CDATA[";
   private static final byte[] END_XML_AUDIT = "]]></audit>".getBytes();
 
-  private final static String TITLE = "PagoPa - Piattaforma Notifiche";
-  private final static String SUBJECT = "File di Audit - Retention %s del %s";
-  private final static String CREATOR = "pn-log-saver";
-  private final static String PARAGRAPH =
+  private static final String TITLE = "PagoPa - Piattaforma Notifiche";
+  private static final String SUBJECT = "File di Audit - Retention %s del %s";
+  private static final String CREATOR = "pn-log-saver";
+  private static final String PARAGRAPH =
       "Questo pdf contiente i file di audit della Piattaforma Notifiche.";
 
 
   public static void createPdf(Path folder, Path file, Retention retention, LocalDate logDate) {
-    log.info("Start create pdf {} for folder {}", file.getFileName().toString(), folder.toString());
+    log.info("Creating pdf {} for folder {}", file.getFileName().toString(), folder.toString());
     try (Document document = new Document();) {
       // PDF-stream to a file
       PdfWriter.getInstance(document, new FileOutputStream(file.toFile()));
@@ -46,10 +46,8 @@ public class PdfUtils {
       document.addProducer();
       document.addCreationDate();
 
-      Stream.of(folder.toFile().listFiles()).forEach(filePath -> {
-        document.addHeader(filePath.getName(),
-            handleXmlContent(filePath.toPath(), retention, logDate));
-      });
+      Stream.of(folder.toFile().listFiles()).forEach(filePath -> document
+          .addHeader(filePath.getName(), handleXmlContent(filePath.toPath(), retention, logDate)));
 
       document.open();
       document.add(new Paragraph(PARAGRAPH));

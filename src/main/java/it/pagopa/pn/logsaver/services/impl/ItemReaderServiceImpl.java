@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
 import it.pagopa.pn.logsaver.model.Item;
@@ -28,18 +29,19 @@ public class ItemReaderServiceImpl implements ItemReaderService {
   private final S3BucketClient clientS3;
   private final LogSaverCfg cfg;
 
-  @Override
-  public List<Item> findItems(ItemType type, LocalDate date) {
+
+  private List<Item> findItems(ItemType type, LocalDate date) {
     log.info("Start search {} items.", type.name());
     final List<Item> ret = new ArrayList<>();
 
-    List<String> apps = ItemType.cdc == type ? cfg.getCdcTables() : cfg.getLogsMicroservice();
+    List<String> apps = ItemType.CDC == type ? cfg.getCdcTables() : cfg.getLogsMicroservice();
 
     if (Objects.isNull(apps) || apps.isEmpty()) {
       apps = clientS3.findSubFolders(type.getSubFolfer());
     }
 
-    apps.stream().forEach(appName -> handleItems(ret, appName, type, date));
+    CollectionUtils.emptyIfNull(apps).stream()
+        .forEach(appName -> handleItems(ret, appName, type, date));
     log.info("Found {} items.", ret.size());
     return ret;
   }
@@ -73,7 +75,7 @@ public class ItemReaderServiceImpl implements ItemReaderService {
 
   private String handleDailyPrefix(String appName, ItemType type, LocalDate date) {
     String dailyTmpPattern =
-        ItemType.cdc == type ? cfg.getCdcRootPathTemplate() : cfg.getLogsRootPathTemplate();
+        ItemType.CDC == type ? cfg.getCdcRootPathTemplate() : cfg.getLogsRootPathTemplate();
     return String.format(date.format(DateTimeFormatter.ofPattern(dailyTmpPattern)), appName);
   }
 

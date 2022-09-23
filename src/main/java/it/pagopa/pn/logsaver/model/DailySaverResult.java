@@ -1,19 +1,32 @@
 package it.pagopa.pn.logsaver.model;
 
+import java.time.LocalDate;
 import java.util.List;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Builder
+@EqualsAndHashCode
 public class DailySaverResult {
 
-  private List<AuditFile> auditList;
+  private LocalDate logDate;
 
-  private List<AuditStorage> auditUploadList;
+  private List<AuditStorage> auditStorageList;
 
-  private Boolean success;
+  private boolean success;
 
   private Throwable error;
+
+  @Override
+  public String toString() {
+    return String.format("Date %s result %s file uploaded %d ", logDate.toString(),
+        (success ? "SUCCESS" : "ERROR"), auditStorageList.size());
+  }
+
+
 
 }
