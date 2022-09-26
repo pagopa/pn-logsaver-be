@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
@@ -21,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
@@ -31,7 +31,7 @@ import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @ExtendWith(MockitoExtension.class)
-public class ItemReaderServiceImplTest {
+class ItemReaderServiceImplTest {
 
   @Mock
   private S3BucketClient clientS3;
@@ -43,7 +43,7 @@ public class ItemReaderServiceImplTest {
   @Captor
   private ArgumentCaptor<String> prefix;
 
-  private final LocalDate logDate = LocalDate.parse("2022-07-11");
+
 
   @Captor
   private ArgumentCaptor<String> subFolder;
@@ -69,9 +69,10 @@ public class ItemReaderServiceImplTest {
 
     when(cfg.getCdcTables()).thenReturn(TestCostant.TABLES);
     when(cfg.getLogsMicroservice()).thenReturn(TestCostant.MICROSERVICES);
-    when(clientS3.findObjects(anyString())).thenReturn(mockResList);
+    when(clientS3.findObjects(anyString()))
+        .thenAnswer((InvocationOnMock invocation) -> mockResList.stream());
 
-    List<Item> res = service.findItems(logDate);
+    List<Item> res = service.findItems(TestCostant.CTX);
 
     verify(clientS3, times(0)).findSubFolders(any(String.class));
     verify(clientS3, times(expFindObjectInvocation)).findObjects(prefix.capture());
@@ -87,7 +88,7 @@ public class ItemReaderServiceImplTest {
     assertEquals(expectedPrefix.size(), res.size());
     Item defItem = res.get(0);
     assertEquals(TestCostant.S3_KEY, defItem.getS3Key());
-    assertEquals(logDate, defItem.getLogDate());
+    assertEquals(TestCostant.CTX.logDate(), defItem.getLogDate());
     assertNotNull(defItem.getType());
 
   }
@@ -98,16 +99,18 @@ public class ItemReaderServiceImplTest {
     List<S3Object> mockResList = List.of(S3Object.builder().key(TestCostant.S3_KEY).build());
     int expFindObjectInvocation = expectedPrefix.size() * mockResList.size();
 
-    when(cfg.getCdcTables()).thenReturn(null);
-    when(cfg.getLogsMicroservice()).thenReturn(null);
-    when(clientS3.findObjects(anyString())).thenReturn(mockResList);
+    when(cfg.getCdcTables()).thenReturn(List.of());
+    when(cfg.getLogsMicroservice()).thenReturn(List.of());
+    when(clientS3.findObjects(anyString()))
+        .thenAnswer((InvocationOnMock invocation) -> mockResList.stream());
 
 
-    when(clientS3.findSubFolders(ItemType.CDC.getSubFolfer())).thenReturn(TestCostant.TABLES);
+    when(clientS3.findSubFolders(ItemType.CDC.getSubFolfer()))
+        .thenReturn(TestCostant.TABLES.stream());
     when(clientS3.findSubFolders(ItemType.LOGS.getSubFolfer()))
-        .thenReturn(TestCostant.MICROSERVICES);
+        .thenReturn(TestCostant.MICROSERVICES.stream());
 
-    List<Item> res = service.findItems(logDate);
+    List<Item> res = service.findItems(TestCostant.CTX);
 
     verify(clientS3, times(ItemType.values().length)).findSubFolders(subFolder.capture());
     verify(clientS3, times(expFindObjectInvocation)).findObjects(prefix.capture());
@@ -128,7 +131,7 @@ public class ItemReaderServiceImplTest {
     assertEquals(expectedPrefix.size(), res.size());
     Item defItem = res.get(0);
     assertEquals(TestCostant.S3_KEY, defItem.getS3Key());
-    assertEquals(logDate, defItem.getLogDate());
+    assertEquals(TestCostant.CTX.logDate(), defItem.getLogDate());
     assertNotNull(defItem.getType());
 
   }

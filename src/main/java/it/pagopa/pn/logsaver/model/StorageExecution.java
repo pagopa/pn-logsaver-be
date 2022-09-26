@@ -18,9 +18,9 @@ public class StorageExecution {
 
   private LocalDate logDate;
 
-  private Set<ItemType> typesProcessed;
+  private Set<ItemType> itemTypes;
 
-  private Set<ExportType> exportTypes;
+  // private Set<ExportType> exportTypes;
 
   private List<ExecutionDetails> details;
 

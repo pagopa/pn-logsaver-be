@@ -79,7 +79,7 @@ public class JsonUtils {
     } catch (Exception e) {
       log.trace("error parsing log event message unknow format: {} ", logEvt.toString());
     }
-    return retentionToExport.contains(Retention.AUDIT5Y) ? Retention.DEVELOPER : null;
+    return retentionToExport.contains(Retention.DEVELOPER) ? Retention.DEVELOPER : null;
 
   }
 

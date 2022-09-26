@@ -11,7 +11,5 @@ public class LogSaverApplication {
     SpringApplication.run(LogSaverApplication.class, args);
   }
 
-
-
 }
 

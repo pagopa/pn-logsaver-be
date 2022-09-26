@@ -1,5 +1,6 @@
 package it.pagopa.pn.logsaver.model;
 
+import java.util.Objects;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +22,7 @@ public class AuditStorage extends AuditFile {
 
   private String uploadKey;
 
-  private boolean sendingError;
+  private Throwable error;
 
   private AuditStorageStatus status;
 
@@ -30,6 +31,7 @@ public class AuditStorage extends AuditFile {
         .logDate(arc.logDate()).exportType(arc.exportType()).build();
   }
 
-
-
+  public boolean sendingError() {
+    return Objects.nonNull(error);
+  }
 }

@@ -2,7 +2,6 @@ package it.pagopa.pn.logsaver.services.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -63,7 +62,7 @@ class ItemProcessorServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    this.service = new ItemProcessorServiceImpl(cfg, s3Service);
+    this.service = new ItemProcessorServiceImpl(s3Service);
     this.fileSystem = Jimfs.newFileSystem(Configuration.forCurrentPlatform());
   }
 
@@ -89,8 +88,8 @@ class ItemProcessorServiceImplTest {
 
     when(s3Service.getItemContent(TestCostant.S3_KEY)).thenReturn(buckeFile);
 
-    when(cfg.filter(any(), any(), any()))
-        .thenAnswer(invocation -> mockedItemChildrenContent.stream());
+    // when(cfg.filter(any(), any(), any()))
+    // .thenAnswer(invocation -> mockedItemChildrenContent.stream());
     // .thenReturn(mockedItemChildrenContent.stream());
 
     Path tmpPath = fileSystem.getPath(TestCostant.TMP_FOLDER);

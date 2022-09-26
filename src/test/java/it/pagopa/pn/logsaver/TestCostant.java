@@ -2,8 +2,11 @@ package it.pagopa.pn.logsaver;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.utils.LsUtils;
 
 public final class TestCostant {
 
@@ -42,5 +45,10 @@ public final class TestCostant {
           Item.builder().logDate(LOGDATE).type(ItemType.LOGS).s3Key(S3_KEY).build(),
           Item.builder().logDate(LOGDATE).type(ItemType.LOGS).s3Key(S3_KEY).build(),
           Item.builder().logDate(LOGDATE).type(ItemType.LOGS).s3Key(S3_KEY).build());
+
+
+  public final static DailyContextCfg CTX =
+      DailyContextCfg.builder().retentionExportTypeMap(LsUtils.defaultRetentionExportTypeMap())
+          .tmpBasePath(TMP_FOLDER).itemTypes(Set.of(ItemType.values())).logDate(LOGDATE).build();
 
 }

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,8 @@ class S3BucketClientImplTest {
     when(clientS3.listObjectsV2(any(ListObjectsV2Request.class)))
         .thenReturn(ListObjectsV2Response.builder().contents(mockRes).build());
 
-    List<S3Object> resList = client.findObjects("logs/ecs/pnDelivery/2022/07/11/12/");
+    List<S3Object> resList =
+        client.findObjects("logs/ecs/pnDelivery/2022/07/11/12/").collect(Collectors.toList());
 
     verify(clientS3, times(1)).listObjectsV2(any(ListObjectsV2Request.class));
     assertEquals(1, resList.size());
@@ -77,7 +79,7 @@ class S3BucketClientImplTest {
         .thenReturn(ListObjectsV2Response.builder().commonPrefixes(resPrefixList).build());
 
 
-    List<String> resList = client.findSubFolders("logs/ecs/");
+    List<String> resList = client.findSubFolders("logs/ecs/").collect(Collectors.toList());
 
     verify(clientS3, times(1)).listObjectsV2(any(ListObjectsV2Request.class));
     assertEquals(3, resList.size());

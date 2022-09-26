@@ -8,9 +8,6 @@ import it.pagopa.pn.logsaver.model.Item;
 
 public interface ItemProcessorService {
 
-
-  List<AuditFile> groupByRetention(DailyContextCfg dailyCxt);
-
   List<AuditFile> process(List<Item> items, DailyContextCfg dailyCtx);
 
 }

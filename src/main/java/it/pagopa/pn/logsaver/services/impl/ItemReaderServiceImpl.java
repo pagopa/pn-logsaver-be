@@ -3,14 +3,12 @@ package it.pagopa.pn.logsaver.services.impl;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
+import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.services.ItemReaderService;
@@ -30,29 +28,23 @@ public class ItemReaderServiceImpl implements ItemReaderService {
   private final LogSaverCfg cfg;
 
 
-  private List<Item> findItems(ItemType type, LocalDate date) {
+  private Stream<Item> findItems(ItemType type, LocalDate date) {
     log.info("Start search {} items.", type.name());
-    final List<Item> ret = new ArrayList<>();
 
-    List<String> apps = ItemType.CDC == type ? cfg.getCdcTables() : cfg.getLogsMicroservice();
+    List<String> appsCfg = ItemType.CDC == type ? cfg.getCdcTables() : cfg.getLogsMicroservice();
 
-    if (Objects.isNull(apps) || apps.isEmpty()) {
-      apps = clientS3.findSubFolders(type.getSubFolfer());
-    }
+    Stream<String> apps =
+        appsCfg.isEmpty() ? clientS3.findSubFolders(type.getSubFolfer()) : appsCfg.stream();
 
-    CollectionUtils.emptyIfNull(apps).stream()
-        .forEach(appName -> handleItems(ret, appName, type, date));
-    log.info("Found {} items.", ret.size());
-    return ret;
+    return apps.flatMap(appName -> handleItems(appName, type, date));
   }
 
   @Override
-  public List<Item> findItems(LocalDate date) {
+  public List<Item> findItems(DailyContextCfg dailyCtx) {
 
-    final List<Item> ret = new ArrayList<>();
-
-    Stream.of(ItemType.values()).flatMap(type -> findItems(type, date).stream())
-        .collect(Collectors.toCollection(() -> ret));
+    final List<Item> ret =
+        Stream.of(ItemType.values()).filter(type -> type.containsRetentions(dailyCtx.retentions()))
+            .flatMap(type -> findItems(type, dailyCtx.logDate())).collect(Collectors.toList());
     log.info("Total items {}", ret.size());
     return ret;
   }
@@ -63,14 +55,12 @@ public class ItemReaderServiceImpl implements ItemReaderService {
   }
 
 
-  private void handleItems(List<Item> itemList, String appName, ItemType type, LocalDate date) {
+  private Stream<Item> handleItems(String appName, ItemType type, LocalDate date) {
 
     String prefix = handleDailyPrefix(appName, type, date);
     log.info("Search {} items for subfolder {}", type.name(), prefix);
-    List<S3Object> objList = clientS3.findObjects(prefix);
-    objList.stream().map(obj -> Item.builder().s3Key(obj.key()).type(type).logDate(date).build())
-        .collect(Collectors.toCollection(() -> itemList));
-
+    Stream<S3Object> objList = clientS3.findObjects(prefix);
+    return objList.map(obj -> Item.builder().s3Key(obj.key()).type(type).logDate(date).build());
   }
 
   private String handleDailyPrefix(String appName, ItemType type, LocalDate date) {

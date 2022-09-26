@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -20,14 +21,13 @@ import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCre
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
+import it.pagopa.pn.logsaver.utils.LsUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
 public class PnSafeStorageClientImpl implements PnSafeStorageClient {
-  public static final String PN_LEGAL_FACTS = "PN_LEGAL_FACTS";
   public static final String SAVED = "SAVED";
-  public static final String PN_AAR = "PN_AAR";
 
   private final FileUploadApi fileUploadApi;
   private final PnSafeStorageConfigs cfg;
@@ -36,7 +36,6 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
   public PnSafeStorageClientImpl(RestTemplate rest, PnSafeStorageConfigs cfg) {
     ApiClient newApiClient = new ApiClient(rest);
     newApiClient.setBasePath(cfg.getSafeStorageBaseUrl());
-
     this.fileUploadApi = new FileUploadApi(newApiClient);
     this.cfg = cfg;
     this.restTemplate = rest;
@@ -46,12 +45,12 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
   @Override
   public AuditStorage uploadFile(AuditStorage itemUpd) {
 
-
     String sha256 = FilesUtils.computeSha256(itemUpd.filePath());
     String mediaType = itemUpd.exportType().getMediaType();
     try {
       log.info("Send fileCreationRequest for file {}", itemUpd.filePath().toString());
-      FileCreationResponse res = createFile(sha256, mediaType);
+      FileCreationResponse res =
+          createFile(sha256, mediaType, LsUtils.getStorageDocumentType(itemUpd));
 
       log.info("Send fileContent to recevide url {}", res.getUploadUrl());
       this.uploadContent(res, sha256, itemUpd.filePath(), mediaType);
@@ -62,16 +61,16 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
     } catch (Exception e) {
       log.error("Exception on upload file {}", itemUpd.filePath().toString());
-      return itemUpd.sendingError(true);
+      return itemUpd.error(e);
     }
 
   }
 
 
-  private FileCreationResponse createFile(String sha256, String mediaType) {
-    FileCreationRequest fileCreationRequest = new FileCreationRequest();;
+  private FileCreationResponse createFile(String sha256, String mediaType, String docType) {
+    FileCreationRequest fileCreationRequest = new FileCreationRequest();
     fileCreationRequest.setContentType(mediaType);
-    fileCreationRequest.setDocumentType(PN_LEGAL_FACTS);
+    fileCreationRequest.setDocumentType(docType);
     fileCreationRequest.setStatus(SAVED);
     try {
 
@@ -79,8 +78,8 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
           fileCreationRequest);
 
     } catch (Exception ee) {
-      log.error("Exception on createFile file: ", ee);
-      throw new ExternalException("Create file error", ee);
+      log.error("Exception on SafeStorage createFile: {} ", ee.getMessage());
+      throw new ExternalException("SafeStorage create file error", ee);
     }
   }
 
@@ -90,7 +89,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
     try {
 
       MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
-      headers.add("Content-type", mediaType);
+      headers.add(HttpHeaders.CONTENT_TYPE, mediaType);
       headers.add("x-amz-checksum-sha256", sha256);
       headers.add("x-amz-meta-secret", fileCreationResponse.getSecret());
 

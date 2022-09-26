@@ -1,24 +1,25 @@
 package it.pagopa.pn.logsaver.utils;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.io.SequenceInputStream;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.util.Base64Utils;
@@ -43,8 +44,9 @@ public class FilesUtils {
     try {
       FileUtils.forceDelete(path.toFile());
     } catch (FileNotFoundException | NullPointerException e) {
-      // Nothing todo
+      // Nothing to do
     } catch (IOException e) {
+      log.error("Error removing folder {}", path.toString());
       throw new FileSystemException("", e);
     }
   }
@@ -60,11 +62,10 @@ public class FilesUtils {
       }
 
     } catch (IOException e) {
-
+      log.error("Error creating or cleaning folder {}", path.toString());
       throw new FileSystemException("", e);
     }
   }
-
 
   public static void createDirectories(Collection<Path> pathList) {
     pathList.stream().forEach(FilesUtils::createDirectory);
@@ -74,101 +75,51 @@ public class FilesUtils {
     try {
       Files.createDirectories(path);
     } catch (IOException e) {
-      throw new FileSystemException("", e);
+      log.error("Error creating folder {}", path.toString());
+      throw new FileSystemException("Error creating folder", e);
     }
 
   }
-
-
-
-  public static void zipDirectory(Path dir, Path zipPathout) {
-
-    try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPathout.toFile()));) {
-
-      _zipDirectory(dir, zos);
-
-    } catch (IOException e) {
-      throw new FileSystemException("", e);
-    }
-  }
-
-
-  private static void _zipDirectory(Path dir, ZipOutputStream zos) {
-    try {
-
-      for (File filePath : dir.toFile().listFiles()) {
-        log.trace("Zipping " + filePath.getPath());
-        if (filePath.isDirectory()) {
-          _zipDirectory(filePath.toPath(), zos);
-        } else {
-          ZipEntry ze = new ZipEntry(filePath.getName());
-          zos.putNextEntry(ze);
-
-          FileInputStream fis = new FileInputStream(filePath);
-          IOUtils.copy(fis, zos);
-
-          zos.closeEntry();
-          fis.close();
-        }
-
-      }
-
-    } catch (IOException e) {
-      throw new FileSystemException("", e);
-    }
-  }
-
-
 
   public static void writeXMLFile(InputStream content, String fileName, Path path,
       Retention retention, LocalDate logDate) {
-    try {
 
-      Path fullPathFile = Path.of(path.toString(), fileName);
-      FileOutputStream fileOut = new FileOutputStream(fullPathFile.toFile(), true);
+    Path fullPathFile = Path.of(path.toString(), fileName);
+
+    try (RandomAccessFile writer = new RandomAccessFile(fullPathFile.toString(), "rw");
+        FileChannel fl = writer.getChannel();) {
+
       if (Files.size(fullPathFile) == 0) {
         InputStream start = new ByteArrayInputStream(
             String.format(START_XML_AUDIT, logDate.toString(), fileName, retention.getNameFormat())
                 .getBytes());
         content = new SequenceInputStream(start, content);
       } else {
-        FileChannel fl = fileOut.getChannel();
         fl.truncate(fl.size() - END_XML_AUDIT_SIZE);
       }
 
-      IOUtils.copy(new SequenceInputStream(content, new ByteArrayInputStream(END_XML_AUDIT)),
-          fileOut);
+      ReadableByteChannel channelIn = Channels
+          .newChannel(new SequenceInputStream(content, new ByteArrayInputStream(END_XML_AUDIT)));
+      long chunk = 1024 * 1024L;
+      long cnt;
+      for (long offset = 0; (cnt = fl.transferFrom(channelIn, offset, chunk)) > 0; offset += cnt);
 
-      fileOut.close();
     } catch (IOException e) {
-      log.error("Error writing log file {}", fileName);
+      log.error("Error writing xml log file {}", fileName);
       throw new FileSystemException("Error writing xml file", e);
     }
 
   }
 
-
-
   public static void writeFile(InputStream content, String fileName, Path path) {
-    try (FileOutputStream fileOut =
-        new FileOutputStream(Paths.get(path.toString(), fileName).toFile(), true);) {
+    try (OutputStream fileOut = Files.newOutputStream(Paths.get(path.toString(), fileName),
+        StandardOpenOption.APPEND, StandardOpenOption.CREATE);) {
       IOUtils.copy(content, fileOut);
     } catch (IOException e) {
       log.error("Error writing log file {}", fileName);
       throw new FileSystemException("Error writing log file", e);
     }
 
-  }
-
-  public static String computeSha256(byte[] content) {
-
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] encodedhash = digest.digest(content);
-      return bytesToBase64(encodedhash);
-    } catch (NoSuchAlgorithmException exc) {
-      throw new InternalException("cannot compute sha256", exc);
-    }
   }
 
   private static String bytesToBase64(byte[] hash) {
@@ -187,7 +138,7 @@ public class FilesUtils {
       byte[] encodedhash = md.digest();
       return bytesToBase64(encodedhash);
     } catch (NoSuchAlgorithmException | IOException exc) {
-      throw new InternalException("cannot compute sha256", exc);
+      throw new InternalException("Cannot compute sha256", exc);
     }
   }
 }

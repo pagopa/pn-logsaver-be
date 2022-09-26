@@ -1,15 +1,15 @@
 package it.pagopa.pn.logsaver.client.s3;
 
 import java.io.InputStream;
-import java.util.List;
+import java.util.stream.Stream;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 
 public interface S3BucketClient {
 
-  List<S3Object> findObjects(String prefix);
+  Stream<S3Object> findObjects(String prefix);
 
-  List<String> findSubFolders(String prefix);
+  Stream<String> findSubFolders(String prefix);
 
   InputStream getObjectContent(String key);
 

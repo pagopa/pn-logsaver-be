@@ -1,14 +1,13 @@
 package it.pagopa.pn.logsaver.dao.dynamo;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.dao.AuditStorageMapper;
@@ -18,8 +17,9 @@ import it.pagopa.pn.logsaver.dao.entity.ContinuosExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExtraType;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
+import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
+import it.pagopa.pn.logsaver.exceptions.InternalException;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
@@ -31,11 +31,14 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactPutItemEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.TransactUpdateItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 @Component
 @RequiredArgsConstructor
@@ -55,6 +58,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
     executionTable = enhancedClient.table(TABLE, TableSchema.fromBean(ExecutionEntity.class));
     continuosExecutionTable =
         enhancedClient.table(TABLE, TableSchema.fromBean(ContinuosExecutionEntity.class));
+    insertFirstContinuosExecution();
     insertFirtsExecution();
   }
 
@@ -63,7 +67,6 @@ public class StorageDaoDynamoImpl implements StorageDao {
       Set<Retention> retentions) {
 
     List<AuditStorageEntity> retList = new ArrayList<>();
-
 
     Expression expression = Expression.builder().expression("#result = :result")
         .putExpressionValue(":result",
@@ -78,17 +81,8 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
   @Override
   public AuditStorageEntity getAudit(LocalDate dateLog, Retention retention) {
-
-
     return auditStorageTable.getItem(Key.builder().partitionValue(retention.name())
         .sortValue(DateUtils.format(dateLog)).build());
-  }
-
-
-  @Override
-  public void insertAudit(AuditStorageEntity as) {
-
-    auditStorageTable.putItem(as);
   }
 
 
@@ -114,26 +108,37 @@ public class StorageDaoDynamoImpl implements StorageDao {
     return executionTable
         .query(QueryEnhancedRequest.builder().queryConditional(queryConditional)
             .scanIndexForward(false).limit(Integer.valueOf(1)).build())
-        .items().stream().findFirst().orElseGet(() -> {
-          log.warn("No execution date in the table. Insert first execution with date {}",
-              FIRST_START_DAY);
-          return insertFirtsExecution();
-        });
+        .items().stream().findFirst()
+        .orElseThrow(() -> new InternalException("No execution date in the table."));
   }
 
 
 
   private ExecutionEntity insertFirtsExecution() {
-    Map<String, RetentionResult> def = Stream.of(Retention.values())
-        .flatMap(ret -> Stream.of(ExportType.values()).map(
-            expTy -> new RetentionResult(ret.name(), AuditStorageStatus.SENT.name(), expTy.name())))
-        .collect(Collectors.toMap(RetentionResult::getKey, Function.identity()));
+    // Dettaglio esecuzione di default
+    Map<String, RetentionResult> def = StorageDaoLogicSupport.defaultResultMap();
 
-    ExecutionEntity last =
-        ExecutionEntity.builder().logDate(FIRST_START_DAY).itemTypes(ItemType.valuesAsString())
-            .exportTypes(ExportType.valuesAsString()).retentionResult(def).build();
+    ExecutionEntity last = ExecutionEntity.builder().logDate(FIRST_START_DAY)
+        .itemTypes(ItemType.valuesAsString()).retentionResult(def).build();
 
-    executionTable.updateItem(last);
+    Map<String, AttributeValue> expressionValues = new HashMap<>();
+    expressionValues.put(":execution",
+        AttributeValue.builder().s(ExtraType.LOG_SAVER_EXECUTION.name()).build());
+
+    Map<String, String> expressionNames = new HashMap<>();
+    expressionNames.put("#type", "type");
+
+    PutItemEnhancedRequest<ExecutionEntity> insert = PutItemEnhancedRequest
+        .builder(ExecutionEntity.class)
+        .conditionExpression(Expression.builder().expression(" #type <> :execution ")
+            .expressionValues(expressionValues).expressionNames(Map.of("#type", "type")).build())
+        .item(last).build();
+    try {
+      executionTable.putItem(insert);
+      log.info("Insert first execution with date {}", FIRST_START_DAY);
+    } catch (ConditionalCheckFailedException e) {
+      log.info("Execution date in the table. ");
+    }
     return last;
   }
 
@@ -146,56 +151,72 @@ public class StorageDaoDynamoImpl implements StorageDao {
     return continuosExecutionTable
         .query(QueryEnhancedRequest.builder().queryConditional(queryConditional)
             .scanIndexForward(false).limit(Integer.valueOf(1)).build())
-        .items().stream().findFirst().orElseGet(() -> {
-          log.warn("No execution date in the table. Insert first continuos execution with date {}",
-              FIRST_START_DAY);
-          return insertFirstContinuosExecution();
-        }).getLatestExecutionDate();
+        .items().stream().findFirst()
+        .orElseThrow(() -> new InternalException("No continuos execution date in the table."))
+        .getLatestExecutionDate();
+
   }
 
 
 
-  private ContinuosExecutionEntity insertFirstContinuosExecution() {
-    return continuosExecutionTable
-        .updateItem(new ContinuosExecutionEntity(DateUtils.parse(FIRST_START_DAY)));
+  private void insertFirstContinuosExecution() {
+
+    PutItemEnhancedRequest<ContinuosExecutionEntity> insert =
+        PutItemEnhancedRequest.builder(ContinuosExecutionEntity.class)
+            .conditionExpression(Expression.builder()
+                .expression("attribute_not_exists( "
+                    .concat(ContinuosExecutionEntity.FIELD_EXECUTION_DATE).concat(" )"))
+                .build())
+            .item(new ContinuosExecutionEntity(DateUtils.parse(FIRST_START_DAY))).build();
+    try {
+      continuosExecutionTable.putItem(insert);
+      log.info("Insert first continuos execution with date {}", FIRST_START_DAY);
+    } catch (ConditionalCheckFailedException e) {
+      log.info("Continuos execution date in the table.");
+    }
   }
+
 
   @Override
-  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate day,
-      Set<ItemType> types, Set<ExportType> typeExport, Set<Retention> retentions) {
+  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate,
+      Set<ItemType> types) {
 
-    ExecutionEntity last = ExecutionEntity.builder().logDate(DateUtils.format(day))
+    ExecutionEntity newExecution = ExecutionEntity.builder().logDate(DateUtils.format(logDate))
         .retentionResult(AuditStorageMapper.toResultExecution(auditList))
-        .itemTypes(ItemType.valuesAsString(types))
-        .exportTypes(ExportType.valuesAsString(typeExport))
-        .retentions(Retention.valuesAsString(retentions)).build();
+        .itemTypes(ItemType.valuesAsString(types)).build();
 
-    TransactWriteItemsEnhancedRequest.Builder transBuild =
-        TransactWriteItemsEnhancedRequest.builder().addPutItem(executionTable, last);
+    TransactUpdateItemEnhancedRequest<ExecutionEntity> executionUpdate =
+        TransactUpdateItemEnhancedRequest.builder(ExecutionEntity.class).item(newExecution).build();
 
-    String previousDay = day.minusDays(1).toString();
-    // Aggiorno La data ultima esecuzione continua se l'ultima data è uguale previousDay
-    Map<String, AttributeValue> expressionValues = new HashMap<>();
-    expressionValues.put(":previousDay", AttributeValue.builder().s(previousDay).build());
+    final TransactWriteItemsEnhancedRequest.Builder transBuild =
+        TransactWriteItemsEnhancedRequest.builder().addUpdateItem(executionTable, executionUpdate);
 
-    TransactPutItemEnhancedRequest<ContinuosExecutionEntity> condtionalUpdate =
-        TransactPutItemEnhancedRequest.builder(ContinuosExecutionEntity.class)
-            .item(new ContinuosExecutionEntity(day))
-            .conditionExpression(Expression.builder()
-                .expression(ContinuosExecutionEntity.FIELD_EXECUTION_DATE.concat(" = :previousDay"))
-                .expressionValues(expressionValues).build())
-            .build();
 
-    // LocalDate lastContinuosExecDate = latestContinuosExecution();
-    // if (Duration.between(lastContinuosExecDate, day).toDays() == 1) {
-    transBuild.addPutItem(continuosExecutionTable, condtionalUpdate);
-    // }
+    LocalDate lastContinuosExecutionReg = latestContinuosExecution();
+    // Aggiorno La data ultima esecuzione continua se:
+    // Tutti i file sono stati inviati
+    // se la differenza tra la logDate e la data ultima esecuzione continua è 1
+    if (!StorageDaoLogicSupport.hasErrors(newExecution) && Duration
+        .between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1) {
+
+      // Determino la data esecuzione continua
+      List<ExecutionEntity> execList = this.executionFrom(logDate);
+      LocalDate lastContinuosExecutionDate =
+          StorageDaoLogicSupport.computeLastContinuosExecutionDate(logDate, execList);
+
+      TransactPutItemEnhancedRequest<ContinuosExecutionEntity> condtionalUpdate =
+          TransactPutItemEnhancedRequest.builder(ContinuosExecutionEntity.class)
+              .item(new ContinuosExecutionEntity(lastContinuosExecutionDate)).build();
+
+      transBuild.addPutItem(continuosExecutionTable, condtionalUpdate);
+    }
 
     auditList.stream().forEach(entity -> transBuild.addPutItem(auditStorageTable, entity));
 
     enhancedClient.transactWriteItems(transBuild.build());
 
   }
+
 
   @Override
   public List<ExecutionEntity> executionBetween(LocalDate dateFrom, LocalDate dateTo) {
@@ -207,9 +228,19 @@ public class StorageDaoDynamoImpl implements StorageDao {
         Key.builder().partitionValue(ExtraType.LOG_SAVER_EXECUTION.name())
             .sortValue(DateUtils.format(dateTo)).build());
     return executionTable
-        .query(QueryEnhancedRequest.builder().queryConditional(queryConditional)
-            .scanIndexForward(false).limit(Integer.valueOf(1)).build())
-        .items().stream().collect(Collectors.toList());
+        .query(QueryEnhancedRequest.builder().queryConditional(queryConditional).build()).items()
+        .stream().collect(Collectors.toList());
   }
 
+
+  public List<ExecutionEntity> executionFrom(LocalDate dateFrom) {
+
+
+    QueryConditional queryConditional = QueryConditional
+        .sortGreaterThan(Key.builder().partitionValue(ExtraType.LOG_SAVER_EXECUTION.name())
+            .sortValue(DateUtils.format(dateFrom)).build());
+    return executionTable.query(QueryEnhancedRequest.builder().queryConditional(queryConditional)
+
+        .build()).items().stream().collect(Collectors.toList());
+  }
 }

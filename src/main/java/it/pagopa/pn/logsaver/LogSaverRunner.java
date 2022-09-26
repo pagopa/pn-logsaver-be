@@ -10,10 +10,9 @@ import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.services.AuditSaverService;
 import it.pagopa.pn.logsaver.springbootcfg.ClApplicationArguments;
-import lombok.extern.slf4j.Slf4j;
+import it.pagopa.pn.logsaver.utils.LsUtils;
 
 @Component
-@Slf4j
 public class LogSaverRunner implements ApplicationRunner {
 
 
@@ -30,24 +29,12 @@ public class LogSaverRunner implements ApplicationRunner {
   public void run(ApplicationArguments args) throws Exception {
 
     SpringApplication.exit(ctx, this::lunnchApp);
-
   }
 
   private int lunnchApp() {
-
-    boolean res;
     List<DailySaverResult> results = logSaver.dailySaverFromLatestExecutionToYesterday(
         appArgs.getItemTypes(), appArgs.getRetentionExportTypesMap());
-
-    res = results.stream().map(resDaily -> {
-      log.info(resDaily.toString());
-      return resDaily;
-    }).filter(resDaily -> !resDaily.isSuccess()).map(resDaily -> {
-      log.info("Error Message: {}", resDaily.getError().getCause().getMessage());
-      return resDaily;
-    }).count() == 0;
-    log.debug("Applicantion ends with status as {}", res);
-    return res ? 0 : 1;
+    return LsUtils.exitCodeAndLogResult(results);
   }
 }
 

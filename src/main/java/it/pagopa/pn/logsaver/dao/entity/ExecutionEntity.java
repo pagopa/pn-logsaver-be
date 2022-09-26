@@ -16,21 +16,21 @@ public class ExecutionEntity extends AuditStorageBase {
 
   private List<String> itemTypes;
 
-  private List<String> exportTypes;
+  // private List<String> exportTypes;
 
-  private List<String> retentions;
+  // private List<String> retentions;
 
-  // private List<RetentionResult> retentionResult;
 
   private Map<String, RetentionResult> retentionResult;
 
   @Builder
   public ExecutionEntity(String logDate, Map<String, RetentionResult> retentionResult,
-      List<String> itemTypes, List<String> exportTypes, List<String> retentions) {
+      List<String> itemTypes// , List<String> exportTypes, List<String> retentions
+  ) {
     super(ExtraType.LOG_SAVER_EXECUTION.name(), logDate);
     this.retentionResult = retentionResult;
     this.itemTypes = itemTypes;
-    this.exportTypes = exportTypes;
-    this.retentions = retentions;
+    // this.exportTypes = exportTypes;
+    // this.retentions = retentions;
   }
 }

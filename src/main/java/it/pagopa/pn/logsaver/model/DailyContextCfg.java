@@ -7,7 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -31,8 +30,8 @@ public class DailyContextCfg {
   @Default
   private Map<Retention, Path> retentionTmpPath = new LinkedHashMap<>();
   @NonNull
-  @Default
-  private Map<Retention, Set<ExportType>> retentionExportTypeMap = defaultRetentionExportTypeMap();
+  private Map<Retention, Set<ExportType>> retentionExportTypeMap;
+
   private Path tmpDailyPath;
 
   public DailyContextCfg initContext() {
@@ -55,10 +54,6 @@ public class DailyContextCfg {
     return retentionTmpPath.containsKey(retention);
   }
 
-  private static Map<Retention, Set<ExportType>> defaultRetentionExportTypeMap() {
-    return Stream.of(Retention.values())
-        .collect(Collectors.toMap(r -> r, r -> Set.of(ExportType.values())));
-  }
 
   public Set<Retention> retentions() {
     return retentionExportTypeMap.keySet();

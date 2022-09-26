@@ -19,6 +19,7 @@ import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
+import it.pagopa.pn.logsaver.utils.LsUtils;
 import lombok.Data;
 
 
@@ -47,12 +48,16 @@ public class ClApplicationArguments {
   @Autowired
   void initRetentionExportType(@Value("${exportType:}") String retentionExportType) {
 
-    this.retentionExportTypesMap = Stream.of(StringUtils.split(retentionExportType, ","))
-        .map(retExTypes -> StringUtils.split(retExTypes, "$"))
-        .collect(groupingBy(arr -> Retention.valueOf(arr[0]),
-            collectingAndThen(toList(), list -> list.stream().flatMap(
-                el -> Stream.of(StringUtils.split(el[1], "|")).map(ExportType::valueOf).distinct())
-                .distinct().collect(toSet()))));
+    this.retentionExportTypesMap = StringUtils.isNoneEmpty(retentionExportType)
+        ? Stream.of(StringUtils.split(retentionExportType, ","))
+            .map(retExTypes -> StringUtils.split(retExTypes, "$"))
+            .collect(groupingBy(arr -> Retention.valueOf(arr[0]),
+                collectingAndThen(toList(),
+                    list -> list.stream()
+                        .flatMap(el -> Stream.of(StringUtils.split(el[1], "|"))
+                            .map(ExportType::valueOf).distinct())
+                        .distinct().collect(toSet()))))
+        : LsUtils.defaultRetentionExportTypeMap();
   }
 
   @PostConstruct

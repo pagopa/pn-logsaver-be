@@ -5,27 +5,26 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import it.pagopa.pn.logsaver.services.support.ExportAudit;
-import it.pagopa.pn.logsaver.utils.FilesUtils;
-import it.pagopa.pn.logsaver.utils.PdfUtils;
+import it.pagopa.pn.logsaver.services.functions.ExportAudit;
+import it.pagopa.pn.logsaver.services.impl.functions.ExportAuditPdf;
+import it.pagopa.pn.logsaver.utils.ZipUtils;
 import lombok.Getter;
 
 
 public enum ExportType {
   ZIP(".zip", "application/zip",
-      (exportDir, out, retention, logDate) -> FilesUtils.zipDirectory(exportDir, out)), PDF_SIGNED(
-          ".pdf", "application/pdf", PdfUtils::createPdf);
+      (exportDir, out, retention, logDate) -> ZipUtils.createZip(exportDir, out)), PDF_SIGNED(
+          ".pdf", "application/pdf", new ExportAuditPdf());
 
   @Getter
   private String extension;
 
-  private ExportAudit<Path, Path, Retention, LocalDate> exportWriter;
+  private ExportAudit exportWriter;
 
   @Getter
   private String mediaType;
 
-  ExportType(String extension, String mediaType,
-      ExportAudit<Path, Path, Retention, LocalDate> exportWriter) {
+  ExportType(String extension, String mediaType, ExportAudit exportWriter) {
     this.extension = extension;
     this.exportWriter = exportWriter;
     this.mediaType = mediaType;
