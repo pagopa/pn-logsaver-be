@@ -17,6 +17,6 @@ public class RetentionResult {
   private String exportType;
 
   public String getKey() {
-    return String.join(ExecutionEntity.KEY_SEPARATOR, getRetention(), getExportType());
+    return String.join(AuditStorageBase.KEY_SEPARATOR, getRetention(), getExportType());
   }
 }

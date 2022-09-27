@@ -47,7 +47,7 @@ public class FilesUtils {
       // Nothing to do
     } catch (IOException e) {
       log.error("Error removing folder {}", path.toString());
-      throw new FileSystemException("", e);
+      throw new FileSystemException("Error removing folder", e);
     }
   }
 
@@ -63,7 +63,7 @@ public class FilesUtils {
 
     } catch (IOException e) {
       log.error("Error creating or cleaning folder {}", path.toString());
-      throw new FileSystemException("", e);
+      throw new FileSystemException("Error creating or cleaning folder", e);
     }
   }
 

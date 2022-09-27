@@ -16,11 +16,6 @@ public class ExecutionEntity extends AuditStorageBase {
 
   private List<String> itemTypes;
 
-  // private List<String> exportTypes;
-
-  // private List<String> retentions;
-
-
   private Map<String, RetentionResult> retentionResult;
 
   @Builder
@@ -30,7 +25,5 @@ public class ExecutionEntity extends AuditStorageBase {
     super(ExtraType.LOG_SAVER_EXECUTION.name(), logDate);
     this.retentionResult = retentionResult;
     this.itemTypes = itemTypes;
-    // this.exportTypes = exportTypes;
-    // this.retentions = retentions;
   }
 }

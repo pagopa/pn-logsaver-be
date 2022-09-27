@@ -72,6 +72,8 @@ public class ExportAuditPdf implements ExportAudit {
 
       return IOUtils.toString(xml, Charset.defaultCharset());
     } catch (IOException e) {
+      log.error("Error create xml metadata pdf {} for retention {}",
+          filePath.getFileName().toString(), retention.name());
       throw new FileSystemException("Error read file: " + e.getMessage());
     }
   }

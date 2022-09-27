@@ -20,8 +20,6 @@ public class StorageExecution {
 
   private Set<ItemType> itemTypes;
 
-  // private Set<ExportType> exportTypes;
-
   private List<ExecutionDetails> details;
 
 

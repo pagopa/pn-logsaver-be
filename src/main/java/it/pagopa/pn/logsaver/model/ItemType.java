@@ -51,6 +51,7 @@ public enum ItemType {
     return !SetUtils.intersection(retentions, tocheck).isEmpty();
   }
 
+
   public Stream<ItemChildren> filter(DailyContextCfg ctx, InputStream content) {
     return filter.apply(content, ctx);
   }
