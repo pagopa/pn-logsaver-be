@@ -12,7 +12,6 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
-import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.services.StorageService;
 import lombok.AllArgsConstructor;
@@ -26,14 +25,6 @@ public class StorageServiceImpl implements StorageService {
   private final PnSafeStorageClient safeStorageClient;
 
   private final StorageDao storageDao;
-
-
-  public AuditStorage get(Retention type, LocalDate logDate) {
-
-    AuditStorageEntity auditStoreEntity = storageDao.getAudit(logDate, type);
-
-    return AuditStorageMapper.toModel(auditStoreEntity);
-  }
 
   @Override
   public StorageExecution latestStorageExecution() {

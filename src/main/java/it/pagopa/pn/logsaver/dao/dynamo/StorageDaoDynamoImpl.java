@@ -2,7 +2,6 @@ package it.pagopa.pn.logsaver.dao.dynamo;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,9 +18,7 @@ import it.pagopa.pn.logsaver.dao.entity.ExtraType;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.ItemType;
-import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -60,42 +57,6 @@ public class StorageDaoDynamoImpl implements StorageDao {
         enhancedClient.table(TABLE, TableSchema.fromBean(ContinuosExecutionEntity.class));
     insertFirstContinuosExecution();
     insertFirtsExecution();
-  }
-
-  @Override
-  public List<AuditStorageEntity> getAudits(LocalDate dateFrom, LocalDate dateTo,
-      Set<Retention> retentions) {
-
-    List<AuditStorageEntity> retList = new ArrayList<>();
-
-    Expression expression = Expression.builder().expression("#result = :result")
-        .putExpressionValue(":result",
-            AttributeValue.builder().s(AuditStorageStatus.SENT.name()).build())
-        .putExpressionName("#result", "result").build();
-
-    retentions.stream()
-        .forEach(retention -> findItemInPartion(dateFrom, dateTo, retention, retList, expression));
-
-    return retList;
-  }
-
-  @Override
-  public AuditStorageEntity getAudit(LocalDate dateLog, Retention retention) {
-    return auditStorageTable.getItem(Key.builder().partitionValue(retention.name())
-        .sortValue(DateUtils.format(dateLog)).build());
-  }
-
-
-  private void findItemInPartion(LocalDate dateFrom, LocalDate dateTo, Retention retention,
-      List<AuditStorageEntity> retList, Expression expression) {
-
-    QueryConditional queryConditional = QueryConditional.sortBetween(
-        Key.builder().partitionValue(retention.name()).sortValue(DateUtils.format(dateFrom))
-            .build(),
-        Key.builder().partitionValue(retention.name()).sortValue(DateUtils.format(dateTo)).build());
-
-    auditStorageTable.query(r -> r.queryConditional(queryConditional).filterExpression(expression))
-        .items().stream().collect(Collectors.toCollection(() -> retList));
   }
 
 
@@ -241,6 +202,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
             .sortValue(DateUtils.format(dateFrom)).build());
     return executionTable.query(QueryEnhancedRequest.builder().queryConditional(queryConditional)
 
-        .build()).items().stream().collect(Collectors.toList());
+        .build()).items().stream().distinct().peek(x -> System.out.print(false))
+        .collect(Collectors.toList());
   }
 }

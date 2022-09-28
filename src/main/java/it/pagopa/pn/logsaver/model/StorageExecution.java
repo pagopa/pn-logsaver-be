@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,6 +15,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Builder
 public class StorageExecution {
 
   private LocalDate logDate;

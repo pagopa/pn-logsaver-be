@@ -15,6 +15,10 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 @NoArgsConstructor
 public class AuditStorageEntity extends AuditStorageBase {
 
+  private String retentionType;
+
+  private String contentType;
+
   private String fileName;
 
   private String storageKey;
@@ -23,12 +27,15 @@ public class AuditStorageEntity extends AuditStorageBase {
 
 
   @Builder
-  public AuditStorageEntity(Retention retention, ExportType expType, String logDate,
+  public AuditStorageEntity(Retention retention, ExportType exportType, String logDate,
       String fileName, String storageKey, String result) {
-    super(handlePKey(retention, expType), logDate);
+    super(handlePKey(retention, exportType), logDate);
     this.fileName = fileName;
     this.storageKey = storageKey;
     this.result = result;
+    this.retentionType = retention.name();
+    this.contentType = exportType.name();
+
   }
 
   private static String handlePKey(Retention retention, ExportType expType) {

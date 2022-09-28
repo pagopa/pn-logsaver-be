@@ -16,7 +16,7 @@ import com.google.gson.JsonStreamParser;
 import it.pagopa.pn.logsaver.exceptions.LogFilterException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.Item.ItemChildren;
-import it.pagopa.pn.logsaver.utils.JsonUtils;
+import it.pagopa.pn.logsaver.services.support.LogsFilterSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,14 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 public class LogProcessFunction
     implements BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> {
 
-
   @Override
   public Stream<ItemChildren> apply(InputStream content, DailyContextCfg ctx) {
-    return filter(content, ctx);
-  }
-
-  private Stream<ItemChildren> filter(InputStream content, DailyContextCfg ctx) {
-
     try {
 
       Reader reader = new InputStreamReader(new GZIPInputStream(content));
@@ -44,8 +38,8 @@ public class LogProcessFunction
 
 
       return targetStream.map(JsonElement::getAsJsonObject)
-          .map(json -> JsonUtils.groupByRetention(json, ctx.retentions())).map(Map::entrySet)
-          .flatMap(Set::stream).map(item -> {
+          .map(json -> LogsFilterSupport.groupByRetention(json, ctx.retentions()))
+          .map(Map::entrySet).flatMap(Set::stream).map(item -> {
             String logToWrite = item.getValue().toString();
             return new ItemChildren(item.getKey(), new ByteArrayInputStream(logToWrite.getBytes()));
           });
@@ -55,7 +49,5 @@ public class LogProcessFunction
       throw new LogFilterException("Filter error. The content of the file is not valid json-stream",
           e);
     }
-
   }
-
 }

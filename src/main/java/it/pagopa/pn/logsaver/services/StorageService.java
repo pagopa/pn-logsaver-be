@@ -9,8 +9,6 @@ import it.pagopa.pn.logsaver.model.StorageExecution;
 
 public interface StorageService {
 
-
-
   List<AuditStorage> store(List<AuditFile> files, DailyContextCfg cfg);
 
   StorageExecution latestStorageExecution();
@@ -18,6 +16,5 @@ public interface StorageService {
   LocalDate latestContinuosExecutionDate();
 
   List<StorageExecution> storageExecutionBetween(LocalDate from, LocalDate to);
-
 
 }

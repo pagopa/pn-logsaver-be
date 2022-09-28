@@ -6,25 +6,16 @@ import java.util.Set;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.model.ItemType;
-import it.pagopa.pn.logsaver.model.Retention;
 
 
 public interface StorageDao {
   public static final String FIRST_START_DAY = "2022-07-07";
 
-  List<AuditStorageEntity> getAudits(LocalDate dateFrom, LocalDate dateTo,
-      Set<Retention> retentions);
-
   ExecutionEntity latestExecution();
 
   List<ExecutionEntity> executionBetween(LocalDate dateFrom, LocalDate dateTo);
 
-  AuditStorageEntity getAudit(LocalDate dateLog, Retention retention);
-
   LocalDate latestContinuosExecution();
-
-  // void updateExecution(List<AuditStorageEntity> auditList, LocalDate day, Set<ItemType> types,
-  // Set<ExportType> typeExport, Set<Retention> retentions);
 
   void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<ItemType> types);
 }

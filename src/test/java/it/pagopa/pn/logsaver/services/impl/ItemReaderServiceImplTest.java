@@ -43,8 +43,6 @@ class ItemReaderServiceImplTest {
   @Captor
   private ArgumentCaptor<String> prefix;
 
-
-
   @Captor
   private ArgumentCaptor<String> subFolder;
 
@@ -53,7 +51,6 @@ class ItemReaderServiceImplTest {
   @BeforeEach
   void setUp() {
     this.service = new ItemReaderServiceImpl(clientS3, cfg);
-
   }
 
   void mockCfgBase() {

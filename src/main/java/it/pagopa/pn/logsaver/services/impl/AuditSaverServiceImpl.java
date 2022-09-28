@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
@@ -105,6 +106,8 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
   private DailyContextCfg recoveryDailyContext(LocalDate logDate,
       Map<LocalDate, StorageExecution> execList) {
+
+    Validate.noNullElements(execList.values());
 
     if (execList.containsKey(logDate)) {
       // Costruisco il contesto prendendo dall'ultima esecuzione le configurazioni dei file non

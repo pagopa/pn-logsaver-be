@@ -40,7 +40,7 @@ public class AuditStorageMapper {
     }
     AuditStorageEntity entity = AuditStorageEntity.builder().fileName(storage.fileName())
         .logDate(DateUtils.format(storage.logDate())).retention(storage.retention())
-        .expType(storage.exportType()).build();
+        .exportType(storage.exportType()).build();
 
     if (storage.sendingError()) {
       entity.setResult(AuditStorageStatus.CREATED.name());
@@ -51,14 +51,6 @@ public class AuditStorageMapper {
     return entity;
   }
 
-  public static AuditStorage toModel(AuditStorageEntity entity) {
-    return Objects.isNull(entity) ? null
-        : AuditStorage.builder().retention(Retention.valueOf(entity.getRetention()))
-            .logDate(DateUtils.parse(entity.getLogDate()))
-            .exportType(ExportType.valueOf(entity.getExportType()))
-            .status(AuditStorageStatus.valueOf(entity.getResult())).build();
-  }
-
 
   public static StorageExecution toModel(ExecutionEntity entity) {
     return new StorageExecution(DateUtils.parse(entity.getLogDate()),
@@ -67,13 +59,6 @@ public class AuditStorageMapper {
 
   public static List<ExecutionDetails> toModel(Map<String, RetentionResult> resList) {
     return MapUtils.emptyIfNull(resList).values().stream()
-        .map(au -> new ExecutionDetails(Retention.valueOf(au.getRetention()),
-            AuditStorageStatus.valueOf(au.getResult()), ExportType.valueOf(au.getExportType())))
-        .collect(Collectors.toList());
-  }
-
-  public static List<ExecutionDetails> toModel(List<RetentionResult> resList) {
-    return CollectionUtils.emptyIfNull(resList).stream()
         .map(au -> new ExecutionDetails(Retention.valueOf(au.getRetention()),
             AuditStorageStatus.valueOf(au.getResult()), ExportType.valueOf(au.getExportType())))
         .collect(Collectors.toList());
