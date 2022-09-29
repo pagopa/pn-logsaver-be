@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import it.pagopa.pn.logsaver.config.TestConfig;
@@ -23,6 +24,7 @@ import it.pagopa.pn.logsaver.springbootcfg.ClApplicationArguments;
 @Import(TestConfig.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
 @ActiveProfiles("test")
+@DirtiesContext
 class LogSaverApplicationSpringBootIntegrationTest {
   // EnvironmentTestUtils.addEnvironment(env, "org=Spring", "name=Boot");
 
