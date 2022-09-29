@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver.model;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -8,6 +9,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,8 +21,8 @@ import lombok.Setter;
 public class DailySaverResult {
 
   private LocalDate logDate;
-
-  private List<AuditStorage> auditStorageList;
+  @Default
+  private List<AuditStorage> auditStorageList = new ArrayList<>();
 
   private Throwable error;
 

@@ -5,13 +5,18 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import it.pagopa.pn.logsaver.dao.AuditStorageMapper;
+import it.pagopa.pn.logsaver.dao.StorageDao;
+import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.ExportType;
+import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.experimental.UtilityClass;
@@ -19,6 +24,22 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class StorageDaoLogicSupport {
 
+
+  public static ExecutionEntity from(List<AuditStorageEntity> auditList, LocalDate logDate,
+      Set<ItemType> types) {
+    return ExecutionEntity.builder().logDate(DateUtils.format(logDate))
+        .retentionResult(AuditStorageMapper.toResultExecution(auditList))
+        .itemTypes(ItemType.valuesAsString(types)).build();
+  }
+
+
+
+  public static ExecutionEntity firstExececutionRow() {
+    Map<String, RetentionResult> def = StorageDaoLogicSupport.defaultResultMap();
+
+    return ExecutionEntity.builder().logDate(StorageDao.FIRST_START_DAY)
+        .itemTypes(ItemType.valuesAsString()).retentionResult(def).build();
+  }
 
 
   public static Map<String, RetentionResult> defaultResultMap() {

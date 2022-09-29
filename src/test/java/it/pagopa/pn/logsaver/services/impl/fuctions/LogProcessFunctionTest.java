@@ -21,6 +21,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.exceptions.LogFilterException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.Item.ItemChildren;
@@ -29,10 +30,9 @@ import it.pagopa.pn.logsaver.services.impl.functions.LogProcessFunction;
 
 @ExtendWith(SpringExtension.class)
 class LogProcessFunctionTest {
-  private final String fileLog =
-      "classpath:files/s3/pn-pnDelivery-ecs-delivery-stream-1-2022-07-12-00-05-07-ed57bcd0-ce62-4566-a943-04f9e462e54c";
 
-  @Value(fileLog)
+
+  @Value(TestCostant.FILE_LOG)
   private Resource s3File;
 
   @Mock

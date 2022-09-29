@@ -15,22 +15,24 @@ import it.pagopa.pn.logsaver.utils.LsUtils;
 
 public final class TestCostant {
 
-  public final static String TMP_FOLDER = "/tmp/logsaver/";
+  public static final String FILE_LOG =
+      "classpath:files/s3/pn-pnDelivery-ecs-delivery-stream-1-2022-07-12-00-05-07-ed57bcd0-ce62-4566-a943-04f9e462e54c";
+  public static final String TMP_FOLDER = "/tmp/logsaver/";
 
-  public final static LocalDate LOGDATE_FROM = LocalDate.parse("2022-07-08");
-  public final static LocalDate LATEST_CONTUOS_EXEC_DATE = LocalDate.parse("2022-07-10");
-  public final static LocalDate LOGDATE = LocalDate.parse("2022-07-11");
-  public final static String BUCKET_NAME = "pn-logs-bucket-eu-south-1";
-  public final static String S3_KEY =
+  public static final LocalDate LOGDATE_FROM = LocalDate.parse("2022-07-08");
+  public static final LocalDate LATEST_CONTUOS_EXEC_DATE = LocalDate.parse("2022-07-10");
+  public static final LocalDate LOGDATE = LocalDate.parse("2022-07-11");
+  public static final String BUCKET_NAME = "pn-logs-bucket-eu-south-1";
+  public static final String S3_KEY =
       "logs/ecs/pnDelivery/2022/07/11/12/pn-pnDelivery-ecs-delivery-stream-1-2022-07-11-12-56-15";
 
-  public final static List<String> MICROSERVICES = List.of("pnDelivery", "pnDeliveryPush",
+  public static final List<String> MICROSERVICES = List.of("pnDelivery", "pnDeliveryPush",
       "pnExternalRegistry", "pnMandate", "pnUserAttributes");
 
-  public final static List<String> TABLES =
+  public static final List<String> TABLES =
       List.of("pnMandateCdc", "pnNotificationCdc", "pnTimelineCdc", "pnUserAttributesCdc");
 
-  public final static List<String> EXPECTED_PREFIX = List.of("logs/ecs/pnDelivery/2022/07/11",
+  public static final List<String> EXPECTED_PREFIX = List.of("logs/ecs/pnDelivery/2022/07/11",
       "logs/ecs/pnDeliveryPush/2022/07/11", "logs/ecs/pnExternalRegistry/2022/07/11",
       "logs/ecs/pnMandate/2022/07/11", "logs/ecs/pnUserAttributes/2022/07/11",
       "cdc/pnMandateCdc/2022/07/11", "cdc/pnNotificationCdc/2022/07/11",
@@ -38,7 +40,7 @@ public final class TestCostant {
 
   );
 
-  public final static List<Item> items =
+  public static final List<Item> items =
       List.of(Item.builder().logDate(LOGDATE).type(ItemType.CDC).s3Key(S3_KEY).build(),
           Item.builder().logDate(LOGDATE).type(ItemType.CDC).s3Key(S3_KEY).build(),
           Item.builder().logDate(LOGDATE).type(ItemType.CDC).s3Key(S3_KEY).build(),
@@ -73,7 +75,7 @@ public final class TestCostant {
           .build());
 
 
-  public final static DailyContextCfg CTX =
+  public static final DailyContextCfg CTX =
       DailyContextCfg.builder().retentionExportTypeMap(LsUtils.defaultRetentionExportTypeMap())
           .tmpBasePath(TMP_FOLDER).itemTypes(Set.of(ItemType.values())).logDate(LOGDATE).build();
 

@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -74,7 +75,7 @@ public class ExportAuditPdf implements ExportAudit {
     } catch (IOException e) {
       log.error("Error create xml metadata pdf {} for retention {}",
           filePath.getFileName().toString(), retention.name());
-      throw new FileSystemException("Error read file: " + e.getMessage());
+      throw new UncheckedIOException("Error read file: " + e.getMessage(), e);
     }
   }
 

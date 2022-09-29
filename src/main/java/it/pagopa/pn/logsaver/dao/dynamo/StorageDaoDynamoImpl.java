@@ -8,14 +8,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import it.pagopa.pn.logsaver.dao.AuditStorageMapper;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ContinuosExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExtraType;
-import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
 import it.pagopa.pn.logsaver.model.ItemType;
@@ -40,6 +39,7 @@ import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedExce
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnProperty(name = "aws.dynamoDb-profile-name")
 public class StorageDaoDynamoImpl implements StorageDao {
   private static final String TABLE = "audit_storage";
 
@@ -76,11 +76,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   private ExecutionEntity insertFirtsExecution() {
-    // Dettaglio esecuzione di default
-    Map<String, RetentionResult> def = StorageDaoLogicSupport.defaultResultMap();
-
-    ExecutionEntity last = ExecutionEntity.builder().logDate(FIRST_START_DAY)
-        .itemTypes(ItemType.valuesAsString()).retentionResult(def).build();
+    ExecutionEntity last = StorageDaoLogicSupport.firstExececutionRow();
 
     Map<String, AttributeValue> expressionValues = new HashMap<>();
     expressionValues.put(":execution",
@@ -142,9 +138,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
   public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate,
       Set<ItemType> types) {
 
-    ExecutionEntity newExecution = ExecutionEntity.builder().logDate(DateUtils.format(logDate))
-        .retentionResult(AuditStorageMapper.toResultExecution(auditList))
-        .itemTypes(ItemType.valuesAsString(types)).build();
+    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types);
 
     TransactUpdateItemEnhancedRequest<ExecutionEntity> executionUpdate =
         TransactUpdateItemEnhancedRequest.builder(ExecutionEntity.class).item(newExecution).build();
@@ -200,9 +194,8 @@ public class StorageDaoDynamoImpl implements StorageDao {
     QueryConditional queryConditional = QueryConditional
         .sortGreaterThan(Key.builder().partitionValue(ExtraType.LOG_SAVER_EXECUTION.name())
             .sortValue(DateUtils.format(dateFrom)).build());
-    return executionTable.query(QueryEnhancedRequest.builder().queryConditional(queryConditional)
-
-        .build()).items().stream().distinct().peek(x -> System.out.print(false))
-        .collect(Collectors.toList());
+    return executionTable
+        .query(QueryEnhancedRequest.builder().queryConditional(queryConditional).build()).items()
+        .stream().distinct().collect(Collectors.toList());
   }
 }

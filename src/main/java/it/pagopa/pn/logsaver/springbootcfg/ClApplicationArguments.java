@@ -10,21 +10,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import it.pagopa.pn.logsaver.utils.LsUtils;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 
-@Configuration
-@Data
+@Component
+@Getter
+@Setter
 public class ClApplicationArguments {
 
   private List<LocalDate> dateList;
@@ -35,18 +36,18 @@ public class ClApplicationArguments {
 
   @Autowired
   void initDateList(
-      @Value("${dateList:}#{T(java.util.Collections).emptyList()}") List<String> dateListStr) {
+      @Value("${date.list:#{T(java.util.Collections).emptyList()}}") List<String> dateListStr) {
     this.dateList = dateListStr.stream().map(DateUtils::parse).collect(Collectors.toList());
   }
 
   @Autowired
   void initTypeList(
-      @Value("${types:}#{T(it.pagopa.pn.logsaver.model.ItemType).valuesAsString()}") List<String> typeListStr) {
+      @Value("${item.types:#{T(it.pagopa.pn.logsaver.model.ItemType).valuesAsString()}}") List<String> typeListStr) {
     this.itemTypes = typeListStr.stream().map(ItemType::valueOf).collect(Collectors.toSet());
   }
 
   @Autowired
-  void initRetentionExportType(@Value("${exportType:}") String retentionExportType) {
+  void initRetentionExportType(@Value("${retention.export.type:}") String retentionExportType) {
 
     this.retentionExportTypesMap = StringUtils.isNoneEmpty(retentionExportType)
         ? Stream.of(StringUtils.split(retentionExportType, ","))
@@ -60,8 +61,4 @@ public class ClApplicationArguments {
         : LsUtils.defaultRetentionExportTypeMap();
   }
 
-  @PostConstruct
-  void validate() {
-
-  }
 }
