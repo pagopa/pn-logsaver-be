@@ -2,7 +2,6 @@ package it.pagopa.pn.logsaver;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.ExitCodeEvent;
@@ -33,14 +32,17 @@ public class LogSaverRunner implements ApplicationRunner {
   @Autowired
   private ApplicationEventPublisher eventPublisher;
 
-  @Value("${retention.export.type:}")
-  String retentionExportType;
-
   @Override
   public void run(ApplicationArguments args) throws Exception {
+    List<DailySaverResult> results;
 
-    List<DailySaverResult> results = logSaver.dailySaverFromLatestExecutionToYesterday(
-        appArgs.getItemTypes(), appArgs.getRetentionExportTypesMap());
+    if (appArgs.getDateList().isEmpty()) {
+      results = logSaver.dailySaverFromLatestExecutionToYesterday(appArgs.getItemTypes(),
+          appArgs.getRetentionExportTypesMap());
+    } else {
+      results = logSaver.dailyListSaver(appArgs.getDateList());
+    }
+
     int exitCode = LsUtils.exitCodeAndLogResult(results);
 
     eventPublisher.publishEvent(new ExitCodeEvent(results, exitCode));

@@ -41,7 +41,7 @@ public class FilesUtils {
   public static void createOrCleanDirectory(Path path) {
 
     try {
-      if (Files.notExists(path)) {
+      if (!Files.exists(path)) {
         Files.createDirectories(path);
       } else {
         FileUtils.cleanDirectory(path.toFile());

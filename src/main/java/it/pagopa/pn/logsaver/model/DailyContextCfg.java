@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -50,18 +49,8 @@ public class DailyContextCfg {
     FilesUtils.remove(tmpDailyPath());
   }
 
-  public boolean retentionHaveExportType(Retention retention) {
-    return retentionTmpPath.containsKey(retention);
-  }
-
-
   public Set<Retention> retentions() {
     return retentionExportTypeMap.keySet();
-  }
-
-  public Set<ExportType> exportTypes() {
-    return retentionExportTypeMap.values().stream().flatMap(e -> e.stream().distinct()).distinct()
-        .collect(Collectors.toSet());
   }
 
   public Set<ExportType> exportTypes(Retention retention) {

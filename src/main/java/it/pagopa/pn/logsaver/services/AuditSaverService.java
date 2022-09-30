@@ -11,8 +11,7 @@ import it.pagopa.pn.logsaver.model.Retention;
 
 public interface AuditSaverService {
 
-  List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList, Set<ItemType> types,
-      ExportType exportType);
+  List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList);
 
   List<DailySaverResult> dailySaverFromLatestExecutionToYesterday(Set<ItemType> itemTypes,
       Map<Retention, Set<ExportType>> retentionExportTypeMap);

@@ -4,13 +4,14 @@ import static java.util.stream.Collectors.toCollection;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.model.AuditFile;
@@ -97,10 +98,32 @@ public class AuditSaverServiceImpl implements AuditSaverService {
   }
 
   @Override
-  public List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList,
-      Set<ItemType> types, ExportType exportType) {
-    // TODO Valutare i controlli da fare sulla lista date e come costruire il contesto della data
-    throw new NotImplementedException("It will be implemented!");
+  public List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList) {
+    List<DailySaverResult> resList = new ArrayList<>();
+    // Leggo ultima esecuzione consecutiva
+    LocalDate lastContExecDate = storageService.latestContinuosExecutionDate();
+
+    List<LocalDate> dateExecutionListFiltered = dateExecutionList.stream()
+        .filter(date -> date.isAfter(lastContExecDate) && date.isBefore(LocalDate.now()))
+        .collect(Collectors.toList());
+    Optional<LocalDate> maxDate =
+        dateExecutionListFiltered.stream().max(Comparator.comparing(d -> d));
+
+    if (maxDate.isPresent()) {
+      Map<LocalDate, StorageExecution> executionMap = new HashMap<>();
+      AuditSaverLogicSupport.groupByDate(
+          storageService.storageExecutionBetween(lastContExecDate, maxDate.get()), executionMap);
+
+      List<DailyContextCfg> workList = dateExecutionListFiltered.stream() //
+          .map(dateToCheck -> recoveryDailyContext(dateToCheck, executionMap))
+          .filter(Objects::nonNull).collect(Collectors.toList());
+
+      log.info("There are {} previous days to be processed", workList.size());
+      workList.stream().map(this::dailySaver).collect(toCollection(() -> resList));
+      log.info("Processing previous days finished");
+    }
+
+    return resList;
   }
 
 

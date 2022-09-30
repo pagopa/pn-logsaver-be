@@ -3,8 +3,6 @@ package it.pagopa.pn.logsaver.utils;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import com.google.common.collect.HashBasedTable;
@@ -39,14 +37,6 @@ public class LsUtils {
   public static Map<Retention, Set<ExportType>> defaultRetentionExportTypeMap() {
     return Stream.of(Retention.values())
         .collect(Collectors.toMap(r -> r, r -> Set.of(ExportType.values())));
-  }
-
-  //
-  public static <T extends Object> Function<T, T> peek(Consumer<T> action) {
-    return e -> {
-      action.accept(e);
-      return e;
-    };
   }
 
   public static int exitCodeAndLogResult(List<DailySaverResult> results) {
