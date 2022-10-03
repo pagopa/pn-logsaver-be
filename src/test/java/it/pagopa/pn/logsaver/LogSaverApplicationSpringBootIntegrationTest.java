@@ -66,7 +66,7 @@ class LogSaverApplicationSpringBootIntegrationTest {
           args.getRetentionExportTypesMap().get(Retention.AUDIT10Y));
       assertEquals(Set.of(ExportType.ZIP),
           args.getRetentionExportTypesMap().get(Retention.AUDIT5Y));
-
+      TestConfig.destroy();
 
     }
   }
@@ -113,7 +113,7 @@ class LogSaverApplicationSpringBootIntegrationTest {
           .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
       verify(saverService, times(1)).dailyListSaver(anyList());
       verify(storageDao, times(1)).updateExecution(any(), any(), any());
-
+      TestConfig.destroy();
 
     }
   }
