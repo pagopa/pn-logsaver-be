@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import java.util.Set;
@@ -50,13 +48,12 @@ class LogSaverApplicationSpringBootIntegrationTest {
     ClApplicationArguments args;
     @SpyBean
     LogSaverRunner runner;
-    @SpyBean
-    AuditSaverService saverService;
+
 
     @Test
     void whenApplicationStarded_thenHaveApplicationArguments() throws Exception {
       verify(runner, times(1)).run(any());
-      verify(saverService, times(1)).dailySaverFromLatestExecutionToYesterday(anySet(), anyMap());
+
       assertEquals(2, args.getRetentionExportTypesMap().size());
       assertTrue(args.getRetentionExportTypesMap().containsKey(Retention.AUDIT10Y));
       assertTrue(args.getRetentionExportTypesMap().containsKey(Retention.AUDIT5Y));
@@ -109,7 +106,7 @@ class LogSaverApplicationSpringBootIntegrationTest {
       assertTrue(args.getItemTypes().contains(ItemType.CDC));
       assertTrue(args.getItemTypes().contains(ItemType.LOGS));
 
-      Awaitility.await().atMost(30, TimeUnit.SECONDS)
+      Awaitility.await().atMost(90, TimeUnit.SECONDS)
           .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
       verify(saverService, times(1)).dailyListSaver(anyList());
       verify(storageDao, times(1)).updateExecution(any(), any(), any());
