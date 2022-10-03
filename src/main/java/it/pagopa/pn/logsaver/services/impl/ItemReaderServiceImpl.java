@@ -4,15 +4,14 @@ import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
+import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.services.ItemReaderService;
-import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -40,13 +39,10 @@ public class ItemReaderServiceImpl implements ItemReaderService {
   }
 
   @Override
-  public List<Item> findItems(DailyContextCfg dailyCtx) {
-
-    final List<Item> ret =
-        Stream.of(ItemType.values()).filter(type -> type.containsRetentions(dailyCtx.retentions()))
-            .flatMap(type -> findItems(type, dailyCtx.logDate())).collect(Collectors.toList());
-    log.info("Total items {}", ret.size());
-    return ret;
+  public Stream<Item> findItems(DailyContextCfg dailyCtx) {
+    return Stream.of(ItemType.values())
+        .filter(type -> type.containsRetentions(dailyCtx.retentions()))
+        .flatMap(type -> findItems(type, dailyCtx.logDate()));
   }
 
   @Override

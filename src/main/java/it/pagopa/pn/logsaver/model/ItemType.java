@@ -1,6 +1,5 @@
 package it.pagopa.pn.logsaver.model;
 
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -16,19 +15,20 @@ public enum ItemType {
 
 
   CDC("cdc/", Set.of(Retention.AUDIT10Y),
-      (in, cfg) -> Stream.of(new ItemChildren(Retention.AUDIT10Y, in))), LOGS("logs/ecs/",
-          Set.of(Retention.values()), new LogProcessFunction());
+      (in, cfg) -> Stream
+          .of(new ItemChildren(Retention.AUDIT10Y, in.getContent(), in.getFileName()))), LOGS(
+              "logs/ecs/", Set.of(Retention.values()), new LogProcessFunction());
 
 
 
   private String subFolfer;
   private Set<Retention> retentions;
-  private BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> filter;
+  private BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> filter;
 
 
 
   private ItemType(String subFolfer, Set<Retention> retentions,
-      BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> filter) {
+      BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> filter) {
     this.subFolfer = subFolfer;
     this.retentions = retentions;
     this.filter = filter;
@@ -52,7 +52,7 @@ public enum ItemType {
   }
 
 
-  public Stream<ItemChildren> filter(DailyContextCfg ctx, InputStream content) {
-    return filter.apply(content, ctx);
+  public Stream<ItemChildren> filter(DailyContextCfg ctx, Item item) {
+    return filter.apply(item, ctx);
   }
 }

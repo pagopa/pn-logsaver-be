@@ -97,7 +97,7 @@ class StorageDaoDynamoImplTest {
         .retentionResult(StorageDaoLogicSupport.defaultResultMap()).build();
     when(executionTable.query(any(QueryEnhancedRequest.class)))
         .thenReturn(execListMock(List.of(mock)));
-    ExecutionEntity exEnt = storageDao.latestExecution();
+    ExecutionEntity exEnt = storageDao.getLatestExecution();
     assertTrue(TestUtils.equals(mock, exEnt));
     verify(executionTable, times(1)).query(any(QueryEnhancedRequest.class));
   }
@@ -106,7 +106,7 @@ class StorageDaoDynamoImplTest {
   void latestExecution_NotFound() {
     when(executionTable.query(any(QueryEnhancedRequest.class))).thenReturn(execListMock(List.of()));
 
-    assertThrows(InternalException.class, () -> storageDao.latestExecution());
+    assertThrows(InternalException.class, () -> storageDao.getLatestExecution());
     verify(executionTable, times(1)).query(any(QueryEnhancedRequest.class));
   }
 
@@ -144,7 +144,7 @@ class StorageDaoDynamoImplTest {
     when(continuosExecutionTable.query(any(QueryEnhancedRequest.class)))
         .thenReturn(continuosExecListMock(List.of(mock)));
 
-    LocalDate exEnt = storageDao.latestContinuosExecution();
+    LocalDate exEnt = storageDao.getLatestContinuosExecution();
     assertEquals(TestCostant.LOGDATE, exEnt);
     verify(continuosExecutionTable, times(1)).query(any(QueryEnhancedRequest.class));
   }
@@ -154,7 +154,7 @@ class StorageDaoDynamoImplTest {
     when(continuosExecutionTable.query(any(QueryEnhancedRequest.class)))
         .thenReturn(continuosExecListMock(List.of()));
 
-    assertThrows(InternalException.class, () -> storageDao.latestContinuosExecution());
+    assertThrows(InternalException.class, () -> storageDao.getLatestContinuosExecution());
     verify(continuosExecutionTable, times(1)).query(any(QueryEnhancedRequest.class));
   }
 
@@ -192,7 +192,7 @@ class StorageDaoDynamoImplTest {
         .thenReturn(execListMock(List.of(mock)));
 
     List<ExecutionEntity> res =
-        storageDao.executionBetween(TestCostant.LOGDATE_FROM, TestCostant.LOGDATE);
+        storageDao.getExecutionBetween(TestCostant.LOGDATE_FROM, TestCostant.LOGDATE);
     verify(executionTable, times(1)).query(any(QueryEnhancedRequest.class));
     assertTrue(TestUtils.equals(mock, res.get(0)));
   }

@@ -11,10 +11,10 @@ public interface StorageService {
 
   List<AuditStorage> store(List<AuditFile> files, DailyContextCfg cfg);
 
-  StorageExecution latestStorageExecution();
+  StorageExecution getLatestStorageExecution();
 
-  LocalDate latestContinuosExecutionDate();
+  LocalDate getLatestContinuosExecutionDate();
 
-  List<StorageExecution> storageExecutionBetween(LocalDate from, LocalDate to);
+  List<StorageExecution> getStorageExecutionBetween(LocalDate from, LocalDate to);
 
 }

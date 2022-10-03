@@ -24,7 +24,13 @@
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-web</artifactId>
 		</dependency>
-		
+		<dependency>
+		 	<groupId>org.springframework.boot</groupId>
+		 	<artifactId>
+		 		spring-boot-configuration-processor
+		 	</artifactId>
+		 	<optional>true</optional>
+		 </dependency>
 		<dependency>
 		    <groupId>com.google.code.findbugs</groupId>
 		    <artifactId>jsr305</artifactId>
@@ -119,6 +125,7 @@
 		    <groupId>org.mock-server</groupId>
 		    <artifactId>mockserver-junit-jupiter-no-dependencies</artifactId>
 		    <version>5.14.0</version>
+		     <scope>test</scope>   
 		</dependency>
 		<dependency>
 		    <groupId>com.google.jimfs</groupId>
@@ -127,18 +134,12 @@
 		     <scope>test</scope>   
 		</dependency>
 		<dependency>
-		    <groupId>org.springframework.boot</groupId>
-		    <artifactId>spring-boot-starter-web</artifactId>
-		    <scope>test</scope>   
+		      <groupId>org.awaitility</groupId>
+		      <artifactId>awaitility</artifactId>
+		      <version>4.2.0</version>
+		      <scope>test</scope>
 		</dependency>
-        
-		 <dependency>
-		 	<groupId>org.springframework.boot</groupId>
-		 	<artifactId>
-		 		spring-boot-configuration-processor
-		 	</artifactId>
-		 	<optional>true</optional>
-		 </dependency>
+
 	</dependencies>
 
 	<build>

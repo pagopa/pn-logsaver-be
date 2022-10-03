@@ -12,8 +12,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
+import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
@@ -29,7 +31,6 @@ import it.pagopa.pn.logsaver.services.ItemProcessorService;
 import it.pagopa.pn.logsaver.services.ItemReaderService;
 import it.pagopa.pn.logsaver.services.StorageService;
 import it.pagopa.pn.logsaver.services.support.AuditSaverLogicSupport;
-import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +57,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
         yesterday.toString());
 
     // Leggo ultima esecuzione consecutiva
-    LocalDate lastContExecDate = storageService.latestContinuosExecutionDate();
+    LocalDate lastContExecDate = storageService.getLatestContinuosExecutionDate();
     Map<LocalDate, StorageExecution> executionMap = new HashMap<>();
     // se yesterday-lastContExecDate > 1 sono presenti esecuzioni non processate correttamente o
     // date senza esecuzione
@@ -69,7 +70,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
           lastContExecDate);
 
       AuditSaverLogicSupport.groupByDate(
-          storageService.storageExecutionBetween(lastContExecDate, yesterday), executionMap);
+          storageService.getStorageExecutionBetween(lastContExecDate, yesterday), executionMap);
 
       List<DailyContextCfg> workList = DateUtils.getDatesRange(lastContExecDate, yesterday).stream() //
           .map(dateToCheck -> recoveryDailyContext(dateToCheck, executionMap))
@@ -101,7 +102,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
   public List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList) {
     List<DailySaverResult> resList = new ArrayList<>();
     // Leggo ultima esecuzione consecutiva
-    LocalDate lastContExecDate = storageService.latestContinuosExecutionDate();
+    LocalDate lastContExecDate = storageService.getLatestContinuosExecutionDate();
 
     List<LocalDate> dateExecutionListFiltered = dateExecutionList.stream()
         .filter(date -> date.isAfter(lastContExecDate) && date.isBefore(LocalDate.now()))
@@ -112,7 +113,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     if (maxDate.isPresent()) {
       Map<LocalDate, StorageExecution> executionMap = new HashMap<>();
       AuditSaverLogicSupport.groupByDate(
-          storageService.storageExecutionBetween(lastContExecDate, maxDate.get()), executionMap);
+          storageService.getStorageExecutionBetween(lastContExecDate, maxDate.get()), executionMap);
 
       List<DailyContextCfg> workList = dateExecutionListFiltered.stream() //
           .map(dateToCheck -> recoveryDailyContext(dateToCheck, executionMap))
@@ -175,7 +176,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       log.info("Start execution for day {}", dailyCtx.logDate());
       dailyCtx.initContext();
 
-      List<Item> items = readerService.findItems(dailyCtx);
+      Stream<Item> items = readerService.findItems(dailyCtx);
 
       List<AuditFile> grouped = service.process(items, dailyCtx);
 

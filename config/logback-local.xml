@@ -6,6 +6,10 @@
             <pattern>%d [%X{trace_id}] %highlight(%-5level) - %-4relative - [%thread] - %cyan(%logger{20}) - %msg %n</pattern>
         </encoder>
     </appender>
+    <logger name="org.springframework.web.client.RestTemplate" level="info" />
+    <logger name="org.apache.http" level="info" />
+    <logger name="httpclient.wire" level="info" />
+     <logger name="it.pagopa.pn.logsaver.services.impl.ItemProcessorServiceImpl" level="info" />
     <root level="info">
         <appender-ref ref="STDOUT" />
     </root>

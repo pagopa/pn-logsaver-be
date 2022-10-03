@@ -11,7 +11,7 @@ import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
-import it.pagopa.pn.logsaver.utils.LsUtils;
+import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 
 public final class TestCostant {
 
@@ -76,7 +76,7 @@ public final class TestCostant {
 
 
   public static final DailyContextCfg CTX =
-      DailyContextCfg.builder().retentionExportTypeMap(LsUtils.defaultRetentionExportTypeMap())
+      DailyContextCfg.builder().retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
           .tmpBasePath(TMP_FOLDER).itemTypes(Set.of(ItemType.values())).logDate(LOGDATE).build();
 
 }

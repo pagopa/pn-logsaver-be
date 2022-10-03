@@ -61,7 +61,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   @Override
-  public ExecutionEntity latestExecution() {
+  public ExecutionEntity getLatestExecution() {
 
     QueryConditional queryConditional = QueryConditional
         .keyEqualTo(Key.builder().partitionValue(ExtraType.LOG_SAVER_EXECUTION.name()).build());
@@ -100,7 +100,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
   }
 
   @Override
-  public LocalDate latestContinuosExecution() {
+  public LocalDate getLatestContinuosExecution() {
 
     QueryConditional queryConditional = QueryConditional
         .keyEqualTo(Key.builder().partitionValue(ExtraType.CONTINUOS_EXECUTION.name()).build());
@@ -139,7 +139,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
       Set<ItemType> types) {
 
     ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types);
-
+    // Controllare eventuali limiti su numero di righe
     TransactUpdateItemEnhancedRequest<ExecutionEntity> executionUpdate =
         TransactUpdateItemEnhancedRequest.builder(ExecutionEntity.class).item(newExecution).build();
 
@@ -147,7 +147,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
         TransactWriteItemsEnhancedRequest.builder().addUpdateItem(executionTable, executionUpdate);
 
 
-    LocalDate lastContinuosExecutionReg = latestContinuosExecution();
+    LocalDate lastContinuosExecutionReg = getLatestContinuosExecution();
     // Aggiorno La data ultima esecuzione continua se:
     // Tutti i file sono stati inviati
     // se la differenza tra la logDate e la data ultima esecuzione continua è 1
@@ -174,7 +174,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   @Override
-  public List<ExecutionEntity> executionBetween(LocalDate dateFrom, LocalDate dateTo) {
+  public List<ExecutionEntity> getExecutionBetween(LocalDate dateFrom, LocalDate dateTo) {
 
 
     QueryConditional queryConditional = QueryConditional.sortBetween(

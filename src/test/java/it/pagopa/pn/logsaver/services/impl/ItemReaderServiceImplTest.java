@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,10 +25,10 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
+import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.services.ItemReaderService;
-import it.pagopa.pn.logsaver.springbootcfg.LogSaverCfg;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,7 +70,7 @@ class ItemReaderServiceImplTest {
     when(clientS3.findObjects(anyString()))
         .thenAnswer((InvocationOnMock invocation) -> mockResList.stream());
 
-    List<Item> res = service.findItems(TestCostant.CTX);
+    List<Item> res = service.findItems(TestCostant.CTX).collect(Collectors.toList());
 
     verify(clientS3, times(0)).findSubFolders(any(String.class));
     verify(clientS3, times(expFindObjectInvocation)).findObjects(prefix.capture());
@@ -107,7 +108,7 @@ class ItemReaderServiceImplTest {
     when(clientS3.findSubFolders(ItemType.LOGS.getSubFolfer()))
         .thenReturn(TestCostant.MICROSERVICES.stream());
 
-    List<Item> res = service.findItems(TestCostant.CTX);
+    List<Item> res = service.findItems(TestCostant.CTX).collect(Collectors.toList());
 
     verify(clientS3, times(ItemType.values().length)).findSubFolders(subFolder.capture());
     verify(clientS3, times(expFindObjectInvocation)).findObjects(prefix.capture());

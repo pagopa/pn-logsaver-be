@@ -27,7 +27,7 @@ public class DailyContextCfg {
   @NonNull
   private Set<ItemType> itemTypes;
   @Default
-  private Map<Retention, Path> retentionTmpPath = new LinkedHashMap<>();
+  private Map<Retention, Path> retentionTmpFolder = new LinkedHashMap<>();
   @NonNull
   private Map<Retention, Set<ExportType>> retentionExportTypeMap;
 
@@ -37,11 +37,11 @@ public class DailyContextCfg {
     this.tmpDailyPath = Paths.get(tmpBasePath(), logDate().toString());
     String tmpDailyPathStr = tmpDailyPath.toString();
 
-    retentions().stream().forEach(retention -> retentionTmpPath.computeIfAbsent(retention,
+    retentions().stream().forEach(retention -> retentionTmpFolder.computeIfAbsent(retention,
         ret -> Paths.get(tmpDailyPathStr, ret.getFolder())));
 
     FilesUtils.createOrCleanDirectory(tmpDailyPath());
-    FilesUtils.createDirectories(retentionTmpPath().values());
+    FilesUtils.createDirectories(retentionTmpFolder().values());
     return this;
   }
 
@@ -53,7 +53,7 @@ public class DailyContextCfg {
     return retentionExportTypeMap.keySet();
   }
 
-  public Set<ExportType> exportTypes(Retention retention) {
+  public Set<ExportType> getExportTypesByRetention(Retention retention) {
     return retentionExportTypeMap.get(retention);
   }
 }

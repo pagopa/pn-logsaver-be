@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
@@ -34,11 +35,14 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 // @MockServerSettings(ports = {8088})
 public class TestConfig {
 
-  private ClientAndServer server;
+  private static ClientAndServer server;
 
   @PostConstruct
   void setUp() {
-    server = ClientAndServer.startClientAndServer(8089);
+    if (Objects.isNull(server) || !server.isRunning()) {
+      server = ClientAndServer.startClientAndServer(8089);
+    }
+
 
 
     server.when(request().withMethod("POST").withPath("/safe-storage/v1/files")).respond(
@@ -52,7 +56,7 @@ public class TestConfig {
   }
 
   @PreDestroy
-  void destroy() {
+  public static void destroy() {
     server.stop();
   }
 

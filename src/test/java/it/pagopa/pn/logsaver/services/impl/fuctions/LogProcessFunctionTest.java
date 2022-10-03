@@ -24,6 +24,7 @@ import com.google.gson.JsonSyntaxException;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.exceptions.LogFilterException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
+import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.Item.ItemChildren;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.services.impl.functions.LogProcessFunction;
@@ -51,16 +52,18 @@ class LogProcessFunctionTest {
   void filter_InputStreamMalformed() throws IOException {
 
     InputStream in = IOUtils.toInputStream("test");
-    assertThrows(LogFilterException.class, () -> function.apply(in, ctx));
+    Item item =
+        Item.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY).content(in).build();
+    assertThrows(LogFilterException.class, () -> function.apply(item, ctx));
   }
 
 
   @Test
   void filter() throws IOException {
     when(ctx.retentions()).thenReturn(Set.of(Retention.values()));
-
-    List<ItemChildren> ret =
-        function.apply(s3File.getInputStream(), ctx).sequential().collect(Collectors.toList());
+    Item item = Item.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY)
+        .content(s3File.getInputStream()).build();
+    List<ItemChildren> ret = function.apply(item, ctx).sequential().collect(Collectors.toList());
 
     assertNotNull(ret);
     assertEquals(10, ret.size());

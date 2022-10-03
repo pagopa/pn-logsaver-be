@@ -36,7 +36,7 @@ import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.services.ItemProcessorService;
 import it.pagopa.pn.logsaver.services.ItemReaderService;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
-import it.pagopa.pn.logsaver.utils.LsUtils;
+import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 
 @ExtendWith(MockitoExtension.class)
 class ItemProcessorServiceImplTest {
@@ -66,7 +66,7 @@ class ItemProcessorServiceImplTest {
   @Test
   void process() throws InterruptedException, ExecutionException {
 
-    BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> noOpFilter =
+    BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> noOpFilter =
         (in, cfg) -> childrenList().stream();
     ReflectionTestUtils.setField(ItemType.LOGS, "filter", noOpFilter);
     ReflectionTestUtils.setField(ItemType.CDC, "filter", noOpFilter);
@@ -79,13 +79,13 @@ class ItemProcessorServiceImplTest {
     // doNothing().when(FilesUtils).
     List<Item> items = TestCostant.items;
 
-    DailyContextCfg ctx =
-        DailyContextCfg.builder().retentionExportTypeMap(LsUtils.defaultRetentionExportTypeMap())
-            .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
-            .logDate(TestCostant.LOGDATE).build();
+    DailyContextCfg ctx = DailyContextCfg.builder()
+        .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
+        .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
+        .logDate(TestCostant.LOGDATE).build();
     ctx.initContext();
 
-    List<AuditFile> res = service.process(items, ctx);
+    List<AuditFile> res = service.process(items.stream(), ctx);
 
 
     int exepectedFileWrite = items.size() * mockedItemChildrenContent.size();
@@ -107,7 +107,7 @@ class ItemProcessorServiceImplTest {
 
   @Test
   void process_IOExceptionWhenCloseS3Stream() throws IOException {
-    BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> noOpFilter =
+    BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> noOpFilter =
         (in, cfg) -> childrenList().stream();
     ReflectionTestUtils.setField(ItemType.LOGS, "filter", noOpFilter);
     ReflectionTestUtils.setField(ItemType.CDC, "filter", noOpFilter);
@@ -116,17 +116,17 @@ class ItemProcessorServiceImplTest {
     when(s3Service.getItemContent(TestCostant.S3_KEY)).then((i) -> content);
     List<Item> items = TestCostant.items;
     // Path tmpPath = fileSystem.getPath(TestCostant.TMP_FOLDER);
-    DailyContextCfg ctx =
-        DailyContextCfg.builder().retentionExportTypeMap(LsUtils.defaultRetentionExportTypeMap())
-            .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
-            .logDate(TestCostant.LOGDATE).build();
+    DailyContextCfg ctx = DailyContextCfg.builder()
+        .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
+        .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
+        .logDate(TestCostant.LOGDATE).build();
     ctx.initContext();
-    assertThrows(UncheckedIOException.class, () -> service.process(items, ctx));
+    assertThrows(UncheckedIOException.class, () -> service.process(items.stream(), ctx));
   }
 
   @Test
   void process_IOExceptionWhenCloseFileStream() throws IOException {
-    BiFunction<InputStream, DailyContextCfg, Stream<ItemChildren>> noOpFilter =
+    BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> noOpFilter =
         (in, cfg) -> childrenListIOException().stream();
     ReflectionTestUtils.setField(ItemType.LOGS, "filter", noOpFilter);
     ReflectionTestUtils.setField(ItemType.CDC, "filter", noOpFilter);
@@ -136,17 +136,17 @@ class ItemProcessorServiceImplTest {
         .then((i) -> IOUtils.toInputStream("BUCKETFILE", Charset.defaultCharset()));
     List<Item> items = TestCostant.items;
     // Path tmpPath = fileSystem.getPath(TestCostant.TMP_FOLDER);
-    DailyContextCfg ctx =
-        DailyContextCfg.builder().retentionExportTypeMap(LsUtils.defaultRetentionExportTypeMap())
-            .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
-            .logDate(TestCostant.LOGDATE).build();
+    DailyContextCfg ctx = DailyContextCfg.builder()
+        .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
+        .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
+        .logDate(TestCostant.LOGDATE).build();
     ctx.initContext();
-    assertThrows(UncheckedIOException.class, () -> service.process(items, ctx));
+    assertThrows(UncheckedIOException.class, () -> service.process(items.stream(), ctx));
   }
 
 
   private List<ItemChildren> childrenListIOException() {
-    return List.of(new ItemChildren(Retention.AUDIT10Y, content));
+    return List.of(new ItemChildren(Retention.AUDIT10Y, content, "fileName"));
   }
 
   private List<ItemChildren> childrenList() {
@@ -156,9 +156,9 @@ class ItemProcessorServiceImplTest {
         IOUtils.toInputStream(RandomStringUtils.random(20), Charset.defaultCharset());
     InputStream file_1_3 =
         IOUtils.toInputStream(RandomStringUtils.random(20), Charset.defaultCharset());
-    return List.of(new ItemChildren(Retention.AUDIT10Y, file_1_1),
-        new ItemChildren(Retention.AUDIT5Y, file_1_2),
-        new ItemChildren(Retention.DEVELOPER, file_1_3));
+    return List.of(new ItemChildren(Retention.AUDIT10Y, file_1_1, "fileName10"),
+        new ItemChildren(Retention.AUDIT5Y, file_1_2, "fileName5"),
+        new ItemChildren(Retention.DEVELOPER, file_1_3, "fileNamedev"));
 
   }
 }

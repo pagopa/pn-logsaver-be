@@ -21,7 +21,7 @@ import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCre
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
-import it.pagopa.pn.logsaver.utils.LsUtils;
+import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
@@ -50,7 +50,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
     try {
       log.info("Send fileCreationRequest for file {}", itemUpd.filePath().toString());
       FileCreationResponse res =
-          createFile(sha256, mediaType, LsUtils.getStorageDocumentType(itemUpd));
+          createFile(sha256, mediaType, LogSaverUtils.getStorageDocumentType(itemUpd));
 
       log.info("Send fileContent to recevide url {}", res.getUploadUrl());
       this.uploadContent(res, sha256, itemUpd.filePath(), mediaType);

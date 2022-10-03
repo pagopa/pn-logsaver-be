@@ -11,11 +11,11 @@ import it.pagopa.pn.logsaver.model.ItemType;
 public interface StorageDao {
   public static final String FIRST_START_DAY = "2022-07-07";
 
-  ExecutionEntity latestExecution();
+  ExecutionEntity getLatestExecution();
 
-  List<ExecutionEntity> executionBetween(LocalDate dateFrom, LocalDate dateTo);
+  List<ExecutionEntity> getExecutionBetween(LocalDate dateFrom, LocalDate dateTo);
 
-  LocalDate latestContinuosExecution();
+  LocalDate getLatestContinuosExecution();
 
   void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<ItemType> types);
 }

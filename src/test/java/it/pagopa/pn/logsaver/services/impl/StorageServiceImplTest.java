@@ -70,13 +70,13 @@ class StorageServiceImplTest {
   void latestStorageExecution() {
     Map<String, RetentionResult> retentionResult = StorageDaoLogicSupport.defaultResultMap();
 
-    when(storageDao.latestExecution())
+    when(storageDao.getLatestExecution())
         .thenReturn(ExecutionEntity.builder().itemTypes(ItemType.valuesAsString())
             .retentionResult(retentionResult).logDate(TestCostant.LOGDATE.toString()).build());
 
-    StorageExecution latest = service.latestStorageExecution();
+    StorageExecution latest = service.getLatestStorageExecution();
 
-    verify(storageDao, times(1)).latestExecution();
+    verify(storageDao, times(1)).getLatestExecution();
     assertNotNull(latest);
     assertEquals(TestCostant.LOGDATE, latest.getLogDate());
     assertEquals(Set.of(ItemType.values()), latest.getItemTypes());
@@ -86,11 +86,11 @@ class StorageServiceImplTest {
   @Test
   void latestContinuosExecutionDate() {
 
-    when(storageDao.latestContinuosExecution()).thenReturn(TestCostant.LOGDATE);
+    when(storageDao.getLatestContinuosExecution()).thenReturn(TestCostant.LOGDATE);
 
-    LocalDate latestConDate = service.latestContinuosExecutionDate();
+    LocalDate latestConDate = service.getLatestContinuosExecutionDate();
 
-    verify(storageDao, times(1)).latestContinuosExecution();
+    verify(storageDao, times(1)).getLatestContinuosExecution();
     assertNotNull(latestConDate);
     assertEquals(TestCostant.LOGDATE, latestConDate);
   }
@@ -98,14 +98,14 @@ class StorageServiceImplTest {
   @Test
   void storageExecutionBetween() {
 
-    when(storageDao.executionBetween(any(), any()))
+    when(storageDao.getExecutionBetween(any(), any()))
         .thenReturn(List.of(ExecutionEntity.builder().itemTypes(ItemType.valuesAsString())
             .retentionResult(StorageDaoLogicSupport.defaultResultMap())
             .logDate(TestCostant.LOGDATE.toString()).build()));
     List<StorageExecution> resList =
-        service.storageExecutionBetween(TestCostant.LOGDATE_FROM, TestCostant.LOGDATE);
+        service.getStorageExecutionBetween(TestCostant.LOGDATE_FROM, TestCostant.LOGDATE);
 
-    verify(storageDao, times(1)).executionBetween(any(), any());
+    verify(storageDao, times(1)).getExecutionBetween(any(), any());
 
     assertNotNull(resList);
     assertEquals(1, resList.size());

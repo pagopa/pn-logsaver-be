@@ -14,14 +14,14 @@ public enum Retention {
 
   private String folder;
 
-  private String nameFormat;
+  private String fileNamePattern;
 
   private String text;
 
 
   Retention(String folder, String nameFormat, String text) {
     this.folder = folder;
-    this.nameFormat = nameFormat;
+    this.fileNamePattern = nameFormat;
     this.text = text;
   }
 

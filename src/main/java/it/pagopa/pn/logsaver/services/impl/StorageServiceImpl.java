@@ -27,21 +27,21 @@ public class StorageServiceImpl implements StorageService {
   private final StorageDao storageDao;
 
   @Override
-  public StorageExecution latestStorageExecution() {
+  public StorageExecution getLatestStorageExecution() {
 
-    ExecutionEntity exec = storageDao.latestExecution();
+    ExecutionEntity exec = storageDao.getLatestExecution();
 
     return AuditStorageMapper.toModel(exec);
   }
 
   @Override
-  public LocalDate latestContinuosExecutionDate() {
-    return storageDao.latestContinuosExecution();
+  public LocalDate getLatestContinuosExecutionDate() {
+    return storageDao.getLatestContinuosExecution();
   }
 
   @Override
-  public List<StorageExecution> storageExecutionBetween(LocalDate from, LocalDate to) {
-    return storageDao.executionBetween(from, to).stream().map(AuditStorageMapper::toModel)
+  public List<StorageExecution> getStorageExecutionBetween(LocalDate from, LocalDate to) {
+    return storageDao.getExecutionBetween(from, to).stream().map(AuditStorageMapper::toModel)
         .collect(Collectors.toList());
   }
 
