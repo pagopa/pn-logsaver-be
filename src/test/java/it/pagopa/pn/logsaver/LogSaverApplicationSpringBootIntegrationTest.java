@@ -35,9 +35,7 @@ import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.services.AuditSaverService;
 
 
-@DirtiesContext
 class LogSaverApplicationSpringBootIntegrationTest {
-
   @Nested
   @DisplayName("Integration Test - Test with application argurmets --retention.export.types and --item.types")
   @SpringBootTest(webEnvironment = WebEnvironment.NONE,
@@ -45,6 +43,7 @@ class LogSaverApplicationSpringBootIntegrationTest {
   @Import(TestConfig.class)
   @TestPropertySource(locations = "classpath:application-test.properties")
   @ActiveProfiles("test")
+  @DirtiesContext
   class Test1 {
 
     @SpyBean
@@ -80,6 +79,7 @@ class LogSaverApplicationSpringBootIntegrationTest {
   @TestPropertySource(locations = "classpath:application-test.properties")
   @ExtendWith({OutputCaptureExtension.class, SpringExtension.class})
   @ActiveProfiles("test")
+  @DirtiesContext
   class Test2 {
 
     @SpyBean
