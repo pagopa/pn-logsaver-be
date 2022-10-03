@@ -6,13 +6,9 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import java.util.List;
 import java.util.Objects;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockserver.integration.ClientAndServer;
-import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.MediaType;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -31,14 +27,14 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @TestConfiguration
-@ExtendWith(MockServerExtension.class)
+// @ExtendWith(MockServerExtension.class)
 // @MockServerSettings(ports = {8088})
 public class TestConfig {
 
   private static ClientAndServer server;
 
-  @PostConstruct
-  void setUp() {
+  // @PostConstruct
+  public static void setUp() {
     if (Objects.isNull(server) || !server.isRunning()) {
       server = ClientAndServer.startClientAndServer(8089);
     }
@@ -55,7 +51,7 @@ public class TestConfig {
 
   }
 
-  @PreDestroy
+  // @PreDestroy
   public static void destroy() {
     server.stop();
   }

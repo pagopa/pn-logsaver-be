@@ -49,6 +49,10 @@ class LogSaverApplicationSpringBootIntegrationTest {
     @SpyBean
     LogSaverRunner runner;
 
+    @BeforeEach
+    void populateDb() {
+      TestConfig.setUp();
+    }
 
     @Test
     void whenApplicationStarded_thenHaveApplicationArguments() throws Exception {
@@ -92,7 +96,7 @@ class LogSaverApplicationSpringBootIntegrationTest {
 
     @BeforeEach
     void populateDb() {
-      storageDao.getClass();
+      TestConfig.setUp();
     }
 
     @Test
