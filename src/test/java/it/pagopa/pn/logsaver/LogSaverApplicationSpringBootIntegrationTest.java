@@ -106,7 +106,7 @@ class LogSaverApplicationSpringBootIntegrationTest {
       assertTrue(args.getItemTypes().contains(ItemType.CDC));
       assertTrue(args.getItemTypes().contains(ItemType.LOGS));
 
-      Awaitility.await().atMost(90, TimeUnit.SECONDS)
+      Awaitility.await().atMost(120, TimeUnit.SECONDS)
           .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
       verify(saverService, times(1)).dailyListSaver(anyList());
       verify(storageDao, times(1)).updateExecution(any(), any(), any());
