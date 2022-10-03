@@ -1,0 +1,77 @@
+package it.pagopa.pn.logsaver;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import it.pagopa.pn.logsaver.config.ClApplicationArguments;
+import it.pagopa.pn.logsaver.config.TestConfig;
+import it.pagopa.pn.logsaver.dao.StorageDao;
+import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.services.AuditSaverService;
+
+@Nested
+@DisplayName("Integration Test - Test with application argurments --date.list and --item.types")
+@SpringBootTest(webEnvironment = WebEnvironment.NONE,
+    args = {"--date.list=2022-07-09", "--item.types=LOGS,CDC"})
+@Import(TestConfig.class)
+@TestPropertySource(locations = "classpath:application-test.properties")
+@ExtendWith({OutputCaptureExtension.class, SpringExtension.class})
+@ActiveProfiles("test")
+@DirtiesContext
+class LogSaverApplicationSpringBootIntegrationTest2 {
+
+  @SpyBean
+  ClApplicationArguments args;
+  @SpyBean
+  LogSaverRunner runner;
+
+  @SpyBean
+  AuditSaverService saverService;
+
+  @SpyBean
+  StorageDao storageDao;
+
+  @BeforeEach
+  void populateDb() {
+    TestConfig.setUp();
+  }
+
+  @Test
+  void whenApplicationStarded_thenHaveApplicationArguments(CapturedOutput output) throws Exception {
+
+    verify(runner, times(1)).run(any());
+
+    assertEquals(2, args.getItemTypes().size());
+    assertEquals(1, args.getDateList().size());
+
+    assertTrue(args.getItemTypes().contains(ItemType.CDC));
+    assertTrue(args.getItemTypes().contains(ItemType.LOGS));
+
+    Awaitility.await().atMost(120, TimeUnit.SECONDS)
+        .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
+    verify(saverService, times(1)).dailyListSaver(anyList());
+    verify(storageDao, times(1)).updateExecution(any(), any(), any());
+    TestConfig.destroy();
+
+  }
+}
