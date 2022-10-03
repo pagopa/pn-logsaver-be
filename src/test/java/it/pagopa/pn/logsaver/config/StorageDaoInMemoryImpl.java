@@ -15,8 +15,11 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.utils.DateUtils;
+import lombok.Getter;
+import lombok.Setter;
 
-
+@Getter
+@Setter
 public class StorageDaoInMemoryImpl implements StorageDao {
 
   LocalDate FIRST_START_DAY_MOCK = DateUtils.yesterday().minusDays(3);

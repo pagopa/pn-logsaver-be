@@ -1,9 +1,11 @@
 package it.pagopa.pn.logsaver.services.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -29,6 +32,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
+import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.Item;
 import it.pagopa.pn.logsaver.model.Item.ItemChildren;
 import it.pagopa.pn.logsaver.model.ItemType;
@@ -45,23 +49,18 @@ class ItemProcessorServiceImplTest {
   private ItemReaderService s3Service;
 
   private ItemProcessorService service;
-  private MockedStatic<FilesUtils> fileUtils;
+
   @Mock
   private InputStream content;
 
-  // private FileSystem fileSystem;
 
   @BeforeEach
   void setUp() {
-    // this.fileUtils = mockStatic(FilesUtils.class);
     this.service = new ItemProcessorServiceImpl(s3Service);
-    // this.fileSystem = Jimfs.newFileSystem(Configuration.forCurrentPlatform());
   }
 
   @AfterEach
-  void destroy() throws IOException {
-    // this.fileUtils.close();
-  }
+  void destroy() throws IOException {}
 
   @Test
   void process() throws InterruptedException, ExecutionException {
@@ -71,37 +70,48 @@ class ItemProcessorServiceImplTest {
     ReflectionTestUtils.setField(ItemType.LOGS, "filter", noOpFilter);
     ReflectionTestUtils.setField(ItemType.CDC, "filter", noOpFilter);
 
-    List<ItemChildren> mockedItemChildrenContent = childrenList();
-
-
     when(s3Service.getItemContent(TestCostant.S3_KEY))
         .then((i) -> IOUtils.toInputStream("BUCKETFILE", Charset.defaultCharset()));
-    // doNothing().when(FilesUtils).
-    List<Item> items = TestCostant.items;
 
+
+    List<Item> items = TestCostant.items;
     DailyContextCfg ctx = DailyContextCfg.builder()
         .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
         .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
         .logDate(TestCostant.LOGDATE).build();
-    ctx.initContext();
-
-    List<AuditFile> res = service.process(items.stream(), ctx);
 
 
-    int exepectedFileWrite = items.size() * mockedItemChildrenContent.size();
-    verify(s3Service, times(items.size())).getItemContent(anyString());
+    try (MockedStatic<FilesUtils> fileUtils = mockStatic(FilesUtils.class);
+        MockedStatic<LogSaverUtils> logSaverUtils = mockStatic(LogSaverUtils.class);) {
 
-    // Path tmpPathRes = fileSystem.getPath(TestCostant.TMP_FOLDER, TestCostant.LOGDATE.toString());
+      logSaverUtils.when(() -> LogSaverUtils.toParallelStream(any()))
+          .thenAnswer(in -> in.getArgument(0, List.class).stream());
 
-    // Stream.of(tmpPathRes.iterator()).toArray();
+      ctx.initContext();
 
-    // assertEquals(Retention.values().length, foldersRetention.length);
+      List<AuditFile> res = service.process(items.stream(), ctx);
 
+      int exepectedFileAudite = ctx.retentionExportTypeMap().values().stream().reduce(0,
+          (prev, e) -> prev + e.size(), Integer::sum);
+      assertEquals(exepectedFileAudite, res.size());
+      ctx.retentionExportTypeMap().keySet().forEach(retention -> {
+        Set<ExportType> expectedExportType = ctx.getExportTypesByRetention(retention);
+        Set<ExportType> resultExportType =
+            res.stream().filter(file -> file.retention() == retention).map(AuditFile::exportType)
+                .collect(Collectors.toSet());
 
+        assertEquals(expectedExportType, resultExportType);
 
-    // fileUtils.verify(() -> FilesUtils.createOrCleanDirectory(any()), times(1));
-    // fileUtils.verify(() -> FilesUtils.createDirectories(any()), times(1));
-    // fileUtils.verify(() -> FilesUtils.writeFile(any(), any(), any()), times(3));
+      });
+
+      int exepectedFileWrite = items.size() * childrenList().size();
+      verify(s3Service, times(items.size())).getItemContent(anyString());
+
+      fileUtils.verify(() -> FilesUtils.createOrCleanDirectory(any()), times(1));
+      fileUtils.verify(() -> FilesUtils.createDirectories(any()), times(1));
+      fileUtils.verify(() -> FilesUtils.writeFile(any(), any(), any()), times(exepectedFileWrite));
+
+    }
   }
 
 
@@ -111,17 +121,15 @@ class ItemProcessorServiceImplTest {
         (in, cfg) -> childrenList().stream();
     ReflectionTestUtils.setField(ItemType.LOGS, "filter", noOpFilter);
     ReflectionTestUtils.setField(ItemType.CDC, "filter", noOpFilter);
-    // when(content.read(any())).thenReturn(-1);
     doThrow(IOException.class).when(content).close();
     when(s3Service.getItemContent(TestCostant.S3_KEY)).then((i) -> content);
-    List<Item> items = TestCostant.items;
-    // Path tmpPath = fileSystem.getPath(TestCostant.TMP_FOLDER);
+    Stream<Item> items = TestCostant.items.stream();
     DailyContextCfg ctx = DailyContextCfg.builder()
         .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
         .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
         .logDate(TestCostant.LOGDATE).build();
     ctx.initContext();
-    assertThrows(UncheckedIOException.class, () -> service.process(items.stream(), ctx));
+    assertThrows(UncheckedIOException.class, () -> service.process(items, ctx));
   }
 
   @Test
@@ -134,14 +142,14 @@ class ItemProcessorServiceImplTest {
     doThrow(IOException.class).when(content).close();
     when(s3Service.getItemContent(TestCostant.S3_KEY))
         .then((i) -> IOUtils.toInputStream("BUCKETFILE", Charset.defaultCharset()));
-    List<Item> items = TestCostant.items;
-    // Path tmpPath = fileSystem.getPath(TestCostant.TMP_FOLDER);
+    Stream<Item> items = TestCostant.items.stream();
+
     DailyContextCfg ctx = DailyContextCfg.builder()
         .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
         .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
         .logDate(TestCostant.LOGDATE).build();
     ctx.initContext();
-    assertThrows(UncheckedIOException.class, () -> service.process(items.stream(), ctx));
+    assertThrows(UncheckedIOException.class, () -> service.process(items, ctx));
   }
 
 
