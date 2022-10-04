@@ -24,9 +24,8 @@ Parameters:
     Type: String
     Description: 'Where to send CDC'
 
-Resources:
 
-  Conditions:
+Conditions:
 
   Never:
     !Equals [ "A", "B" ]
