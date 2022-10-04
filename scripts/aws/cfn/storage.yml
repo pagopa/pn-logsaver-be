@@ -20,9 +20,9 @@ Parameters:
     Type: String
     Description: 'keep track of used projects commitIds'
   
-  CdcKinesisSourceStreamArn:
-    Type: String
-    Description: 'Where to send CDC'
+  #CdcKinesisSourceStreamArn:
+  #  Type: String
+  #  Description: 'Where to send CDC'
 
 
 Conditions:
