@@ -6,6 +6,8 @@
             <pattern>%d - %highlight(%-5level) - %-4relative - [%thread] - %cyan(%logger{20}) - %msg %n</pattern>
         </encoder>
     </appender>
+    
+        <logger name="org.mockserver.log" level="warn"/>
     <root level="info">
         <appender-ref ref="STDOUT" />
     </root>

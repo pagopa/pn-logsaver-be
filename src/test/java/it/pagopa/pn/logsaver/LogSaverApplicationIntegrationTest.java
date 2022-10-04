@@ -21,7 +21,8 @@ class LogSaverApplicationIntegrationTest {
   void whenApplicationTeminated_thenReturnExitCode(CapturedOutput output) throws Exception {
     TestConfig.setUp();
     LogSaverApplication.main(new String[] {"--spring.profiles.active=test",
-        "--spring.config.location=classpath:application-test.properties"});
+        "--spring.config.location=classpath:application-test.properties",
+        "--date.list=2022-07-09"});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
         .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
 

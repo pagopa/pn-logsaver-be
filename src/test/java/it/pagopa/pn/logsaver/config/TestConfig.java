@@ -6,6 +6,7 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import java.util.List;
 import java.util.Objects;
+import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.mockito.Mockito;
 import org.mockserver.integration.ClientAndServer;
@@ -33,8 +34,9 @@ public class TestConfig {
 
   private static ClientAndServer server;
 
-  // @PostConstruct
+  @PostConstruct
   public static void setUp() {
+    System.setProperty("-Dmockserver.logLevel", "OFF");
     if (Objects.isNull(server) || !server.isRunning()) {
       server = ClientAndServer.startClientAndServer(8089);
     }
