@@ -36,3 +36,7 @@ Resources:
     Type: Custom::NonResource
     Condition: Never
 
+
+Outputs:
+  Foo:
+    Value: "Bar"
