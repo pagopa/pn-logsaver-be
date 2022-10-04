@@ -23,9 +23,9 @@ Parameters:
     Type: String
     Description: 'The S3 bucket from which to fetch the templates used by this stack.'
 
-  SafeStorageBaseUrl:
-     Type: String
-     Description: 'Url to the SafeStorage microservice'
+  #SafeStorageBaseUrl:
+  #   Type: String
+  #   Description: 'Url to the SafeStorage microservice'
 
   
   ECSClusterName:
@@ -64,9 +64,9 @@ Parameters:
     Type: String
     Description: 'keep track of used projects commitIds'
 
-  LogsKinesisSourceStreamArn:
-    Type: String
-    Description: 'Kinesis stream that receive logs'
+  #LogsKinesisSourceStreamArn:
+  #  Type: String
+  #  Description: 'Kinesis stream that receive logs'
 
 Conditions:
 
