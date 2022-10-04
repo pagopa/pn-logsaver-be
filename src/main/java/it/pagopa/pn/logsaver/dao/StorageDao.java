@@ -9,7 +9,7 @@ import it.pagopa.pn.logsaver.model.ItemType;
 
 
 public interface StorageDao {
-  public static final String FIRST_START_DAY = "2022-07-07";
+  public static final String FIRST_START_DAY = "2022-10-01";
 
   ExecutionEntity getLatestExecution();
 

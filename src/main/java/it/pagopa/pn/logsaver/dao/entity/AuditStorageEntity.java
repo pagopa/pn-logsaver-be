@@ -1,6 +1,6 @@
 package it.pagopa.pn.logsaver.dao.entity;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.apache.commons.lang3.StringUtils;
 import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.Retention;
@@ -26,7 +26,7 @@ public class AuditStorageEntity extends AuditStorageBase {
 
   private String result;
 
-  private LocalDate insertDate;
+  private LocalDateTime insertDateTime;
 
 
   @Builder
@@ -38,7 +38,7 @@ public class AuditStorageEntity extends AuditStorageBase {
     this.result = result;
     this.retentionType = retention.name();
     this.contentType = exportType.name();
-    this.insertDate = LocalDate.now();
+    this.insertDateTime = LocalDateTime.now();
 
   }
 

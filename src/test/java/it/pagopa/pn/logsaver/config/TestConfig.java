@@ -6,13 +6,13 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import java.util.List;
 import java.util.Objects;
-import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.mockito.Mockito;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.MediaType;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import it.pagopa.pn.logsaver.TestCostant;
@@ -28,14 +28,13 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @TestConfiguration
-// @ExtendWith(MockServerExtension.class)
-// @MockServerSettings(ports = {8088})
+@Configuration
 public class TestConfig {
 
   private static ClientAndServer server;
 
-  @PostConstruct
-  public static void setUp() {
+  // @Bean
+  public static ClientAndServer setUp() {
     System.setProperty("-Dmockserver.logLevel", "OFF");
     if (Objects.isNull(server) || !server.isRunning()) {
       server = ClientAndServer.startClientAndServer(8089);
@@ -50,6 +49,7 @@ public class TestConfig {
     server.when(request().withMethod("PUT").withPath("/sage-storage/v1/upload-with-presigned-url"))
         .respond(response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON)
             .withBody(""));
+    return server;
 
   }
 
