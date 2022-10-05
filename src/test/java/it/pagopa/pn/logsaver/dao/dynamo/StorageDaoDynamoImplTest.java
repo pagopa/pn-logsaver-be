@@ -21,6 +21,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.util.ReflectionUtils;
@@ -37,6 +38,7 @@ import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.ItemType;
 import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
@@ -59,12 +61,15 @@ class StorageDaoDynamoImplTest {
   private static DynamoDbTable<ContinuosExecutionEntity> continuosExecutionTable;
 
   private StorageDao storageDao;
+  @Mock
+  private AwsConfigs awsCfg;
 
   @Captor
   private ArgumentCaptor<TransactWriteItemsEnhancedRequest> transacRequest;
 
   @BeforeEach
   void init() {
+    when(awsCfg.getDynamoDbTableName()).thenReturn("audit_storage");
     enhancedClient = Mockito.mock(DynamoDbEnhancedClient.class);
     auditStorageTable = Mockito.mock(DynamoDbTable.class);
     executionTable = Mockito.mock(DynamoDbTable.class);
@@ -80,7 +85,7 @@ class StorageDaoDynamoImplTest {
       }
     });
 
-    storageDao = new StorageDaoDynamoImpl(enhancedClient);
+    storageDao = new StorageDaoDynamoImpl(awsCfg, enhancedClient);
     Method init = ReflectionUtils.findMethod(StorageDaoDynamoImpl.class, "init");
     ReflectionUtils.makeAccessible(init);
     ReflectionUtils.invokeMethod(init, storageDao);
@@ -259,10 +264,6 @@ class StorageDaoDynamoImplTest {
     assertEquals(1, updAuditDevPdf.size());
     // :AMZN_MAPPED_
     assertEquals("2022-07-13", updContinuosExec.get(0).item().get("latestExecutionDate").s());
-
-    // updLastExec.get(0).expressionAttributeValues()
-
-    // item.update().expressionAttributeValues().get(":AMZN_MAPPED_latestExecutionDate");
 
   }
 }

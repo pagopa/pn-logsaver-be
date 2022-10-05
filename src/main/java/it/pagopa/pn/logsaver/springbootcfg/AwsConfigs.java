@@ -17,6 +17,6 @@ public class AwsConfigs {
 
   private String dynamoDbProfileName;
   private String dynamoDbRegionCode;
-
+  private String dynamoDbTableName;
 
 }

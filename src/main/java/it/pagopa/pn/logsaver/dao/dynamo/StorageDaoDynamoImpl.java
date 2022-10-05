@@ -18,6 +18,7 @@ import it.pagopa.pn.logsaver.dao.entity.ExtraType;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
 import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +42,9 @@ import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedExce
 @Slf4j
 @ConditionalOnProperty(name = "aws.dynamoDb-profile-name")
 public class StorageDaoDynamoImpl implements StorageDao {
-  private static final String TABLE = "audit_storage";
 
+  @NonNull
+  private final AwsConfigs cfg;
   @NonNull
   private final DynamoDbEnhancedClient enhancedClient;
   private DynamoDbTable<AuditStorageEntity> auditStorageTable;
@@ -51,10 +53,12 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
   @PostConstruct
   void init() {
-    auditStorageTable = enhancedClient.table(TABLE, TableSchema.fromBean(AuditStorageEntity.class));
-    executionTable = enhancedClient.table(TABLE, TableSchema.fromBean(ExecutionEntity.class));
-    continuosExecutionTable =
-        enhancedClient.table(TABLE, TableSchema.fromBean(ContinuosExecutionEntity.class));
+    auditStorageTable = enhancedClient.table(cfg.getDynamoDbTableName(),
+        TableSchema.fromBean(AuditStorageEntity.class));
+    executionTable = enhancedClient.table(cfg.getDynamoDbTableName(),
+        TableSchema.fromBean(ExecutionEntity.class));
+    continuosExecutionTable = enhancedClient.table(cfg.getDynamoDbTableName(),
+        TableSchema.fromBean(ContinuosExecutionEntity.class));
     insertFirstContinuosExecution();
     insertFirtsExecution();
   }
