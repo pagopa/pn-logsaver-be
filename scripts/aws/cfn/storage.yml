@@ -24,19 +24,35 @@ Parameters:
   #  Type: String
   #  Description: 'Where to send CDC'
 
-
-Conditions:
-
-  Never:
-    !Equals [ "A", "B" ]
-
 Resources:
 
-  NonResource:
-    Type: Custom::NonResource
-    Condition: Never
+  # Dynamo Table
+  LogSaverTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-AuditStorage'
+      AttributeDefinitions:
+        - AttributeName: "type"
+          AttributeType: "S"
+        - AttributeName: "logDate"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "type"
+          KeyType: "HASH"
+        - AttributeName: "logDate"
+          KeyType: "RANGE"
+      BillingMode: "PAY_PER_REQUEST"
+      #KinesisStreamSpecification:
+      #  StreamArn: !Ref CdcKinesisSourceStreamArn
+      #StreamSpecification:
+      #  StreamViewType: NEW_IMAGE
 
 
 Outputs:
-  Foo:
-    Value: "Bar"
+  # Dynamo table
+  LogSaverDynamoTableName:
+    Description: Name of dynamodb table containing audit storage
+    Value: !Ref LogSaverTable
+  LogSaverDynamoTableArn:
+    Description: ARN of dynamodb table containing notifications
+    Value: !Sub '${LogSaverTable.Arn}'
