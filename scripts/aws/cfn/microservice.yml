@@ -7,10 +7,6 @@ Parameters:
     Description: 'Usually pn can be pnXYZ where XYZ are the feature number, useful to create
       experimental environments without crash official development environment'
 
-  CorsAllowedDomains:
-    Type: String
-    Description: 'Comma separated list of domains allowed to make cross origin request'
-
   ContainerImageUri:
     Type: String
     Description: 'Exact container image URI with full repository and image digest'
@@ -27,10 +23,6 @@ Parameters:
      Type: String
      Description: 'Url to the SafeStorage microservice'
 
-  ECSClusterName:
-    Type: String
-    Description: 'The name of the ECS cluster where the microservice is going to be deployed'
-
   SubnetsIds:
     Type: String
     Description: 'subnets ids comma separated list. Where to deploy the microservice'
@@ -38,22 +30,6 @@ Parameters:
   VpcId:
     Type: String
     Description: 'VpcId where the microservice is going to be deployed'
-  
-  EcsDefaultSecurityGroup:
-    Type: String
-    Description: 'Default security group required by infrastructure'
-
-  ApplicationLoadBalancerListenerArn:
-    Type: String
-    Description: 'Load balancer listener where HTTP endpoints is going to be registered'
-
-  ApplicationLoadBalancerDomain:
-    Type: String
-    Description: 'Base URL of the load balancer where the service is going to be reachable'
-
-  NetworkLoadBalancerLink:
-    Type: String
-    Description: 'network load balancer link for API-GW'
   
   AlarmSNSTopicArn:
     Type: String
@@ -93,13 +69,9 @@ Parameters:
     Type: String
     Description: 'Schedule rule event bus'
 
-  SecurityGroups:
-    Type: List<AWS::EC2::SecurityGroup::Id>
-    Description: list of security groups
-
   AppName:
     Type: String
-    Default: logsaver
+    Default: logsaver-be
     Description: App Name
 
   ComputeResourceType:
@@ -144,7 +116,6 @@ Resources:
       ComputeEnvironmentName: !Sub '${ProjectName}-${AppName}-compute-environment'
       ComputeResources:
         MaxvCpus: !Ref MaxvCpus
-        SecurityGroupIds: !Ref SecurityGroups
         Type: !Ref ComputeResourceType
         Subnets: !Ref SubnetsIds
       State: ENABLED
