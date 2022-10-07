@@ -173,7 +173,7 @@ Resources:
           - Name: PN_SAFESTORAGEBASEURL
             Value: !Ref SafeStorageBaseUrl
           - Name: PN_SAFESTORAGECXID
-            Value: !Sub '${ProjectName}-{$AppName}'
+            Value: !Sub '${ProjectName}-${AppName}'
           - Name: AWS_S3REGIONCODE
             Value: !Ref AWS::Region
           - Name: AWS_S3BUCKETNAME
