@@ -1,5 +1,6 @@
 {
   "Parameters" : {
-    "SafeStorageBaseUrl": "https://14ej9p2krd.execute-api.eu-south-1.amazonaws.com/dev"
+    "SafeStorageBaseUrl": "https://14ej9p2krd.execute-api.eu-south-1.amazonaws.com/dev",
+    "ScheduleExpression": "cron(*/15, * * * ? *)"
   }
 }

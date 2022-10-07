@@ -65,6 +65,11 @@ Parameters:
     Type: String
     Description: 'Logs bucket name'
 
+  ScheduleExpression:
+    Type: String
+    Default: 'cron(0, 10,11,20 * * ? *)'
+    Description: 'Schedule rule expression'
+
   AppName:
     Type: String
     Default: 'logsaver-be'
@@ -340,7 +345,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Description: "ScheduledRule"
-      ScheduleExpression: "cron(0, 10,11,20 * * ? *)"
+      ScheduleExpression: !Ref ScheduleExpression
       State: "ENABLED"
       Targets:
         - Arn:
