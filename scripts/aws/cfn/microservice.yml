@@ -341,6 +341,26 @@ Resources:
   #        Id: !Ref EventBridgeName
 
   ### Event Rule setup ###
+  ScheduleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${AppName}-batch-schedule-role'
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ events.amazonaws.com ]
+            Action: [ "sts:AssumeRole" ]
+      Path: /
+      Policies:
+        - PolicyName: !Sub '${ProjectName}-${AppName}-batch-schedule-policy'
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "batch:SubmitJob"
+                Resource: "*"
+
   ScheduledRule:
     Type: AWS::Events::Rule
     Properties:
@@ -352,7 +372,7 @@ Resources:
             Fn::GetAtt:
               - "JobQueue"
               - "JobQueueArn"
-          RoleArn: !GetAtt "BatchTaskExecutionRole.Arn"
+          RoleArn: !GetAtt "ScheduleRole.Arn"
           Id: !Sub '${ProjectName}-${AppName}-TargetBatchQueue'
           BatchParameters:
             JobDefinition: !Ref BatchProcessingJobDefinition
