@@ -113,6 +113,8 @@ Resources:
       ComputeResources:
         MaxvCpus: !Ref MaxvCpus
         Type: !Ref ComputeResourceType
+        SecurityGroupIds:
+          - !Ref BatchSecurityGroup
         Subnets: !Split [",", !Ref SubnetsIds]
       State: ENABLED
 
@@ -129,6 +131,18 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+
+  BatchSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Batch Security Group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: "0.0.0.0/0"
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: "0.0.0.0/0"
 
   ## Job Definition
   ## https://docs.aws.amazon.com/batch/latest/userguide/fargate.html#fargate-job-definitions
