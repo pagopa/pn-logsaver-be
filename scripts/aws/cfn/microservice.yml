@@ -227,8 +227,9 @@ Resources:
               Service: [ ecs-tasks.amazonaws.com ]
             Action: [ "sts:AssumeRole" ]
       Path: /
-      Policies:
+      ManagedPolicyArns:
         - !Ref LogsExporterPolicyArn
+      Policies:
         - PolicyName: AmazonECSTaskExecutionRolePolicy
           PolicyDocument:
             Statement:
