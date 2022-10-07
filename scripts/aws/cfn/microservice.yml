@@ -113,7 +113,7 @@ Resources:
       ComputeResources:
         MaxvCpus: !Ref MaxvCpus
         Type: !Ref ComputeResourceType
-        Subnets: !Ref SubnetsIds
+        Subnets: !Split [",", !Ref SubnetsIds]
       State: ENABLED
 
   ## Service Role for batch
