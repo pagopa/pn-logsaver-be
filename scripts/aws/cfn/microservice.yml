@@ -351,6 +351,6 @@ Resources:
           Id: !Sub '${ProjectName}-${AppName}-TargetBatchQueue'
           BatchParameters:
             JobDefinition: !Ref BatchProcessingJobDefinition
-            JobName: !Sub '${ProjectName}-{AppName}-rule-job'
+            JobName: !Sub '${ProjectName}-${AppName}-rule-job'
             RetryStrategy:
               Attempts: !Ref BatchJobMaxAttempts
