@@ -85,17 +85,13 @@ Parameters:
     Type: String
     Description: 'Policy per lettura su bucket log'
 
-  S3BucketName:
+  LogsBucketName:
     Type: String
     Description: 'Logs bucket name'
 
   ScheduleEventBusName:
     Type: String
     Description: 'Schedule rule event bus'
-
-  Subnets:
-    Type: List<AWS::EC2::Subnet::Id>
-    Description: list of subnets where the service is going to be deployed
 
   SecurityGroups:
     Type: List<AWS::EC2::SecurityGroup::Id>
@@ -150,7 +146,7 @@ Resources:
         MaxvCpus: !Ref MaxvCpus
         SecurityGroupIds: !Ref SecurityGroups
         Type: !Ref ComputeResourceType
-        Subnets: !Ref Subnets
+        Subnets: !Ref SubnetsIds
       State: ENABLED
 
   ## Service Role for batch
@@ -197,7 +193,7 @@ Resources:
           PN_SAFESTORAGEBASEURL: !Ref SafeStorageBaseUrl
           PN_SAFESTORAGECXID: !Sub '${ProjectName}-{$AppName}'
           AWS_S3REGIONCODE: !Ref AWS::Region
-          AWS_S3BUCKETNAME: !Ref S3BucketName
+          AWS_S3BUCKETNAME: !Ref LogsBucketName
           AWS_DYNAMODBREGIONCODE: !Ref AWS::Region
           AWS_DYNAMODBTABLENAME: !Ref LogSaverDynamoTableName
       PlatformCapabilities:
@@ -331,6 +327,26 @@ Resources:
                   - "kms:Decrypt"
                 Effect: Allow
                 Resource: "*"
+
+  #BatchBridgeStateRule:
+  #  Type: AWS::Events::Rule
+  #  Properties:
+  #    Description: The EventBridge rule to match Batch state change
+  #    EventBusName: !Ref EventBusName
+  #    EventPattern:
+  #      source:
+  #        - aws.batch
+  #      detail-type:
+  #        - Batch Job State Change
+  #      detail:
+  #        status:
+  #          # - STARTED
+  #          # - SUCCEEDED
+  #          - FAILED
+  #    State: ENABLED
+  #    Targets:
+  #      - Arn: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AlarmSNSTopicName}"
+  #        Id: !Ref EventBridgeName
 
   ### Event Rule setup ###
   ScheduledRule:
