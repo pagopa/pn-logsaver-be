@@ -153,8 +153,7 @@ Resources:
       PropagateTags: true
       JobDefinitionName: !Sub '${ProjectName}-${AppName}-job-definition'
       ContainerProperties:
-        Image:
-          - Ref: ContainerImageUri
+        Image: !Ref ContainerImageUri
         FargatePlatformConfiguration:
           PlatformVersion: LATEST
         ResourceRequirements:
@@ -171,12 +170,18 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: !Sub '${ProjectName}-${AppName}-logs'
         Environment:
-          PN_SAFESTORAGEBASEURL: !Ref SafeStorageBaseUrl
-          PN_SAFESTORAGECXID: !Sub '${ProjectName}-{$AppName}'
-          AWS_S3REGIONCODE: !Ref AWS::Region
-          AWS_S3BUCKETNAME: !Ref LogsBucketName
-          AWS_DYNAMODBREGIONCODE: !Ref AWS::Region
-          AWS_DYNAMODBTABLENAME: !Ref LogSaverDynamoTableName
+          - Name: PN_SAFESTORAGEBASEURL
+            Value: !Ref SafeStorageBaseUrl
+          - Name: PN_SAFESTORAGECXID
+            Value: !Sub '${ProjectName}-{$AppName}'
+          - Name: AWS_S3REGIONCODE
+            Value: !Ref AWS::Region
+          - Name: AWS_S3BUCKETNAME
+            Value: !Ref LogsBucketName
+          - Name: AWS_DYNAMODBREGIONCODE
+            Value: !Ref AWS::Region
+          - Name: AWS_DYNAMODBTABLENAME
+            Value: !Ref LogSaverDynamoTableName
       PlatformCapabilities:
         - FARGATE
       Tags:
