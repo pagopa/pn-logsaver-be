@@ -65,13 +65,9 @@ Parameters:
     Type: String
     Description: 'Logs bucket name'
 
-  ScheduleEventBusName:
-    Type: String
-    Description: 'Schedule rule event bus'
-
   AppName:
     Type: String
-    Default: logsaver-be
+    Default: 'logsaver-be'
     Description: App Name
 
   ComputeResourceType:
@@ -324,7 +320,6 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Description: "ScheduledRule"
-      EventBusName: !Ref ScheduleEventBusName
       ScheduleExpression: "cron(0, 10,11,20 * * ? *)"
       State: "ENABLED"
       Targets:
