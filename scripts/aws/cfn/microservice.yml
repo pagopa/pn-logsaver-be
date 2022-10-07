@@ -67,7 +67,7 @@ Parameters:
 
   ScheduleExpression:
     Type: String
-    Default: 'cron(0, 10,11,20 * * ? *)'
+    Default: 'cron(0 10,11,20 * * ? *)'
     Description: 'Schedule rule expression'
 
   AppName:
