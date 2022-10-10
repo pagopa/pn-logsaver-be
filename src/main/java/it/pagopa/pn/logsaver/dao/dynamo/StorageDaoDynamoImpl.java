@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.dao.StorageDao;
@@ -34,13 +36,14 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactPutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactUpdateItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "aws.dynamoDb-profile-name")
+@ConditionalOnBean(DynamoDbEnhancedClient.class)
 public class StorageDaoDynamoImpl implements StorageDao {
 
   @NonNull
