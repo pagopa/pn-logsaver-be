@@ -11,12 +11,11 @@ import lombok.Setter;
 @Setter
 public class AwsConfigs {
 
-  private String s3ProfileName;
-  private String s3RegionCode;
-  private String s3BucketName;
+  private String profileName;
+  private String regionCode;
+  private String endpointUrl;
 
-  private String dynamoDbProfileName;
-  private String dynamoDbRegionCode;
+  private String s3BucketName;
   private String dynamoDbTableName;
 
 }
