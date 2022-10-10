@@ -7,10 +7,6 @@ Parameters:
     Description: 'Usually pn can be pnXYZ where XYZ are the feature number, useful to create
       experimental environments without crash official development environment'
 
-  CorsAllowedDomains:
-    Type: String
-    Description: 'Comma separated list of domains allowed to make cross origin request'
-
   ContainerImageUri:
     Type: String
     Description: 'Exact container image URI with full repository and image digest'
@@ -23,14 +19,9 @@ Parameters:
     Type: String
     Description: 'The S3 bucket from which to fetch the templates used by this stack.'
 
-  #SafeStorageBaseUrl:
-  #   Type: String
-  #   Description: 'Url to the SafeStorage microservice'
-
-  
-  ECSClusterName:
-    Type: String
-    Description: 'The name of the ECS cluster where the microservice is going to be deployed'
+  SafeStorageBaseUrl:
+     Type: String
+     Description: 'Url to the SafeStorage microservice'
 
   SubnetsIds:
     Type: String
@@ -40,22 +31,6 @@ Parameters:
     Type: String
     Description: 'VpcId where the microservice is going to be deployed'
   
-  EcsDefaultSecurityGroup:
-    Type: String
-    Description: 'Default security group required by infrastructure'
-
-  ApplicationLoadBalancerListenerArn:
-    Type: String
-    Description: 'Load balancer listener where HTTP endpoints is going to be registered'
-
-  ApplicationLoadBalancerDomain:
-    Type: String
-    Description: 'Base URL of the load balancer where the service is going to be reachable'
-
-  NetworkLoadBalancerLink:
-    Type: String
-    Description: 'network load balancer link for API-GW'
-  
   AlarmSNSTopicArn:
     Type: String
     Description: ARN of alarm topic
@@ -64,17 +39,340 @@ Parameters:
     Type: String
     Description: 'keep track of used projects commitIds'
 
-  #LogsKinesisSourceStreamArn:
-  #  Type: String
-  #  Description: 'Kinesis stream that receive logs'
+  LogsKinesisSourceStreamArn:
+    Type: String
+    Description: 'Kinesis stream that receive logs'
+
+  # - Log exports parameters
+  CloudwatchFilterPattern:
+    Default: ''
+    Type: String
+    Description: filter expression for exported logs
+
+  LogSaverDynamoTableArn:
+    Type: String
+    Description: 'AuditStorage DynamoDB table ARN'
+
+  LogSaverDynamoTableName:
+    Type: String
+    Description: 'AuditStorage DynamoDB table name'
+
+  LogsExporterPolicyArn:
+    Type: String
+    Description: 'Policy per lettura su bucket log'
+
+  LogsBucketName:
+    Type: String
+    Description: 'Logs bucket name'
+
+  ScheduleExpression:
+    Type: String
+    Description: 'Schedule rule expression'
+
+  AppName:
+    Type: String
+    Default: 'logsaver-be'
+    Description: App Name
+
+  ComputeResourceType:
+    Type: String
+    Default: FARGATE_SPOT
+    AllowedValues:
+      - FARGATE_SPOT
+      - FARGATE
+    Description: Enter FARGATE_SPOT or FARGATE.
+
+  MaxvCpus:
+    Type: String
+    Default: 128
+    Description: The maximum number of Amazon EC2 vCPUs that an environment can reach.
+
+  VCPU:
+    Type: String
+    Default: 0.25
+    Description: The number of vCPUs reserved for the container.
+
+  Memory:
+    Type: String
+    Default: 2048
+    Description: The memory hard limit (in MiB) present to the container.
+
+  BatchJobMaxAttempts:
+    Type: Number
+    Default: 3
+    Description: The maximum number of batch job attempts.
 
 Conditions:
-
-  Never:
-    !Equals [ "A", "B" ]
+  SendLogToKinesis: !Not [ !Equals [ !Ref LogsKinesisSourceStreamArn, '' ] ]
 
 Resources:
 
-  NonResource:
-    Type: Custom::NonResource
-    Condition: Never
+  ## Compute Environment
+  ComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      Type: MANAGED
+      ServiceRole: !Ref BatchServiceRole
+      ComputeEnvironmentName: !Sub '${ProjectName}-${AppName}-compute-environment'
+      ComputeResources:
+        MaxvCpus: !Ref MaxvCpus
+        Type: !Ref ComputeResourceType
+        SecurityGroupIds:
+          - !Ref BatchSecurityGroup
+        Subnets: !Split [",", !Ref SubnetsIds]
+      State: ENABLED
+
+  ## Service Role for batch
+  BatchServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: batch.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+
+  BatchSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Batch Security Group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: "0.0.0.0/0"
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: "0.0.0.0/0"
+
+  ## Job Definition
+  ## https://docs.aws.amazon.com/batch/latest/userguide/fargate.html#fargate-job-definitions
+  BatchProcessingJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      Type: container
+      PropagateTags: true
+      JobDefinitionName: !Sub '${ProjectName}-${AppName}-job-definition'
+      ContainerProperties:
+        Image: !Ref ContainerImageUri
+        FargatePlatformConfiguration:
+          PlatformVersion: LATEST
+        ResourceRequirements:
+          - Value: !Ref VCPU
+            Type: VCPU
+          - Value: !Ref Memory
+            Type: MEMORY
+        JobRoleArn: !GetAtt "BatchTaskExecutionRole.Arn"
+        ExecutionRoleArn: !GetAtt "BatchTaskExecutionRole.Arn"
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref "BatchLogGroup"
+            awslogs-region: !Ref AWS::Region
+            awslogs-stream-prefix: !Sub '${ProjectName}-${AppName}-logs'
+        Environment:
+          - Name: PN_SAFESTORAGEBASEURL
+            Value: !Ref SafeStorageBaseUrl
+          - Name: PN_SAFESTORAGECXID
+            Value: !Sub '${ProjectName}-${AppName}'
+          - Name: AWS_REGIONCODE
+            Value: !Ref AWS::Region
+          - Name: AWS_S3BUCKETNAME
+            Value: !Ref LogsBucketName
+          - Name: AWS_DYNAMODBTABLENAME
+            Value: !Ref LogSaverDynamoTableName
+      PlatformCapabilities:
+        - FARGATE
+      Tags:
+        Service: Batch
+        Name: JobDefinitionTag
+        Expected: MergeTag
+
+  # Batch Log group
+  BatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '${ProjectName}-${AppName}-logs'
+      RetentionInDays: 3
+      KmsKeyId:
+        Fn::GetAtt:
+          - BatchLogGroupKmsKey
+          - Arn
+
+  # KMS Key for Encrypt log data in CloudWatch Logs
+  BatchLogGroupKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Statement:
+          - Action: kms:*
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - ":iam::"
+                    - Ref: AWS::AccountId
+                    - :root
+            Resource: "*"
+          - Action:
+              - kms:Encrypt*
+              - kms:Decrypt*
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:Describe*
+            Effect: Allow
+            Principal:
+              Service: !Sub logs.${AWS::Region}.amazonaws.com
+            Resource: '*'
+            Condition:
+              ArnLike:
+                'kms:EncryptionContext:aws:logs:arn': !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+        Version: "2012-10-17"
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+
+  BatchTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${AppName}-taskexec-role'
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ ecs-tasks.amazonaws.com ]
+            Action: [ "sts:AssumeRole" ]
+      Path: /
+      ManagedPolicyArns:
+        - !Ref LogsExporterPolicyArn
+      Policies:
+        - PolicyName: AmazonECSTaskExecutionRolePolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ecr:GetAuthorizationToken"
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+  ## JobQueue
+  JobQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref ComputeEnvironment
+      State: ENABLED
+      Priority: 1
+      JobQueueName: !Sub '${ProjectName}-${AppName}-job-queue'
+
+  ### Subscription filters with Kinesis  https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html#DestinationKinesisExample
+  SubscriptionFilter:
+    Condition: SendLogToKinesis
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      RoleArn:
+        Fn::GetAtt:
+          - "SubscriptionFilterServiceRole"
+          - "Arn"
+      LogGroupName: !Ref BatchLogGroup
+      FilterPattern: !Ref CloudwatchFilterPattern
+      DestinationArn: !Ref LogsKinesisSourceStreamArn
+
+  ### IAM Role used by Subscription filters to allow read logs from Cloudwatch and send logs to Kinesis Firehose
+  SubscriptionFilterServiceRole:
+    Condition: SendLogToKinesis
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: logs.amazonaws.com
+        Version: "2012-10-17"
+      Path: /
+      Policies:
+        -
+          PolicyName: !Sub '${ProjectName}-${AppName}-batch-logs-subscription-role'
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - kinesis:PutRecord
+                Effect: Allow
+                Resource: "*"
+              - Action:
+                  - "kms:Encrypt"
+                  - "kms:GenerateDataKey"
+                  - "kms:Decrypt"
+                Effect: Allow
+                Resource: "*"
+
+  #BatchBridgeStateRule:
+  #  Type: AWS::Events::Rule
+  #  Properties:
+  #    Description: The EventBridge rule to match Batch state change
+  #    EventBusName: !Ref EventBusName
+  #    EventPattern:
+  #      source:
+  #        - aws.batch
+  #      detail-type:
+  #        - Batch Job State Change
+  #      detail:
+  #        status:
+  #          # - STARTED
+  #          # - SUCCEEDED
+  #          - FAILED
+  #    State: ENABLED
+  #    Targets:
+  #      - Arn: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AlarmSNSTopicName}"
+  #        Id: !Ref EventBridgeName
+
+  ### Event Rule setup ###
+  ScheduleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${AppName}-batch-schedule-role'
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ events.amazonaws.com ]
+            Action: [ "sts:AssumeRole" ]
+      Path: /
+      Policies:
+        - PolicyName: !Sub '${ProjectName}-${AppName}-batch-schedule-policy'
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "batch:SubmitJob"
+                Resource: "*"
+
+  ScheduledRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "ScheduledRule"
+      ScheduleExpression: !Ref ScheduleExpression
+      State: "ENABLED"
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - "JobQueue"
+              - "JobQueueArn"
+          RoleArn: !GetAtt "ScheduleRole.Arn"
+          Id: !Sub '${ProjectName}-${AppName}-TargetBatchQueue'
+          BatchParameters:
+            JobDefinition: !Ref BatchProcessingJobDefinition
+            JobName: !Sub '${ProjectName}-${AppName}-rule-job'
+            RetryStrategy:
+              Attempts: !Ref BatchJobMaxAttempts

@@ -1,5 +1,6 @@
 {
   "Parameters" : {
-    "Foo": "bar"
+    "SafeStorageBaseUrl": "https://ewlg4idc89.execute-api.eu-south-1.amazonaws.com/dev",
+    "ScheduleExpression": "cron(0 10,11,20 * * ? *)"
   }
 }
