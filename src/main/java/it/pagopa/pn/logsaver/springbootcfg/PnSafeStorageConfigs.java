@@ -27,7 +27,7 @@ public class PnSafeStorageConfigs {
   @PostConstruct
   void initConf() {
     populateConfigurationTable(safeStorageDocTypesPdf, ExportType.PDF_SIGNED);
-    populateConfigurationTable(safeStorageDocTypesPdf, ExportType.ZIP);
+    populateConfigurationTable(safeStorageDocTypesZip, ExportType.ZIP);
   }
 
   private void populateConfigurationTable(Map<String, String> safeStorageDocTypes,
