@@ -34,7 +34,7 @@ public class AwsServicesClientsConfig {
   }
 
   @Bean
-  @ConditionalOnBean(DynamoDbClient.class)
+  @ConditionalOnProperty(name = "aws.use-dynamoDb", havingValue = "true", matchIfMissing = true)
   public DynamoDbEnhancedClient dynamoDbEnhancedClient(DynamoDbClient baseClient) {
     return DynamoDbEnhancedClient.builder()
             .dynamoDbClient(baseClient)

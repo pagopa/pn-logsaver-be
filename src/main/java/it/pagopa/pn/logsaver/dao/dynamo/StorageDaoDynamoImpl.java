@@ -43,7 +43,7 @@ import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedExce
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnBean(DynamoDbEnhancedClient.class)
+@ConditionalOnProperty(name = "aws.use-dynamoDb", havingValue = "true", matchIfMissing = true)
 public class StorageDaoDynamoImpl implements StorageDao {
 
   @NonNull
