@@ -27,6 +27,30 @@ Parameters:
     Type: String
     Description: 'SafeStorage Account ID'
 
+  SafeStorageDocTypesPdf10y:
+    Type: String
+    Description: 'Safe storage doc type for 10 years retention PDF'
+
+  SafeStorageDocTypesPdf5y:
+    Type: String
+    Description: 'Safe storage doc type for 5 years retention PDF'
+
+  SafeStorageDocTypesPdf120d:
+    Type: String
+    Description: 'Safe storage doc type for 120 days retention PDF'
+
+  SafeStorageDocTypesZip10y:
+    Type: String
+    Description: 'Safe storage doc type for 10 years retention Zip'
+
+  SafeStorageDocTypesZip5y:
+    Type: String
+    Description: 'Safe storage doc type for 5 years retention Zip'
+
+  SafeStorageDocTypesZip120d:
+    Type: String
+    Description: 'Safe storage doc type for 120 days retention Zip'
+
   SubnetsIds:
     Type: String
     Description: 'subnets ids comma separated list. Where to deploy the microservice'
@@ -182,6 +206,18 @@ Resources:
             Value: !Ref SafeStorageBaseUrl
           - Name: PN_SAFESTORAGECXID
             Value: !Ref SafeStorageCxId
+          - Name: PN_SAFESTORAGEDOCTYPESPDF10Y
+            Value: !Ref SafeStorageDocTypesPdf10y
+          - Name: PN_SAFESTORAGEDOCTYPESPDF5Y
+            Value: !Ref SafeStorageDocTypesPdf5y
+          - Name: PN_SAFESTORAGEDOCTYPESPDF120D
+            Value: !Ref SafeStorageDocTypesPdf120d
+          - Name: PN_SAFESTORAGEDOCTYPESZIP10Y
+            Value: !Ref SafeStorageDocTypesZip10y
+          - Name: PN_SAFESTORAGEDOCTYPESZIP5Y
+            Value: !Ref SafeStorageDocTypesZip5y
+          - Name: PN_SAFESTORAGEDOCTYPESZIP120D
+            Value: !Ref SafeStorageDocTypesZip120d
           - Name: AWS_REGIONCODE
             Value: !Ref AWS::Region
           - Name: AWS_S3BUCKETNAME
