@@ -3,6 +3,7 @@ package it.pagopa.pn.logsaver.model;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import lombok.Getter;
 
 @Getter
@@ -12,15 +13,15 @@ public enum Retention {
       "'audit-log-5y-'yyyy-MM-dd",
       "5 anni"), DEVELOPER("120d", "'developers-log-'yyyy-MM-dd", "120 giorni");
 
-  private String folder;
+  private String code;
 
   private String fileNamePattern;
 
   private String text;
 
 
-  Retention(String folder, String nameFormat, String text) {
-    this.folder = folder;
+  Retention(String code, String nameFormat, String text) {
+    this.code = code;
     this.fileNamePattern = nameFormat;
     this.text = text;
   }
@@ -36,5 +37,10 @@ public enum Retention {
 
   public static Set<Retention> values(List<String> list) {
     return IEnum.values(list, Retention.class);
+  }
+
+  public static Retention valueFromCode(String code) {
+    return Stream.of(Retention.values()).filter(r -> r.getCode().equalsIgnoreCase(code)).findFirst()
+        .orElseThrow();
   }
 }

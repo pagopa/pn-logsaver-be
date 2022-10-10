@@ -38,7 +38,7 @@ public class DailyContextCfg {
     String tmpDailyPathStr = tmpDailyPath.toString();
 
     retentions().stream().forEach(retention -> retentionTmpFolder.computeIfAbsent(retention,
-        ret -> Paths.get(tmpDailyPathStr, ret.getFolder())));
+        ret -> Paths.get(tmpDailyPathStr, ret.getCode())));
 
     FilesUtils.createOrCleanDirectory(tmpDailyPath());
     FilesUtils.createDirectories(retentionTmpFolder().values());

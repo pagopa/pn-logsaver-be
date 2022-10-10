@@ -8,9 +8,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.client.RestTemplate;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.api.FileUploadApi;
@@ -41,7 +44,7 @@ class PnSafeStorageClientImplTest {
 
   @Mock
   private FileUploadApi fileUploadApi;
-  @Mock
+
   private PnSafeStorageConfigs cfg;
   @Mock
   private RestTemplate restTemplate;
@@ -57,7 +60,17 @@ class PnSafeStorageClientImplTest {
 
   @BeforeEach
   public void createService() {
-    when(cfg.getSafeStorageBaseUrl()).thenReturn("http://localhost");
+    cfg = new PnSafeStorageConfigs();
+    cfg.setSafeStorageBaseUrl("http://localhost");
+    cfg.setSafeStorageDocTypesPdf(Map.of("10y", "PN_LOGS_PDF_AUDIT10Y", "5y", "PN_LOGS_PDF_AUDIT5Y",
+        "120d", "PN_LOGS_PDF_TEMP"));
+    cfg.setSafeStorageDocTypesZip(Map.of("10y", "PN_LOGS_ARCHIVE_AUDIT10Y", "5y",
+        "PN_LOGS_ARCHIVE_AUDIT5Y", "120d", "PN_LOGS_ARCHIVE_TEMP"));
+    cfg.setSafeStorageCxId("1234");
+    Method init = ReflectionUtils.findMethod(PnSafeStorageConfigs.class, "initConf");
+    ReflectionUtils.makeAccessible(init);
+    ReflectionUtils.invokeMethod(init, cfg);
+
     this.client = new PnSafeStorageClientImpl(restTemplate, cfg);
   }
 
@@ -79,8 +92,6 @@ class PnSafeStorageClientImplTest {
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
         .thenReturn(ResponseEntity.ok(respCF));
 
-
-    when(cfg.getSafeStorageCxId()).thenReturn("1234");
 
     AuditStorage req = AuditStorage.builder().exportType(ExportType.PDF_SIGNED)
         .filePath(file.toPath()).logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
@@ -123,9 +134,6 @@ class PnSafeStorageClientImplTest {
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
         .thenReturn(ResponseEntity.internalServerError().body(""));
 
-
-    when(cfg.getSafeStorageCxId()).thenReturn("1234");
-
     AuditStorage req = AuditStorage.builder().exportType(ExportType.PDF_SIGNED)
         .filePath(file.toPath()).logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
 
@@ -167,8 +175,6 @@ class PnSafeStorageClientImplTest {
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
         .thenReturn(ResponseEntity.ok(respCF));
 
-
-    when(cfg.getSafeStorageCxId()).thenReturn("1234");
 
     AuditStorage req = AuditStorage.builder().exportType(ExportType.PDF_SIGNED)
         .filePath(file.toPath()).logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
@@ -214,8 +220,6 @@ class PnSafeStorageClientImplTest {
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
         .thenReturn(ResponseEntity.ok(respCF));
 
-
-    when(cfg.getSafeStorageCxId()).thenReturn("1234");
 
     AuditStorage req = AuditStorage.builder().exportType(ExportType.PDF_SIGNED)
         .filePath(file.toPath()).logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
