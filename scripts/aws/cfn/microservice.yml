@@ -23,6 +23,10 @@ Parameters:
      Type: String
      Description: 'Url to the SafeStorage microservice'
 
+  SafeStorageCxId:
+    Type: String
+    Description: 'SafeStorage Account ID'
+
   SubnetsIds:
     Type: String
     Description: 'subnets ids comma separated list. Where to deploy the microservice'
@@ -177,7 +181,7 @@ Resources:
           - Name: PN_SAFESTORAGEBASEURL
             Value: !Ref SafeStorageBaseUrl
           - Name: PN_SAFESTORAGECXID
-            Value: !Sub '${ProjectName}-${AppName}'
+            Value: !Ref SafeStorageCxId
           - Name: AWS_REGIONCODE
             Value: !Ref AWS::Region
           - Name: AWS_S3BUCKETNAME
