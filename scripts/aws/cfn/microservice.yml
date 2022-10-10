@@ -206,17 +206,17 @@ Resources:
             Value: !Ref SafeStorageBaseUrl
           - Name: PN_SAFESTORAGECXID
             Value: !Ref SafeStorageCxId
-          - Name: PN_SAFESTORAGEDOCTYPESPDF10Y
+          - Name: PN_SAFESTORAGEDOCTYPESPDF_10Y
             Value: !Ref SafeStorageDocTypesPdf10y
-          - Name: PN_SAFESTORAGEDOCTYPESPDF5Y
+          - Name: PN_SAFESTORAGEDOCTYPESPDF_5Y
             Value: !Ref SafeStorageDocTypesPdf5y
-          - Name: PN_SAFESTORAGEDOCTYPESPDF120D
+          - Name: PN_SAFESTORAGEDOCTYPESPDF_120D
             Value: !Ref SafeStorageDocTypesPdf120d
-          - Name: PN_SAFESTORAGEDOCTYPESZIP10Y
+          - Name: PN_SAFESTORAGEDOCTYPESZIP_10Y
             Value: !Ref SafeStorageDocTypesZip10y
-          - Name: PN_SAFESTORAGEDOCTYPESZIP5Y
+          - Name: PN_SAFESTORAGEDOCTYPESZIP_5Y
             Value: !Ref SafeStorageDocTypesZip5y
-          - Name: PN_SAFESTORAGEDOCTYPESZIP120D
+          - Name: PN_SAFESTORAGEDOCTYPESZIP_120D
             Value: !Ref SafeStorageDocTypesZip120d
           - Name: AWS_REGIONCODE
             Value: !Ref AWS::Region
