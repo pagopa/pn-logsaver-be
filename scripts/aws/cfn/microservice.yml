@@ -272,6 +272,7 @@ Resources:
                   - 'dynamodb:Query'
                   - 'dynamodb:TransactGetItems'
                   - 'dynamodb:TransactWriteItems'
+                  - 'dynamodb:UpdateItem'
                 Resource:
                   - !Sub "${LogSaverDynamoTableArn}"
                   - !Sub "${LogSaverDynamoTableArn}/*"
