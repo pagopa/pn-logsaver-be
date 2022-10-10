@@ -263,6 +263,18 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:BatchGetItem'
+                  - 'dynamodb:BatchWriteItem'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:Query'
+                  - 'dynamodb:TransactGetItems'
+                  - 'dynamodb:TransactWriteItems'
+                Resource:
+                  - !Sub "${LogSaverDynamoTableArn}"
+                  - !Sub "${LogSaverDynamoTableArn}/*"
   ## JobQueue
   JobQueue:
     Type: AWS::Batch::JobQueue
