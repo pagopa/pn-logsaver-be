@@ -186,8 +186,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       return resBuilder.auditStorageList(auditStorageList).build();
 
     } catch (Exception e) {
-      log.error("Error processing audit for day {}", dailyCtx.logDate().toString());
-      log.error("Error stacktrace", e);
+      log.error("Error processing audit for day " + dailyCtx.logDate().toString(), e);
       return resBuilder.error(e).build();
     } finally {
       dailyCtx.destroy();

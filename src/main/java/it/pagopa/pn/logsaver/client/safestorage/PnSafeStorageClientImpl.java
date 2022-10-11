@@ -53,7 +53,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
       log.info("Send fileContent to received url {}", res.getUploadUrl());
       this.uploadContent(res, sha256, audit.filePath(), mediaType);
 
-      log.info("File {} sent successfully {}. SafeStorage key {}", audit.fileName(), res.getKey());
+      log.info("File {} sent successfully. SafeStorage key {}", audit.fileName(), res.getKey());
 
       return audit.uploadKey(res.getKey());
 
