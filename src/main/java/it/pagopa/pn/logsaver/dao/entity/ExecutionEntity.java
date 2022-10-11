@@ -14,15 +14,15 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 @NoArgsConstructor
 public class ExecutionEntity extends AuditStorageBase {
 
-  private List<String> itemTypes;
+  private List<String> logFileTypes;
 
   private Map<String, RetentionResult> retentionResult;
 
   @Builder
   public ExecutionEntity(String logDate, Map<String, RetentionResult> retentionResult,
-      List<String> itemTypes) {
+      List<String> logFileTypes) {
     super(ExtraType.LOG_SAVER_EXECUTION.name(), logDate);
     this.retentionResult = retentionResult;
-    this.itemTypes = itemTypes;
+    this.logFileTypes = logFileTypes;
   }
 }

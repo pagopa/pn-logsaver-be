@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
@@ -30,7 +30,7 @@ public class ClApplicationArguments {
 
   private List<LocalDate> dateList;
 
-  private Set<ItemType> itemTypes;
+  private Set<LogFileType> logFileTypes;
 
   private Map<Retention, Set<ExportType>> retentionExportTypesMap;
 
@@ -42,8 +42,8 @@ public class ClApplicationArguments {
 
   @Autowired
   void initTypeList(
-      @Value("${item.types:#{T(it.pagopa.pn.logsaver.model.ItemType).valuesAsString()}}") List<String> typeListStr) {
-    this.itemTypes = typeListStr.stream().map(ItemType::valueOf).collect(Collectors.toSet());
+      @Value("${log.file.types:#{T(it.pagopa.pn.logsaver.model.LogFileType).valuesAsString()}}") List<String> typeListStr) {
+    this.logFileTypes = typeListStr.stream().map(LogFileType::valueOf).collect(Collectors.toSet());
   }
 
   @Autowired

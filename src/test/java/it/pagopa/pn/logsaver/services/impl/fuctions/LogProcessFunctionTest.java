@@ -24,8 +24,8 @@ import com.google.gson.JsonSyntaxException;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.exceptions.LogFilterException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
-import it.pagopa.pn.logsaver.model.Item;
-import it.pagopa.pn.logsaver.model.Item.ItemChildren;
+import it.pagopa.pn.logsaver.model.LogFileReference;
+import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.services.impl.functions.LogProcessFunction;
 
@@ -52,8 +52,8 @@ class LogProcessFunctionTest {
   void filter_InputStreamMalformed() throws IOException {
 
     InputStream in = IOUtils.toInputStream("test");
-    Item item =
-        Item.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY).content(in).build();
+    LogFileReference item =
+        LogFileReference.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY).content(in).build();
     assertThrows(LogFilterException.class, () -> function.apply(item, ctx));
   }
 
@@ -61,9 +61,9 @@ class LogProcessFunctionTest {
   @Test
   void filter() throws IOException {
     when(ctx.retentions()).thenReturn(Set.of(Retention.values()));
-    Item item = Item.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY)
+    LogFileReference item = LogFileReference.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY)
         .content(s3File.getInputStream()).build();
-    List<ItemChildren> ret = function.apply(item, ctx).sequential().collect(Collectors.toList());
+    List<ClassifiedLogFragment> ret = function.apply(item, ctx).sequential().collect(Collectors.toList());
 
     assertNotNull(ret);
     assertEquals(10, ret.size());
@@ -73,13 +73,13 @@ class LogProcessFunctionTest {
     assertEquals(6, filterResult(ret, Retention.DEVELOPER).size());
 
     List<JsonArray> logEvt10List = filterResult(ret, Retention.AUDIT10Y).stream()
-        .map(ItemChildren::getContent).map(this::getLogEvent).collect(Collectors.toList());
+        .map(ClassifiedLogFragment::getContent).map(this::getLogEvent).collect(Collectors.toList());
 
     List<JsonArray> logEvt5List = filterResult(ret, Retention.AUDIT5Y).stream()
-        .map(ItemChildren::getContent).map(this::getLogEvent).collect(Collectors.toList());
+        .map(ClassifiedLogFragment::getContent).map(this::getLogEvent).collect(Collectors.toList());
 
     List<JsonArray> logEvtDevList = filterResult(ret, Retention.DEVELOPER).stream()
-        .map(ItemChildren::getContent).map(this::getLogEvent).collect(Collectors.toList());
+        .map(ClassifiedLogFragment::getContent).map(this::getLogEvent).collect(Collectors.toList());
 
     assertEquals(4, logEvt10List.get(0).size());
     assertEquals(4, logEvt10List.get(1).size());
@@ -96,7 +96,7 @@ class LogProcessFunctionTest {
 
   }
 
-  private List<ItemChildren> filterResult(List<ItemChildren> ret, Retention retention) {
+  private List<ClassifiedLogFragment> filterResult(List<ClassifiedLogFragment> ret, Retention retention) {
     return ret.stream().filter(item -> item.getRetention() == retention)
         .collect(Collectors.toList());
 

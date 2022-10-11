@@ -20,7 +20,7 @@ public class StorageExecution {
 
   private LocalDate logDate;
 
-  private Set<ItemType> itemTypes;
+  private Set<LogFileType> logFileTypes;
 
   private List<ExecutionDetails> details;
 

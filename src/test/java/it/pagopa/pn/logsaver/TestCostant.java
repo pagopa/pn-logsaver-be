@@ -8,8 +8,8 @@ import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.Item;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileReference;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 
@@ -40,20 +40,20 @@ public final class TestCostant {
 
   );
 
-  public static final List<Item> items =
-      List.of(Item.builder().logDate(LOGDATE).type(ItemType.CDC).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.CDC).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.CDC).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.CDC).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.CDC).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.CDC).s3Key(S3_KEY).build(),
+  public static final List<LogFileReference> items = List.of(
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.CDC).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.CDC).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.CDC).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.CDC).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.CDC).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.CDC).s3Key(S3_KEY).build(),
 
-          Item.builder().logDate(LOGDATE).type(ItemType.LOGS).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.LOGS).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.LOGS).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.LOGS).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.LOGS).s3Key(S3_KEY).build(),
-          Item.builder().logDate(LOGDATE).type(ItemType.LOGS).s3Key(S3_KEY).build());
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.LOGS).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.LOGS).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.LOGS).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.LOGS).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.LOGS).s3Key(S3_KEY).build(),
+      LogFileReference.builder().logDate(LOGDATE).type(LogFileType.LOGS).s3Key(S3_KEY).build());
 
   public static List<AuditFile> auditFiles = List.of(
       AuditFile.builder().exportType(ExportType.PDF_SIGNED).logDate(TestCostant.LOGDATE)
@@ -75,8 +75,8 @@ public final class TestCostant {
           .build());
 
 
-  public static final DailyContextCfg CTX =
-      DailyContextCfg.builder().retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
-          .tmpBasePath(TMP_FOLDER).itemTypes(Set.of(ItemType.values())).logDate(LOGDATE).build();
+  public static final DailyContextCfg CTX = DailyContextCfg.builder()
+      .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap()).tmpBasePath(TMP_FOLDER)
+      .logFileTypes(Set.of(LogFileType.values())).logDate(LOGDATE).build();
 
 }

@@ -13,11 +13,11 @@ import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.Item;
-import it.pagopa.pn.logsaver.model.Item.ItemChildren;
+import it.pagopa.pn.logsaver.model.LogFileReference;
+import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
 import it.pagopa.pn.logsaver.model.Retention;
-import it.pagopa.pn.logsaver.services.ItemProcessorService;
-import it.pagopa.pn.logsaver.services.ItemReaderService;
+import it.pagopa.pn.logsaver.services.LogFileProcessorService;
+import it.pagopa.pn.logsaver.services.LogFileReaderService;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 import lombok.NonNull;
@@ -27,21 +27,21 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class ItemProcessorServiceImpl implements ItemProcessorService {
+public class LogFileProcessorServiceImpl implements LogFileProcessorService {
 
 
   @NonNull
-  private final ItemReaderService s3Service;
+  private final LogFileReaderService s3Service;
 
 
   @Override
-  public List<AuditFile> process(Stream<Item> itemStream, DailyContextCfg dailyCtx) {
+  public List<AuditFile> process(Stream<LogFileReference> fileStream, DailyContextCfg dailyCtx) {
     // Riduzione consapevole. Sono stati fatti dei test in locale e la riduzione migliora
     // notevolmente in tempi di esecuzione.
-    List<Item> items = itemStream.collect(Collectors.toList());
-    log.info("Total items {}", items.size());
+    List<LogFileReference> fileList = fileStream.collect(Collectors.toList());
+    log.info("Total files {}", fileList.size());
     log.info("Start processing file");
-    LogSaverUtils.toParallelStream(items).forEach(item -> downloadFilterWrite(item, dailyCtx));
+    LogSaverUtils.toParallelStream(fileList).forEach(item -> downloadFilterWrite(item, dailyCtx));
 
     log.info("Start creating files");
     List<AuditFile> groupedAudit = createAuditFile(dailyCtx);
@@ -50,10 +50,10 @@ public class ItemProcessorServiceImpl implements ItemProcessorService {
 
   }
 
-  private void downloadFilterWrite(Item itemLog, DailyContextCfg dailyCtx) {
+  private void downloadFilterWrite(LogFileReference itemLog, DailyContextCfg dailyCtx) {
     log.debug("Dowload file {}", itemLog.getS3Key());
     // Download file dal bucket
-    try (InputStream content = s3Service.getItemContent(itemLog.getS3Key());) {
+    try (InputStream content = s3Service.getContent(itemLog.getS3Key());) {
       itemLog.setContent(content);
       // Raggruppo il contenuto del file per Retention
       filter(itemLog, dailyCtx)
@@ -66,11 +66,11 @@ public class ItemProcessorServiceImpl implements ItemProcessorService {
     }
   }
 
-  private Stream<ItemChildren> filter(Item itemLog, DailyContextCfg dailyCtx) {
+  private Stream<ClassifiedLogFragment> filter(LogFileReference itemLog, DailyContextCfg dailyCtx) {
     return itemLog.getType().filter(dailyCtx, itemLog);
   }
 
-  private void writeLog(ItemChildren audit, DailyContextCfg dailyCxt) {
+  private void writeLog(ClassifiedLogFragment audit, DailyContextCfg dailyCxt) {
     try (InputStream isItem = audit.getContent();) {
       if (Objects.nonNull(audit.getRetention())) {
         Path path = dailyCxt.retentionTmpFolder().get(audit.getRetention());

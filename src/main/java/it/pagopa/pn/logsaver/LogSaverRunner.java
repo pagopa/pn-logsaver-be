@@ -37,7 +37,7 @@ public class LogSaverRunner implements ApplicationRunner {
     List<DailySaverResult> results;
 
     if (appArgs.getDateList().isEmpty()) {
-      results = logSaver.dailySaverFromLatestExecutionToYesterday(appArgs.getItemTypes(),
+      results = logSaver.dailySaverFromLatestExecutionToYesterday(appArgs.getLogFileTypes(),
           appArgs.getRetentionExportTypesMap());
     } else {
       results = logSaver.dailyListSaver(appArgs.getDateList());

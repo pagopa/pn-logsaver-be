@@ -10,11 +10,11 @@ import lombok.Getter;
 
 @Data
 @Builder
-public class Item {
+public class LogFileReference {
 
   private String s3Key;
 
-  private ItemType type;
+  private LogFileType type;
 
   private LocalDate logDate;
 
@@ -27,7 +27,7 @@ public class Item {
 
   @AllArgsConstructor
   @Getter
-  public static class ItemChildren {
+  public static class ClassifiedLogFragment {
 
     private Retention retention;
 

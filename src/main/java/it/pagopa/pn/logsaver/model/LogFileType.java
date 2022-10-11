@@ -6,29 +6,29 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import org.apache.commons.collections4.SetUtils;
-import it.pagopa.pn.logsaver.model.Item.ItemChildren;
+import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
 import it.pagopa.pn.logsaver.services.impl.functions.LogProcessFunction;
 import lombok.Getter;
 
 @Getter
-public enum ItemType {
+public enum LogFileType {
 
 
   CDC("cdc/", Set.of(Retention.AUDIT10Y),
       (in, cfg) -> Stream
-          .of(new ItemChildren(Retention.AUDIT10Y, in.getContent(), in.getFileName()))), LOGS(
+          .of(new ClassifiedLogFragment(Retention.AUDIT10Y, in.getContent(), in.getFileName()))), LOGS(
               "logs/ecs/", Set.of(Retention.values()), new LogProcessFunction());
 
 
 
   private String subFolfer;
   private Set<Retention> retentions;
-  private BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> filter;
+  private BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> filter;
 
 
 
-  private ItemType(String subFolfer, Set<Retention> retentions,
-      BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> filter) {
+  private LogFileType(String subFolfer, Set<Retention> retentions,
+      BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> filter) {
     this.subFolfer = subFolfer;
     this.retentions = retentions;
     this.filter = filter;
@@ -36,15 +36,15 @@ public enum ItemType {
   }
 
   public static List<String> valuesAsString() {
-    return IEnum.valuesAsString(ItemType.class);
+    return IEnum.valuesAsString(LogFileType.class);
   }
 
-  public static List<String> valuesAsString(Collection<ItemType> list) {
+  public static List<String> valuesAsString(Collection<LogFileType> list) {
     return IEnum.valuesAsString(list);
   }
 
-  public static Set<ItemType> values(List<String> list) {
-    return IEnum.values(list, ItemType.class);
+  public static Set<LogFileType> values(List<String> list) {
+    return IEnum.values(list, LogFileType.class);
   }
 
   public boolean containsRetentions(Set<Retention> tocheck) {
@@ -52,7 +52,7 @@ public enum ItemType {
   }
 
 
-  public Stream<ItemChildren> filter(DailyContextCfg ctx, Item item) {
+  public Stream<ClassifiedLogFragment> filter(DailyContextCfg ctx, LogFileReference item) {
     return filter.apply(item, ctx);
   }
 }

@@ -26,20 +26,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
 import it.pagopa.pn.logsaver.config.LogSaverCfg;
-import it.pagopa.pn.logsaver.model.Item;
-import it.pagopa.pn.logsaver.model.ItemType;
-import it.pagopa.pn.logsaver.services.ItemReaderService;
+import it.pagopa.pn.logsaver.model.LogFileReference;
+import it.pagopa.pn.logsaver.model.LogFileType;
+import it.pagopa.pn.logsaver.services.LogFileReaderService;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @ExtendWith(MockitoExtension.class)
-class ItemReaderServiceImplTest {
+class LogFileReaderServiceImplTest {
 
   @Mock
   private S3BucketClient clientS3;
   @Mock
   private LogSaverCfg cfg;
 
-  private ItemReaderService service;
+  private LogFileReaderService service;
 
   @Captor
   private ArgumentCaptor<String> prefix;
@@ -51,7 +51,7 @@ class ItemReaderServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    this.service = new ItemReaderServiceImpl(clientS3, cfg);
+    this.service = new LogFileReaderServiceImpl(clientS3, cfg);
   }
 
   void mockCfgBase() {
@@ -70,7 +70,7 @@ class ItemReaderServiceImplTest {
     when(clientS3.findObjects(anyString()))
         .thenAnswer((InvocationOnMock invocation) -> mockResList.stream());
 
-    List<Item> res = service.findItems(TestCostant.CTX).collect(Collectors.toList());
+    List<LogFileReference> res = service.findLogFiles(TestCostant.CTX).collect(Collectors.toList());
 
     verify(clientS3, times(0)).findSubFolders(any(String.class));
     verify(clientS3, times(expFindObjectInvocation)).findObjects(prefix.capture());
@@ -84,7 +84,7 @@ class ItemReaderServiceImplTest {
     });
 
     assertEquals(expectedPrefix.size(), res.size());
-    Item defItem = res.get(0);
+    LogFileReference defItem = res.get(0);
     assertEquals(TestCostant.S3_KEY, defItem.getS3Key());
     assertEquals(TestCostant.CTX.logDate(), defItem.getLogDate());
     assertNotNull(defItem.getType());
@@ -103,14 +103,14 @@ class ItemReaderServiceImplTest {
         .thenAnswer((InvocationOnMock invocation) -> mockResList.stream());
 
 
-    when(clientS3.findSubFolders(ItemType.CDC.getSubFolfer()))
+    when(clientS3.findSubFolders(LogFileType.CDC.getSubFolfer()))
         .thenReturn(TestCostant.TABLES.stream());
-    when(clientS3.findSubFolders(ItemType.LOGS.getSubFolfer()))
+    when(clientS3.findSubFolders(LogFileType.LOGS.getSubFolfer()))
         .thenReturn(TestCostant.MICROSERVICES.stream());
 
-    List<Item> res = service.findItems(TestCostant.CTX).collect(Collectors.toList());
+    List<LogFileReference> res = service.findLogFiles(TestCostant.CTX).collect(Collectors.toList());
 
-    verify(clientS3, times(ItemType.values().length)).findSubFolders(subFolder.capture());
+    verify(clientS3, times(LogFileType.values().length)).findSubFolders(subFolder.capture());
     verify(clientS3, times(expFindObjectInvocation)).findObjects(prefix.capture());
 
     List<String> prefixRes = prefix.getAllValues();
@@ -121,13 +121,13 @@ class ItemReaderServiceImplTest {
 
 
     List<String> subFolderRes = subFolder.getAllValues();
-    assertEquals(ItemType.values().length, subFolderRes.size());
-    Stream.of(ItemType.values()).map(ItemType::getSubFolfer).forEach(subFolder -> {
+    assertEquals(LogFileType.values().length, subFolderRes.size());
+    Stream.of(LogFileType.values()).map(LogFileType::getSubFolfer).forEach(subFolder -> {
       assertThat(subFolderRes).contains(subFolder);
     });
 
     assertEquals(expectedPrefix.size(), res.size());
-    Item defItem = res.get(0);
+    LogFileReference defItem = res.get(0);
     assertEquals(TestCostant.S3_KEY, defItem.getS3Key());
     assertEquals(TestCostant.CTX.logDate(), defItem.getLogDate());
     assertNotNull(defItem.getType());
@@ -140,7 +140,7 @@ class ItemReaderServiceImplTest {
     String mockContent = "TEST";
     when(clientS3.getObjectContent(anyString()))
         .thenReturn(IOUtils.toInputStream(mockContent, Charset.defaultCharset()));
-    InputStream res = service.getItemContent("test");
+    InputStream res = service.getContent("test");
 
     assertEquals(mockContent, IOUtils.toString(res, Charset.defaultCharset()));
   }

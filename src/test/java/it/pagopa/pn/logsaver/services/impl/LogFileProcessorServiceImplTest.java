@@ -33,22 +33,22 @@ import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.Item;
-import it.pagopa.pn.logsaver.model.Item.ItemChildren;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileReference;
+import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.Retention;
-import it.pagopa.pn.logsaver.services.ItemProcessorService;
-import it.pagopa.pn.logsaver.services.ItemReaderService;
+import it.pagopa.pn.logsaver.services.LogFileProcessorService;
+import it.pagopa.pn.logsaver.services.LogFileReaderService;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 
 @ExtendWith(MockitoExtension.class)
-class ItemProcessorServiceImplTest {
+class LogFileProcessorServiceImplTest {
 
   @Mock
-  private ItemReaderService s3Service;
+  private LogFileReaderService s3Service;
 
-  private ItemProcessorService service;
+  private LogFileProcessorService service;
 
   @Mock
   private InputStream content;
@@ -56,7 +56,7 @@ class ItemProcessorServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    this.service = new ItemProcessorServiceImpl(s3Service);
+    this.service = new LogFileProcessorServiceImpl(s3Service);
   }
 
   @AfterEach
@@ -65,19 +65,19 @@ class ItemProcessorServiceImplTest {
   @Test
   void process() throws InterruptedException, ExecutionException {
 
-    BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> noOpFilter =
+    BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> noOpFilter =
         (in, cfg) -> childrenList().stream();
-    ReflectionTestUtils.setField(ItemType.LOGS, "filter", noOpFilter);
-    ReflectionTestUtils.setField(ItemType.CDC, "filter", noOpFilter);
+    ReflectionTestUtils.setField(LogFileType.LOGS, "filter", noOpFilter);
+    ReflectionTestUtils.setField(LogFileType.CDC, "filter", noOpFilter);
 
-    when(s3Service.getItemContent(TestCostant.S3_KEY))
+    when(s3Service.getContent(TestCostant.S3_KEY))
         .then((i) -> IOUtils.toInputStream("BUCKETFILE", Charset.defaultCharset()));
 
 
-    List<Item> items = TestCostant.items;
+    List<LogFileReference> items = TestCostant.items;
     DailyContextCfg ctx = DailyContextCfg.builder()
         .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
-        .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
+        .tmpBasePath(TestCostant.TMP_FOLDER).logFileTypes(Set.of(LogFileType.values()))
         .logDate(TestCostant.LOGDATE).build();
 
 
@@ -105,7 +105,7 @@ class ItemProcessorServiceImplTest {
       });
 
       int exepectedFileWrite = items.size() * childrenList().size();
-      verify(s3Service, times(items.size())).getItemContent(anyString());
+      verify(s3Service, times(items.size())).getContent(anyString());
 
       fileUtils.verify(() -> FilesUtils.createOrCleanDirectory(any()), times(1));
       fileUtils.verify(() -> FilesUtils.createDirectories(any()), times(1));
@@ -117,16 +117,16 @@ class ItemProcessorServiceImplTest {
 
   @Test
   void process_IOExceptionWhenCloseS3Stream() throws IOException {
-    BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> noOpFilter =
+    BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> noOpFilter =
         (in, cfg) -> childrenList().stream();
-    ReflectionTestUtils.setField(ItemType.LOGS, "filter", noOpFilter);
-    ReflectionTestUtils.setField(ItemType.CDC, "filter", noOpFilter);
+    ReflectionTestUtils.setField(LogFileType.LOGS, "filter", noOpFilter);
+    ReflectionTestUtils.setField(LogFileType.CDC, "filter", noOpFilter);
     doThrow(IOException.class).when(content).close();
-    when(s3Service.getItemContent(TestCostant.S3_KEY)).then((i) -> content);
-    Stream<Item> items = TestCostant.items.stream();
+    when(s3Service.getContent(TestCostant.S3_KEY)).then((i) -> content);
+    Stream<LogFileReference> items = TestCostant.items.stream();
     DailyContextCfg ctx = DailyContextCfg.builder()
         .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
-        .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
+        .tmpBasePath(TestCostant.TMP_FOLDER).logFileTypes(Set.of(LogFileType.values()))
         .logDate(TestCostant.LOGDATE).build();
     ctx.initContext();
     assertThrows(UncheckedIOException.class, () -> service.process(items, ctx));
@@ -134,39 +134,39 @@ class ItemProcessorServiceImplTest {
 
   @Test
   void process_IOExceptionWhenCloseFileStream() throws IOException {
-    BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> noOpFilter =
+    BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> noOpFilter =
         (in, cfg) -> childrenListIOException().stream();
-    ReflectionTestUtils.setField(ItemType.LOGS, "filter", noOpFilter);
-    ReflectionTestUtils.setField(ItemType.CDC, "filter", noOpFilter);
+    ReflectionTestUtils.setField(LogFileType.LOGS, "filter", noOpFilter);
+    ReflectionTestUtils.setField(LogFileType.CDC, "filter", noOpFilter);
     when(content.read(any())).thenReturn(-1);
     doThrow(IOException.class).when(content).close();
-    when(s3Service.getItemContent(TestCostant.S3_KEY))
+    when(s3Service.getContent(TestCostant.S3_KEY))
         .then((i) -> IOUtils.toInputStream("BUCKETFILE", Charset.defaultCharset()));
-    Stream<Item> items = TestCostant.items.stream();
+    Stream<LogFileReference> items = TestCostant.items.stream();
 
     DailyContextCfg ctx = DailyContextCfg.builder()
         .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
-        .tmpBasePath(TestCostant.TMP_FOLDER).itemTypes(Set.of(ItemType.values()))
+        .tmpBasePath(TestCostant.TMP_FOLDER).logFileTypes(Set.of(LogFileType.values()))
         .logDate(TestCostant.LOGDATE).build();
     ctx.initContext();
     assertThrows(UncheckedIOException.class, () -> service.process(items, ctx));
   }
 
 
-  private List<ItemChildren> childrenListIOException() {
-    return List.of(new ItemChildren(Retention.AUDIT10Y, content, "fileName"));
+  private List<ClassifiedLogFragment> childrenListIOException() {
+    return List.of(new ClassifiedLogFragment(Retention.AUDIT10Y, content, "fileName"));
   }
 
-  private List<ItemChildren> childrenList() {
+  private List<ClassifiedLogFragment> childrenList() {
     InputStream file_1_1 =
         IOUtils.toInputStream(RandomStringUtils.random(20), Charset.defaultCharset());
     InputStream file_1_2 =
         IOUtils.toInputStream(RandomStringUtils.random(20), Charset.defaultCharset());
     InputStream file_1_3 =
         IOUtils.toInputStream(RandomStringUtils.random(20), Charset.defaultCharset());
-    return List.of(new ItemChildren(Retention.AUDIT10Y, file_1_1, "fileName10"),
-        new ItemChildren(Retention.AUDIT5Y, file_1_2, "fileName5"),
-        new ItemChildren(Retention.DEVELOPER, file_1_3, "fileNamedev"));
+    return List.of(new ClassifiedLogFragment(Retention.AUDIT10Y, file_1_1, "fileName10"),
+        new ClassifiedLogFragment(Retention.AUDIT5Y, file_1_2, "fileName5"),
+        new ClassifiedLogFragment(Retention.DEVELOPER, file_1_3, "fileNamedev"));
 
   }
 }

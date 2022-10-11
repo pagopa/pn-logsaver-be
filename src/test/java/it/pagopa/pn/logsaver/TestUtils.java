@@ -10,7 +10,7 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.StorageExecution.ExecutionDetails;
@@ -42,7 +42,7 @@ public class TestUtils {
 
   public static boolean equals(ExecutionEntity ent, ExecutionEntity entTar) {
 
-    return ent.getItemTypes().equals(entTar.getItemTypes())
+    return ent.getLogFileTypes().equals(entTar.getLogFileTypes())
         && ent.getLogDate().equals(entTar.getLogDate())
         && equals(ent.getRetentionResult(), entTar.getRetentionResult());
   }
@@ -59,7 +59,7 @@ public class TestUtils {
 
   public static boolean equals(ExecutionEntity ent, StorageExecution model) {
 
-    return ItemType.values(ent.getItemTypes()).equals(model.getItemTypes())
+    return LogFileType.values(ent.getLogFileTypes()).equals(model.getLogFileTypes())
         && DateUtils.parse(ent.getLogDate()).equals(model.getLogDate())
         && equals(ent.getRetentionResult().values(), model.getDetails());
   }

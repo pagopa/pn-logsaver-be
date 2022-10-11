@@ -42,24 +42,24 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
 
   @Override
-  public AuditStorage uploadFile(AuditStorage itemUpd) {
+  public AuditStorage uploadFile(AuditStorage audit) {
 
-    String sha256 = FilesUtils.computeSha256(itemUpd.filePath());
-    String mediaType = itemUpd.exportType().getMediaType();
+    String sha256 = FilesUtils.computeSha256(audit.filePath());
+    String mediaType = audit.exportType().getMediaType();
     try {
-      log.info("Send fileCreationRequest for file {}", itemUpd.filePath().toString());
-      FileCreationResponse res = createFile(sha256, mediaType, cfg.getStorageDocumentType(itemUpd));
+      log.info("Send fileCreationRequest for file {}", audit.filePath().toString());
+      FileCreationResponse res = createFile(sha256, mediaType, cfg.getStorageDocumentType(audit));
 
-      log.info("Send fileContent to recevide url {}", res.getUploadUrl());
-      this.uploadContent(res, sha256, itemUpd.filePath(), mediaType);
+      log.info("Send fileContent to received url {}", res.getUploadUrl());
+      this.uploadContent(res, sha256, audit.filePath(), mediaType);
 
-      log.info("File sent successfully. SafeStorage key {}", res.getKey());
+      log.info("File {} sent successfully {}. SafeStorage key {}", audit.fileName(), res.getKey());
 
-      return itemUpd.uploadKey(res.getKey());
+      return audit.uploadKey(res.getKey());
 
     } catch (Exception e) {
-      log.error("Exception on upload file {}", itemUpd.filePath().toString());
-      return itemUpd.error(e);
+      log.error("Exception on upload file {}", audit.filePath().toString());
+      return audit.error(e);
     }
 
   }

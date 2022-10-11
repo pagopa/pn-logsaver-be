@@ -36,7 +36,7 @@ import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -97,7 +97,7 @@ class StorageDaoDynamoImplTest {
 
   @Test
   void latestExecution() {
-    ExecutionEntity mock = ExecutionEntity.builder().itemTypes(ItemType.valuesAsString())
+    ExecutionEntity mock = ExecutionEntity.builder().logFileTypes(LogFileType.valuesAsString())
         .logDate(TestCostant.LOGDATE.toString())
         .retentionResult(StorageDaoLogicSupport.defaultResultMap()).build();
     when(executionTable.query(any(QueryEnhancedRequest.class)))
@@ -189,7 +189,7 @@ class StorageDaoDynamoImplTest {
 
   @Test
   void executionBetween() {
-    ExecutionEntity mock = ExecutionEntity.builder().itemTypes(ItemType.valuesAsString())
+    ExecutionEntity mock = ExecutionEntity.builder().logFileTypes(LogFileType.valuesAsString())
         .logDate(TestCostant.LOGDATE.toString())
         .retentionResult(StorageDaoLogicSupport.defaultResultMap()).build();
 
@@ -206,10 +206,10 @@ class StorageDaoDynamoImplTest {
   @Test
   void updateExecution() {
 
-    ExecutionEntity mock = ExecutionEntity.builder().itemTypes(ItemType.valuesAsString())
+    ExecutionEntity mock = ExecutionEntity.builder().logFileTypes(LogFileType.valuesAsString())
         .logDate("2022-07-13").retentionResult(StorageDaoLogicSupport.defaultResultMap()).build();
 
-    ExecutionEntity mock2 = ExecutionEntity.builder().itemTypes(ItemType.valuesAsString())
+    ExecutionEntity mock2 = ExecutionEntity.builder().logFileTypes(LogFileType.valuesAsString())
         .logDate("2022-07-12").retentionResult(StorageDaoLogicSupport.defaultResultMap()).build();
 
     when(executionTable.query(any(QueryEnhancedRequest.class)))
@@ -240,7 +240,7 @@ class StorageDaoDynamoImplTest {
         AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
             .result(AuditStorageStatus.SENT.name()).logDate(TestCostant.LOGDATE.toString())
             .retention(Retention.DEVELOPER).build());
-    storageDao.updateExecution(auditFiles, TestCostant.LOGDATE, Set.of(ItemType.values()));
+    storageDao.updateExecution(auditFiles, TestCostant.LOGDATE, Set.of(LogFileType.values()));
 
     TransactWriteItemsEnhancedRequest transac = transacRequest.getValue();
 

@@ -24,7 +24,7 @@ import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.services.StorageService;
 
@@ -71,7 +71,7 @@ class StorageServiceImplTest {
     Map<String, RetentionResult> retentionResult = StorageDaoLogicSupport.defaultResultMap();
 
     when(storageDao.getLatestExecution())
-        .thenReturn(ExecutionEntity.builder().itemTypes(ItemType.valuesAsString())
+        .thenReturn(ExecutionEntity.builder().logFileTypes(LogFileType.valuesAsString())
             .retentionResult(retentionResult).logDate(TestCostant.LOGDATE.toString()).build());
 
     StorageExecution latest = service.getLatestStorageExecution();
@@ -79,7 +79,7 @@ class StorageServiceImplTest {
     verify(storageDao, times(1)).getLatestExecution();
     assertNotNull(latest);
     assertEquals(TestCostant.LOGDATE, latest.getLogDate());
-    assertEquals(Set.of(ItemType.values()), latest.getItemTypes());
+    assertEquals(Set.of(LogFileType.values()), latest.getLogFileTypes());
     assertEquals(retentionResult.values().size(), latest.getDetails().size());
   }
 
@@ -99,7 +99,7 @@ class StorageServiceImplTest {
   void storageExecutionBetween() {
 
     when(storageDao.getExecutionBetween(any(), any()))
-        .thenReturn(List.of(ExecutionEntity.builder().itemTypes(ItemType.valuesAsString())
+        .thenReturn(List.of(ExecutionEntity.builder().logFileTypes(LogFileType.valuesAsString())
             .retentionResult(StorageDaoLogicSupport.defaultResultMap())
             .logDate(TestCostant.LOGDATE.toString()).build()));
     List<StorageExecution> resList =

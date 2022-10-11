@@ -1,9 +1,9 @@
 package it.pagopa.pn.logsaver.dao.entity;
 
-import java.time.LocalDateTime;
 import org.apache.commons.lang3.StringUtils;
 import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,7 +26,7 @@ public class AuditStorageEntity extends AuditStorageBase {
 
   private String result;
 
-  private LocalDateTime insertDateTime;
+  private String insertDateTime;
 
 
   @Builder
@@ -38,7 +38,7 @@ public class AuditStorageEntity extends AuditStorageBase {
     this.result = result;
     this.retentionType = retention.name();
     this.contentType = exportType.name();
-    this.insertDateTime = LocalDateTime.now();
+    this.insertDateTime = DateUtils.isoDateTime();
 
   }
 

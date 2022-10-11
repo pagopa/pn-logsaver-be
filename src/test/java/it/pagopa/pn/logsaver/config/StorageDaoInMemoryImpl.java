@@ -13,7 +13,7 @@ import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -58,7 +58,7 @@ public class StorageDaoInMemoryImpl implements StorageDao {
 
   @Override
   public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate,
-      Set<ItemType> types) {
+      Set<LogFileType> types) {
     LocalDate lastContinuosExecutionReg = getLatestContinuosExecution();
 
     ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types);

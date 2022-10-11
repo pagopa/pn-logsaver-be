@@ -4,11 +4,11 @@ import java.util.List;
 import java.util.stream.Stream;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
-import it.pagopa.pn.logsaver.model.Item;
+import it.pagopa.pn.logsaver.model.LogFileReference;
 
 
-public interface ItemProcessorService {
+public interface LogFileProcessorService {
 
-  List<AuditFile> process(Stream<Item> items, DailyContextCfg dailyCtx);
+  List<AuditFile> process(Stream<LogFileReference> fileStream, DailyContextCfg dailyCtx);
 
 }

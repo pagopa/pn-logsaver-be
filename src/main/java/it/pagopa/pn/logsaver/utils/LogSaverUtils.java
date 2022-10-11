@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.Item;
+import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.Retention;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ public class LogSaverUtils {
    * @param itemStream
    * @return
    */
-  public static Stream<Item> toParallelStream(List<Item> itemStream) {
+  public static Stream<LogFileReference> toParallelStream(List<LogFileReference> itemStream) {
     return itemStream.stream().parallel();
   }
 

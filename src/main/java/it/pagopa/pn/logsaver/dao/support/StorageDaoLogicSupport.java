@@ -16,7 +16,7 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.experimental.UtilityClass;
@@ -26,10 +26,10 @@ public class StorageDaoLogicSupport {
 
 
   public static ExecutionEntity from(List<AuditStorageEntity> auditList, LocalDate logDate,
-      Set<ItemType> types) {
+      Set<LogFileType> types) {
     return ExecutionEntity.builder().logDate(DateUtils.format(logDate))
         .retentionResult(AuditStorageMapper.toResultExecution(auditList))
-        .itemTypes(ItemType.valuesAsString(types)).build();
+        .logFileTypes(LogFileType.valuesAsString(types)).build();
   }
 
 
@@ -38,7 +38,7 @@ public class StorageDaoLogicSupport {
     Map<String, RetentionResult> def = StorageDaoLogicSupport.defaultResultMap();
 
     return ExecutionEntity.builder().logDate(StorageDao.FIRST_START_DAY)
-        .itemTypes(ItemType.valuesAsString()).retentionResult(def).build();
+        .logFileTypes(LogFileType.valuesAsString()).retentionResult(def).build();
   }
 
 

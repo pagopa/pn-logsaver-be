@@ -22,13 +22,13 @@ import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.model.DailySaverResult.DailySaverResultBuilder;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.Item;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileReference;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.services.AuditSaverService;
-import it.pagopa.pn.logsaver.services.ItemProcessorService;
-import it.pagopa.pn.logsaver.services.ItemReaderService;
+import it.pagopa.pn.logsaver.services.LogFileProcessorService;
+import it.pagopa.pn.logsaver.services.LogFileReaderService;
 import it.pagopa.pn.logsaver.services.StorageService;
 import it.pagopa.pn.logsaver.services.support.AuditSaverLogicSupport;
 import it.pagopa.pn.logsaver.utils.DateUtils;
@@ -40,15 +40,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AuditSaverServiceImpl implements AuditSaverService {
 
-  private final ItemReaderService readerService;
-  private final ItemProcessorService service;
+  private final LogFileReaderService readerService;
+  private final LogFileProcessorService service;
   private final StorageService storageService;
   private final LogSaverCfg cfg;
 
 
   @Override
-  public List<DailySaverResult> dailySaverFromLatestExecutionToYesterday(Set<ItemType> itemTypes,
-      Map<Retention, Set<ExportType>> retentionExportTypeMap) {
+  public List<DailySaverResult> dailySaverFromLatestExecutionToYesterday(
+      Set<LogFileType> logFileType, Map<Retention, Set<ExportType>> retentionExportTypeMap) {
 
     List<DailySaverResult> resList = new ArrayList<>();
     LocalDate yesterday = DateUtils.yesterday();
@@ -91,7 +91,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       }
     } else {
       resList.add(dailySaver(DailyContextCfg.builder().logDate(yesterday)
-          .retentionExportTypeMap(retentionExportTypeMap).itemTypes(itemTypes)
+          .retentionExportTypeMap(retentionExportTypeMap).logFileTypes(logFileType)
           .tmpBasePath(cfg.getTmpBasePath()).build()));
     }
 
@@ -162,7 +162,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
     return recoveryMap.isEmpty() ? null
         : DailyContextCfg.builder().logDate(logDate).tmpBasePath(cfg.getTmpBasePath())
-            .itemTypes(storExec.getItemTypes()).retentionExportTypeMap(recoveryMap).build();
+            .logFileTypes(storExec.getLogFileTypes()).retentionExportTypeMap(recoveryMap).build();
 
   }
 
@@ -176,11 +176,11 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       log.info("Start execution for day {}", dailyCtx.logDate());
       dailyCtx.initContext();
 
-      Stream<Item> items = readerService.findItems(dailyCtx);
+      Stream<LogFileReference> files = readerService.findLogFiles(dailyCtx);
 
-      List<AuditFile> grouped = service.process(items, dailyCtx);
+      List<AuditFile> auditFiles = service.process(files, dailyCtx);
 
-      List<AuditStorage> auditStorageList = storageService.store(grouped, dailyCtx);
+      List<AuditStorage> auditStorageList = storageService.store(auditFiles, dailyCtx);
       log.info("End execution for day {}", dailyCtx.logDate());
 
       return resBuilder.auditStorageList(auditStorageList).build();

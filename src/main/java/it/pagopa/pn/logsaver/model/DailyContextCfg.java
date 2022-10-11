@@ -25,7 +25,7 @@ public class DailyContextCfg {
   @NonNull
   private String tmpBasePath;
   @NonNull
-  private Set<ItemType> itemTypes;
+  private Set<LogFileType> logFileTypes;
   @Default
   private Map<Retention, Path> retentionTmpFolder = new LinkedHashMap<>();
   @NonNull

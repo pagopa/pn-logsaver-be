@@ -14,8 +14,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonStreamParser;
 import it.pagopa.pn.logsaver.exceptions.LogFilterException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
-import it.pagopa.pn.logsaver.model.Item;
-import it.pagopa.pn.logsaver.model.Item.ItemChildren;
+import it.pagopa.pn.logsaver.model.LogFileReference;
+import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.services.support.LogsFilterSupport;
 import lombok.RequiredArgsConstructor;
@@ -24,13 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
 @Slf4j
-public class LogProcessFunction implements BiFunction<Item, DailyContextCfg, Stream<ItemChildren>> {
+public class LogProcessFunction implements BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> {
 
   @Override
-  public Stream<ItemChildren> apply(Item item, DailyContextCfg ctx) {
+  public Stream<ClassifiedLogFragment> apply(LogFileReference logFileRef, DailyContextCfg ctx) {
     try {
 
-      Reader reader = new InputStreamReader(new GZIPInputStream(item.getContent()));
+      Reader reader = new InputStreamReader(new GZIPInputStream(logFileRef.getContent()));
       Iterator<JsonElement> sourceIterator = new JsonStreamParser(reader);
 
       Stream<JsonElement> targetStream =
@@ -42,8 +42,8 @@ public class LogProcessFunction implements BiFunction<Item, DailyContextCfg, Str
           .map(Map::entrySet).flatMap(Set::stream).map(entryRetentionAudit -> {
             String logToWrite = entryRetentionAudit.getValue().toString();
             Retention retention = entryRetentionAudit.getKey();
-            return new ItemChildren(retention, new ByteArrayInputStream(logToWrite.getBytes()),
-                item.getFileName());
+            return new ClassifiedLogFragment(retention, new ByteArrayInputStream(logToWrite.getBytes()),
+                logFileRef.getFileName());
           });
 
     } catch (Exception e) {

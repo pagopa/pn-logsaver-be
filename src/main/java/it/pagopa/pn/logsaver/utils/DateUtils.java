@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver.utils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -19,10 +20,8 @@ public class DateUtils {
   }
 
   public static String format(LocalDate date) {
-    DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
-    return date.format(formatter);
+    return date.format(DateTimeFormatter.ISO_DATE);
   }
-
 
   public static LocalDate yesterday() {
     return LocalDate.now(italianZoneId).minusDays(1);
@@ -30,5 +29,9 @@ public class DateUtils {
 
   public static List<LocalDate> getDatesRange(LocalDate startDate, LocalDate endDate) {
     return startDate.plusDays(1).datesUntil(endDate).collect(Collectors.toList());
+  }
+
+  public static String isoDateTime() {
+    return LocalDateTime.now(italianZoneId).format(DateTimeFormatter.ISO_DATE_TIME);
   }
 }

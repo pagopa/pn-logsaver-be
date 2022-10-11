@@ -20,12 +20,12 @@ import it.pagopa.pn.logsaver.exceptions.FileSystemException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.services.AuditSaverService;
-import it.pagopa.pn.logsaver.services.ItemProcessorService;
-import it.pagopa.pn.logsaver.services.ItemReaderService;
+import it.pagopa.pn.logsaver.services.LogFileProcessorService;
+import it.pagopa.pn.logsaver.services.LogFileReaderService;
 import it.pagopa.pn.logsaver.services.StorageService;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
@@ -34,9 +34,9 @@ import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 class AuditSaverServiceImplTest {
 
   @Mock
-  private ItemReaderService readerService;
+  private LogFileReaderService readerService;
   @Mock
-  private ItemProcessorService procService;
+  private LogFileProcessorService procService;
   @Mock
   private StorageService storageService;
   @Mock
@@ -59,11 +59,11 @@ class AuditSaverServiceImplTest {
     when(storageService.getLatestContinuosExecutionDate())
         .thenReturn(DateUtils.yesterday().minusDays(3));
     when(storageService.getStorageExecutionBetween(any(), any()))
-        .thenReturn(List.of(StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        .thenReturn(List.of(StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(3))
             .details(TestUtils.defaultExecutionDetails()).build()));
 
-    when(readerService.findItems(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
+    when(readerService.findLogFiles(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
 
     when(procService.process(any(), any())).thenReturn(TestCostant.auditFiles);
 
@@ -71,7 +71,7 @@ class AuditSaverServiceImplTest {
 
 
     List<DailySaverResult> res = service.dailySaverFromLatestExecutionToYesterday(
-        Set.of(ItemType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
+        Set.of(LogFileType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
 
     List<DailyContextCfg> ctxList = ctxCaptor.getAllValues();
 
@@ -92,23 +92,23 @@ class AuditSaverServiceImplTest {
   void dailySaverFromLatestExecutionToYesterday_WithOneDayToRecover() {
 
     List<StorageExecution> mockResList = List.of(
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(4))
             .details(TestUtils.defaultExecutionDetails()).build(),
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(2))
             .details(TestUtils.defaultExecutionDetails()).build(),
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(1))
             .details(TestUtils.defaultExecutionDetails()).build(),
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday()).details(TestUtils.defaultExecutionDetails()).build());
 
     when(storageService.getLatestContinuosExecutionDate())
         .thenReturn(DateUtils.yesterday().minusDays(4));
     when(storageService.getStorageExecutionBetween(any(), any())).thenReturn(mockResList);
 
-    when(readerService.findItems(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
+    when(readerService.findLogFiles(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
 
     when(procService.process(any(), any())).thenReturn(TestCostant.auditFiles);
 
@@ -116,7 +116,7 @@ class AuditSaverServiceImplTest {
 
 
     List<DailySaverResult> res = service.dailySaverFromLatestExecutionToYesterday(
-        Set.of(ItemType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
+        Set.of(LogFileType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
 
     List<DailyContextCfg> ctxList = ctxCaptor.getAllValues();
 
@@ -137,26 +137,26 @@ class AuditSaverServiceImplTest {
   void dailySaverFromLatestExecutionToYesterday_WithOneDayToPartialRecover() {
 
     List<StorageExecution> mockResList = List.of(
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(4))
             .details(TestUtils.defaultExecutionDetails()).build(),
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(2))
             .details(TestUtils.defaultExecutionDetails()).build(),
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(3))
             .details(TestUtils.defaultErrorExecutionDetails()).build(),
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(1))
             .details(TestUtils.defaultExecutionDetails()).build(),
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday()).details(TestUtils.defaultExecutionDetails()).build());
 
     when(storageService.getLatestContinuosExecutionDate())
         .thenReturn(DateUtils.yesterday().minusDays(4));
     when(storageService.getStorageExecutionBetween(any(), any())).thenReturn(mockResList);
 
-    when(readerService.findItems(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
+    when(readerService.findLogFiles(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
 
     when(procService.process(any(), any())).thenReturn(TestCostant.auditFiles);
 
@@ -164,7 +164,7 @@ class AuditSaverServiceImplTest {
 
 
     List<DailySaverResult> res = service.dailySaverFromLatestExecutionToYesterday(
-        Set.of(ItemType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
+        Set.of(LogFileType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
 
     List<DailyContextCfg> ctxList = ctxCaptor.getAllValues();
 
@@ -184,13 +184,13 @@ class AuditSaverServiceImplTest {
 
     List<StorageExecution> mockResList = List.of(
 
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(2))
             .details(TestUtils.defaultExecutionDetails()).build(),
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday().minusDays(1))
             .details(TestUtils.defaultExecutionDetails()).build(),
-        StorageExecution.builder().itemTypes(Set.of(ItemType.values()))
+        StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
             .logDate(DateUtils.yesterday()).details(TestUtils.defaultErrorExecutionDetails())
             .build());
 
@@ -198,13 +198,13 @@ class AuditSaverServiceImplTest {
         .thenReturn(DateUtils.yesterday().minusDays(2));
     when(storageService.getStorageExecutionBetween(any(), any())).thenReturn(mockResList);
 
-    when(readerService.findItems(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
+    when(readerService.findLogFiles(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
 
     when(procService.process(any(), any())).thenThrow(FileSystemException.class);
 
 
     List<DailySaverResult> res = service.dailySaverFromLatestExecutionToYesterday(
-        Set.of(ItemType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
+        Set.of(LogFileType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
 
     // List<DailyContextCfg> ctxList = ctxCaptor.getAllValues();
 

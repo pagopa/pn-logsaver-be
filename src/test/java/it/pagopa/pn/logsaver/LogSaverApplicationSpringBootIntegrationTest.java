@@ -19,7 +19,7 @@ class LogSaverApplicationSpringBootIntegrationTest {
   void whenApplicationStarded_thenHaveApplicationArguments() throws Exception {
     this.contextRunner
         .withPropertyValues("retention.export.type=AUDIT10Y$ZIP|PDF_SIGNED,AUDIT5Y$ZIP",
-            "item.types=LOGS")
+            "log.file.types=LOGS")
         .withUserConfiguration(new Class[] {ClApplicationArguments.class, TestConfig.class})
         .run(context -> {
           ClApplicationArguments args = context.getBean(ClApplicationArguments.class);

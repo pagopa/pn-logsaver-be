@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
-
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.dao.StorageDao;
@@ -19,7 +17,7 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExtraType;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.NonNull;
@@ -36,7 +34,6 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactPutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactUpdateItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
@@ -143,10 +140,13 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
   @Override
   public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate,
-      Set<ItemType> types) {
+      Set<LogFileType> types) {
 
+    // Se si ha la necesssità di aaumentare il numero di righe per transazione, monitorare eventuali
+    // limiti
+
+    // Riga dettaglio esecuzione
     ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types);
-    // Controllare eventuali limiti su numero di righe
     TransactUpdateItemEnhancedRequest<ExecutionEntity> executionUpdate =
         TransactUpdateItemEnhancedRequest.builder(ExecutionEntity.class).item(newExecution).build();
 
@@ -169,10 +169,10 @@ public class StorageDaoDynamoImpl implements StorageDao {
       TransactPutItemEnhancedRequest<ContinuosExecutionEntity> condtionalUpdate =
           TransactPutItemEnhancedRequest.builder(ContinuosExecutionEntity.class)
               .item(new ContinuosExecutionEntity(lastContinuosExecutionDate)).build();
-
+      // Riga ultima esecuzioe consecutiva
       transBuild.addPutItem(continuosExecutionTable, condtionalUpdate);
     }
-
+    // Una riga per ogni file generato
     auditList.stream().forEach(entity -> transBuild.addPutItem(auditStorageTable, entity));
 
     enhancedClient.transactWriteItems(transBuild.build());

@@ -13,7 +13,7 @@ import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.ItemType;
+import it.pagopa.pn.logsaver.model.LogFileType;
 import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.StorageExecution.ExecutionDetails;
@@ -54,7 +54,7 @@ public class AuditStorageMapper {
 
   public static StorageExecution toModel(ExecutionEntity entity) {
     return new StorageExecution(DateUtils.parse(entity.getLogDate()),
-        ItemType.values(entity.getItemTypes()), toModel(entity.getRetentionResult()));
+        LogFileType.values(entity.getLogFileTypes()), toModel(entity.getRetentionResult()));
   }
 
   public static List<ExecutionDetails> toModel(Map<String, RetentionResult> resList) {
