@@ -2,6 +2,13 @@
   "Parameters" : {
     "SafeStorageBaseUrl": "https://ewlg4idc89.execute-api.eu-south-1.amazonaws.com/dev",
     "SafeStorageCxId": "pn-delivery-push",
-    "ScheduleExpression": "cron(0 10,11,20 * * ? *)"
+    "ScheduleExpression": "cron(0 10,11,20 * * ? *)",
+    "SafeStorageDocTypesPdf10y": "PN_LEGAL_FACTS",
+    "SafeStorageDocTypesPdf5y": "PN_LEGAL_FACTS",
+    "SafeStorageDocTypesPdf120d": "PN_LEGAL_FACTS",
+    "SafeStorageDocTypesZip10y": "PN_LOGS_ARCHIVE_AUDIT10Y",
+    "SafeStorageDocTypesZip5y": "PN_LOGS_ARCHIVE_AUDIT5Y",
+    "SafeStorageDocTypesZip120d": "PN_LOGS_ARCHIVE_TEMP"
+
   }
 }
