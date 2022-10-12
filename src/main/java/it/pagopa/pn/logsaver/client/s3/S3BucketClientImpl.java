@@ -36,10 +36,10 @@ public class S3BucketClientImpl implements S3BucketClient {
 
 
   @Override
-  public Stream<String> findSubFolders(String prefix) {
-    log.debug("Call s3 bucket for list subfolders with prefix {}", prefix);
+  public Stream<String> findSubFolders(String prefix, String suffix) {
+    log.debug("Call s3 bucket for list subfolders between  {} and {} ", prefix, suffix);
     ListObjectsV2Response response = clientS3.listObjectsV2(ListObjectsV2Request.builder()
-        .bucket(awsCfg.getS3BucketName()).prefix(prefix).delimiter("/").build());
+        .bucket(awsCfg.getS3BucketName()).prefix(prefix).delimiter("/".concat(suffix)).build());
     return response.commonPrefixes().stream()
         .map(item -> StringUtils.removeStart(item.prefix(), prefix))
         .map(item -> StringUtils.removeEnd(item, "/"));

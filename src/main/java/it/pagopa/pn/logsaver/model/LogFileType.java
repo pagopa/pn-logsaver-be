@@ -14,22 +14,19 @@ import lombok.Getter;
 public enum LogFileType {
 
 
-  CDC("cdc/", Set.of(Retention.AUDIT10Y),
-      (in, cfg) -> Stream
-          .of(new ClassifiedLogFragment(Retention.AUDIT10Y, in.getContent(), in.getFileName()))), LOGS(
-              "logs/ecs/", Set.of(Retention.values()), new LogProcessFunction());
+  CDC(Set.of(Retention.AUDIT10Y),
+      (in, cfg) -> Stream.of(
+          new ClassifiedLogFragment(Retention.AUDIT10Y, in.getContent(), in.getFileName()))), LOGS(
+              Set.of(Retention.values()), new LogProcessFunction());
 
 
-
-  private String subFolfer;
   private Set<Retention> retentions;
   private BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> filter;
 
 
 
-  private LogFileType(String subFolfer, Set<Retention> retentions,
+  private LogFileType(Set<Retention> retentions,
       BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> filter) {
-    this.subFolfer = subFolfer;
     this.retentions = retentions;
     this.filter = filter;
 

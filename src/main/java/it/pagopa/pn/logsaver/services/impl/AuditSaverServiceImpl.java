@@ -189,7 +189,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       log.error("Error processing audit for day " + dailyCtx.logDate().toString(), e);
       return resBuilder.error(e).build();
     } finally {
-      dailyCtx.destroy();
+      // dailyCtx.destroy();
     }
   }
 }

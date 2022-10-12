@@ -45,7 +45,7 @@ class LogFileReaderServiceImplTest {
   private ArgumentCaptor<String> prefix;
 
   @Captor
-  private ArgumentCaptor<String> subFolder;
+  private ArgumentCaptor<String> subFolderPrefix;
 
   private final List<String> expectedPrefix = TestCostant.EXPECTED_PREFIX;
 
@@ -72,7 +72,7 @@ class LogFileReaderServiceImplTest {
 
     List<LogFileReference> res = service.findLogFiles(TestCostant.CTX).collect(Collectors.toList());
 
-    verify(clientS3, times(0)).findSubFolders(any(String.class));
+    verify(clientS3, times(0)).findSubFolders(any(String.class), any(String.class));
     verify(clientS3, times(expFindObjectInvocation)).findObjects(prefix.capture());
 
     List<String> prefixRes = prefix.getAllValues();
@@ -103,14 +103,13 @@ class LogFileReaderServiceImplTest {
         .thenAnswer((InvocationOnMock invocation) -> mockResList.stream());
 
 
-    when(clientS3.findSubFolders(LogFileType.CDC.getSubFolfer()))
-        .thenReturn(TestCostant.TABLES.stream());
-    when(clientS3.findSubFolders(LogFileType.LOGS.getSubFolfer()))
-        .thenReturn(TestCostant.MICROSERVICES.stream());
+    when(clientS3.findSubFolders("cdc/", "2022")).thenReturn(TestCostant.TABLES.stream());
+    when(clientS3.findSubFolders("logs/", "2022")).thenReturn(TestCostant.MICROSERVICES.stream());
 
     List<LogFileReference> res = service.findLogFiles(TestCostant.CTX).collect(Collectors.toList());
 
-    verify(clientS3, times(LogFileType.values().length)).findSubFolders(subFolder.capture());
+    verify(clientS3, times(LogFileType.values().length)).findSubFolders(subFolderPrefix.capture(),
+        anyString());
     verify(clientS3, times(expFindObjectInvocation)).findObjects(prefix.capture());
 
     List<String> prefixRes = prefix.getAllValues();
@@ -120,9 +119,9 @@ class LogFileReaderServiceImplTest {
     });
 
 
-    List<String> subFolderRes = subFolder.getAllValues();
+    List<String> subFolderRes = subFolderPrefix.getAllValues();
     assertEquals(LogFileType.values().length, subFolderRes.size());
-    Stream.of(LogFileType.values()).map(LogFileType::getSubFolfer).forEach(subFolder -> {
+    Stream.of("cdc/", "logs/").forEach(subFolder -> {
       assertThat(subFolderRes).contains(subFolder);
     });
 

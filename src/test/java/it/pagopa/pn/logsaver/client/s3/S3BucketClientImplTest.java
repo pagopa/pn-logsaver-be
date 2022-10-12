@@ -79,7 +79,7 @@ class S3BucketClientImplTest {
         .thenReturn(ListObjectsV2Response.builder().commonPrefixes(resPrefixList).build());
 
 
-    List<String> resList = client.findSubFolders("logs/ecs/").collect(Collectors.toList());
+    List<String> resList = client.findSubFolders("logs/ecs/", "2022").collect(Collectors.toList());
 
     verify(clientS3, times(1)).listObjectsV2(any(ListObjectsV2Request.class));
     assertEquals(3, resList.size());

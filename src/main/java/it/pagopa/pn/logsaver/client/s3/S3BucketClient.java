@@ -9,7 +9,7 @@ public interface S3BucketClient {
 
   Stream<S3Object> findObjects(String prefix);
 
-  Stream<String> findSubFolders(String prefix);
+  Stream<String> findSubFolders(String prefix, String suffix);
 
   InputStream getObjectContent(String key);
 

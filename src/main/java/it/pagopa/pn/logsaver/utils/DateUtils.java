@@ -14,7 +14,6 @@ public class DateUtils {
 
   private static final ZoneId italianZoneId = ZoneId.of("Europe/Rome");
 
-
   public static LocalDate parse(String date) {
     return StringUtils.isEmpty(date) ? null : LocalDate.parse(date, DateTimeFormatter.ISO_DATE);
   }
@@ -33,5 +32,9 @@ public class DateUtils {
 
   public static String isoDateTime() {
     return LocalDateTime.now(italianZoneId).format(DateTimeFormatter.ISO_DATE_TIME);
+  }
+
+  public static String getYear(LocalDate data) {
+    return data.format(DateTimeFormatter.ofPattern("yyyy"));
   }
 }
