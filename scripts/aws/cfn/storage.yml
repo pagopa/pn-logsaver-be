@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Some storage with input and output
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Nome dell'ambiente destinazione
+
+  # Unused but required by CD pipeline
+  MicroserviceNumber:
+    Type: Number
+    Description: An unique number that identify the microservice inside the ECS cluster.
+
+  # Unused but required by CD pipeline
+  TemplateBucketBaseUrl:
+    Type: String
+    Description: URL da cui caricare i frammenti di template di infrastruttura
+  
+  Version:
+    Type: String
+    Description: 'keep track of used projects commitIds'
+  
+  CdcKinesisSourceStreamArn:
+    Type: String
+    Description: 'Where to send CDC'
+
+Resources:
+
+  # Dynamo Table
+  LogSaverTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-AuditStorage'
+      AttributeDefinitions:
+        - AttributeName: "type"
+          AttributeType: "S"
+        - AttributeName: "logDate"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "type"
+          KeyType: "HASH"
+        - AttributeName: "logDate"
+          KeyType: "RANGE"
+      BillingMode: "PAY_PER_REQUEST"
+      KinesisStreamSpecification:
+        StreamArn: !Ref CdcKinesisSourceStreamArn
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+Outputs:
+  # Dynamo table
+  LogSaverDynamoTableName:
+    Description: Name of dynamodb table containing audit storage
+    Value: !Ref LogSaverTable
+  LogSaverDynamoTableArn:
+    Description: ARN of dynamodb table containing notifications
+    Value: !Sub '${LogSaverTable.Arn}'
