@@ -20,10 +20,13 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class AuditSaverLogicSupport {
 
-  public static Map<LocalDate, StorageExecution> groupByDate(List<StorageExecution> execList,
+  public static void groupByDate(List<StorageExecution> execList,
       Map<LocalDate, StorageExecution> ret) {
-    return execList.stream().collect(Collectors.toMap(StorageExecution::getLogDate,
-        Function.identity(), (a, b) -> a, () -> ret));
+    execList.stream().collect(
+            Collectors.toMap(StorageExecution::getLogDate,
+                            Function.identity(),
+                            (a, b) -> a,
+                    () -> ret));
   }
 
 
