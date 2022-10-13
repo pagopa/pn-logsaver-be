@@ -23,6 +23,7 @@ public class LogSaverRunnerCallback implements ListenableFutureCallback<List<Dai
   @Override
   public void onFailure(Throwable ex) {
     log.error("Faliure executing log saver: " + ex.getMessage(), ex);
+    eventPublisher.publishEvent(new ExitEvent(1));
   }
 
   @Override
