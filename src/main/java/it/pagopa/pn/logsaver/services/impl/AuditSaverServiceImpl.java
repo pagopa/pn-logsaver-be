@@ -173,8 +173,8 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     DailySaverResultBuilder resBuilder = DailySaverResult.builder().logDate(dailyCtx.logDate());
     try {
 
-      log.info("Start execution for day {}", dailyCtx.logDate());
       dailyCtx.initContext();
+      log.info("Start execution for day {}", dailyCtx.logDate());
 
       Stream<LogFileReference> files = readerService.findLogFiles(dailyCtx);
 
@@ -182,7 +182,6 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
       List<AuditStorage> auditStorageList = storageService.store(auditFiles, dailyCtx);
       log.info("End execution for day {}", dailyCtx.logDate());
-
       return resBuilder.auditStorageList(auditStorageList).build();
 
     } catch (Exception e) {

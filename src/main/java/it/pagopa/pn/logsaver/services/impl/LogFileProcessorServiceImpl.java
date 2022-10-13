@@ -51,6 +51,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
   }
 
   private void downloadFilterWrite(LogFileReference itemLog, DailyContextCfg dailyCtx) {
+    LogSaverUtils.initMDC(dailyCtx);
     log.debug("Dowload file {}", itemLog.getS3Key());
     // Download file dal bucket
     try (InputStream content = s3Service.getContent(itemLog.getS3Key());) {
@@ -63,6 +64,8 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     } catch (IOException e) {
       log.warn("Unexpected error closing input stream");
       throw new UncheckedIOException("writeLog IOException", e);
+    } finally {
+      LogSaverUtils.clearMdcFromForkThread();
     }
   }
 

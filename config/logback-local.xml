@@ -6,7 +6,7 @@
             <timeZone>Europe/Rome</timeZone>
 		</encoder>
     </appender>
-    <logger name="it.pagopa.pn" level="DEBUG" />
+    <logger name="it.pagopa.pn" level="info" />
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>

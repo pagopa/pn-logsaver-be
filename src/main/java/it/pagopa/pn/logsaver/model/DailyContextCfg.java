@@ -6,18 +6,22 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import org.slf4j.MDC;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
+import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
 
 
 @Getter
 @Accessors(fluent = true)
 @Builder
+@Slf4j
 public class DailyContextCfg {
 
   @NonNull
@@ -34,6 +38,10 @@ public class DailyContextCfg {
   private Path tmpDailyPath;
 
   public DailyContextCfg initContext() {
+
+    LogSaverUtils.initMDC(this);
+    log.info("Init context for day {}", this.logDate());
+
     this.tmpDailyPath = Paths.get(tmpBasePath(), logDate().toString());
     String tmpDailyPathStr = tmpDailyPath.toString();
 
@@ -47,6 +55,7 @@ public class DailyContextCfg {
 
   public void destroy() {
     FilesUtils.remove(tmpDailyPath());
+    MDC.clear();
   }
 
   public Set<Retention> retentions() {
