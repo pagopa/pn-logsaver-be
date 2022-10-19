@@ -1,9 +1,7 @@
 package it.pagopa.pn.logsaver.model;
 
-public interface LogSaverResult// <R>
-{
+public interface LogSaverResult {
 
-  // R getResults();
 
   int exitCodeAndLogResult();
 }

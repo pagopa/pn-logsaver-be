@@ -22,7 +22,7 @@ class LogSaverApplicationIntegrationTest {
   void whenApplicationTeminated_thenReturnExitCode_0(CapturedOutput output) throws Exception {
     TestConfig.setUp();
     String data = DateUtils.yesterday().minusDays(1).toString();
-    LogSaverApplication.main(new String[] {"--spring.profiles.active=test",
+    LogSaverApplication.main(new String[] {"datelist-saver", "--spring.profiles.active=test",
         "--spring.config.location=classpath:application-test.properties", "--date.list=" + data});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
         .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
@@ -36,7 +36,8 @@ class LogSaverApplicationIntegrationTest {
   void whenApplicationTeminated_thenReturnExitCode_1(CapturedOutput output) throws Exception {
 
     LogSaverApplication.main(new String[] {"--spring.profiles.active=test",
-        "--spring.config.location=classpath:application-test.properties"});
+        "--spring.config.location=classpath:application-test.properties",
+        "--retention.export.type=AUDIT10Y$ZIP|PDF_SIGNED,AUDIT5Y$ZIP", "--log.file.types=LOGS"});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
         .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
 
