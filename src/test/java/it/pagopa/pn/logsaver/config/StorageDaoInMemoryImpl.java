@@ -8,12 +8,13 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
-import it.pagopa.pn.logsaver.model.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -81,6 +82,14 @@ public class StorageDaoInMemoryImpl implements StorageDao {
       execution.put(logDate, newExecution);
     }
 
+  }
+
+
+
+  @Override
+  public Stream<AuditStorageEntity> getAudits(String key, LocalDate dateFrom, LocalDate dateTo) {
+    // TODO Auto-generated method stub
+    return null;
   }
 
 

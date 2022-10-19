@@ -8,10 +8,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.MDC;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
-import it.pagopa.pn.logsaver.model.DailySaverResult;
-import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.LogFileReference;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,17 +47,6 @@ public class LogSaverUtils {
     return itemList.stream().parallel();
   }
 
-  public static int exitCodeAndLogResult(List<DailySaverResult> results) {
-    long exitCode = results.stream().map(resDaily -> {
-      log.info(resDaily.toString());
-      resDaily.successMessages().stream().forEach(log::info);
-      resDaily.errorMessages().stream().forEach(log::info);
-      return resDaily;
-    }).filter(DailySaverResult::hasErrors).count();
-    exitCode = exitCode > 0 ? 1 : 0;
-    log.info("Log Saver Applicantion ends with status as {}", exitCode);
-    return Math.toIntExact(exitCode);
-  }
 
 
 }

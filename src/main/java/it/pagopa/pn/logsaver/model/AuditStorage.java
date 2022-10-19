@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver.model;
 
 import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,12 +27,18 @@ public class AuditStorage extends AuditFile {
 
   private AuditStorageStatus status;
 
+
+
   public static AuditStorage from(AuditFile arc) {
     return AuditStorage.builder().retention(arc.retention()).filePath(arc.filePath())
         .logDate(arc.logDate()).exportType(arc.exportType()).build();
   }
 
-  public boolean sendingError() {
+  public boolean haveError() {
     return Objects.nonNull(error);
+  }
+
+  public String getErrorMessage() {
+    return haveError() ? error.getMessage() : StringUtils.EMPTY;
   }
 }

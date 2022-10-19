@@ -3,14 +3,15 @@ package it.pagopa.pn.logsaver;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
+import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
-import it.pagopa.pn.logsaver.model.ExportType;
 import it.pagopa.pn.logsaver.model.LogFileReference;
-import it.pagopa.pn.logsaver.model.LogFileType;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 
 public final class TestCostant {
@@ -78,5 +79,26 @@ public final class TestCostant {
   public static final DailyContextCfg CTX = DailyContextCfg.builder()
       .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap()).tmpBasePath(TMP_FOLDER)
       .logFileTypes(Set.of(LogFileType.values())).logDate(LOGDATE).build();
+
+
+  public static List<AuditStorageEntity> auditFilesEntity = List.of(
+      AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
+          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT10Y)
+          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+      AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
+          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT5Y)
+          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+      AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
+          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.DEVELOPER)
+          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+      AuditStorageEntity.builder().exportType(ExportType.ZIP)
+          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT10Y)
+          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+      AuditStorageEntity.builder().exportType(ExportType.ZIP)
+          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT5Y)
+          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+      AuditStorageEntity.builder().exportType(ExportType.ZIP)
+          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.DEVELOPER)
+          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build());
 
 }

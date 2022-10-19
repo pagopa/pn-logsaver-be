@@ -7,10 +7,12 @@ import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 
@@ -51,5 +53,12 @@ public class S3BucketClientImpl implements S3BucketClient {
     log.debug("Call s3 bucket for read content object with key {}", key);
     return clientS3
         .getObject(GetObjectRequest.builder().bucket(awsCfg.getS3BucketName()).key(key).build());
+  }
+
+  @Override
+  public void uploadContent(String key, InputStream file, long size, String checksum) {
+    log.debug("Call s3 bucket for upload content object with key {}", key);
+    clientS3.putObject(PutObjectRequest.builder().bucket(awsCfg.getS3BucketName()).key(key)
+        .contentMD5(checksum).build(), RequestBody.fromInputStream(file, size));
   }
 }

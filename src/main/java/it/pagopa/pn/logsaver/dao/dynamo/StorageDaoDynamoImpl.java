@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -17,7 +18,7 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExtraType;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
-import it.pagopa.pn.logsaver.model.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.NonNull;
@@ -195,7 +196,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
   }
 
 
-  public List<ExecutionEntity> executionFrom(LocalDate dateFrom) {
+  private List<ExecutionEntity> executionFrom(LocalDate dateFrom) {
 
 
     QueryConditional queryConditional = QueryConditional
@@ -205,4 +206,18 @@ public class StorageDaoDynamoImpl implements StorageDao {
         .query(QueryEnhancedRequest.builder().queryConditional(queryConditional).build()).items()
         .stream().distinct().collect(Collectors.toList());
   }
+
+
+  @Override
+  public Stream<AuditStorageEntity> getAudits(String key, LocalDate dateFrom, LocalDate dateTo) {
+
+    QueryConditional queryConditional = QueryConditional.sortBetween(
+        Key.builder().partitionValue(key).sortValue(DateUtils.format(dateFrom)).build(),
+        Key.builder().partitionValue(key).sortValue(DateUtils.format(dateTo)).build());
+
+    return auditStorageTable.query(queryConditional).items().stream();
+
+  }
+
+
 }

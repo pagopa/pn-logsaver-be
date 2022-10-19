@@ -21,10 +21,11 @@ import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.model.DailySaverResult.DailySaverResultBuilder;
-import it.pagopa.pn.logsaver.model.ExportType;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
+import it.pagopa.pn.logsaver.model.DailySaverResultList;
 import it.pagopa.pn.logsaver.model.LogFileReference;
-import it.pagopa.pn.logsaver.model.LogFileType;
-import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.services.AuditSaverService;
 import it.pagopa.pn.logsaver.services.LogFileProcessorService;
@@ -47,8 +48,8 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
 
   @Override
-  public List<DailySaverResult> dailySaverFromLatestExecutionToYesterday(
-      Set<LogFileType> logFileType, Map<Retention, Set<ExportType>> retentionExportTypeMap) {
+  public DailySaverResultList dailySaverFromLatestExecutionToYesterday(Set<LogFileType> logFileType,
+      Map<Retention, Set<ExportType>> retentionExportTypeMap) {
 
     List<DailySaverResult> resList = new ArrayList<>();
     LocalDate yesterday = DateUtils.yesterday();
@@ -95,11 +96,11 @@ public class AuditSaverServiceImpl implements AuditSaverService {
           .tmpBasePath(cfg.getTmpBasePath()).build()));
     }
 
-    return resList;
+    return new DailySaverResultList(resList);
   }
 
   @Override
-  public List<DailySaverResult> dailyListSaver(List<LocalDate> dateExecutionList) {
+  public DailySaverResultList dailyListSaver(List<LocalDate> dateExecutionList) {
     List<DailySaverResult> resList = new ArrayList<>();
     // Leggo ultima esecuzione consecutiva
     LocalDate lastContExecDate = storageService.getLatestContinuosExecutionDate();
@@ -124,7 +125,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       log.info("Processing previous days finished");
     }
 
-    return resList;
+    return new DailySaverResultList(resList);
   }
 
 

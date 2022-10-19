@@ -13,4 +13,6 @@ public interface S3BucketClient {
 
   InputStream getObjectContent(String key);
 
+  void uploadContent(String key, InputStream file, long size, String checksum);
+
 }

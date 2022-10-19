@@ -1,8 +1,8 @@
 package it.pagopa.pn.logsaver.dao.entity;
 
 import org.apache.commons.lang3.StringUtils;
-import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.Builder;
 import lombok.Getter;

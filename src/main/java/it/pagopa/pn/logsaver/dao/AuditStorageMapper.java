@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
@@ -12,11 +13,13 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.LogFileType;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.AuditStorageReference;
+import it.pagopa.pn.logsaver.model.DailyAuditStorage;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.StorageExecution.ExecutionDetails;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.experimental.UtilityClass;
 
@@ -42,13 +45,32 @@ public class AuditStorageMapper {
         .logDate(DateUtils.format(storage.logDate())).retention(storage.retention())
         .exportType(storage.exportType()).build();
 
-    if (storage.sendingError()) {
+    if (storage.haveError()) {
       entity.setResult(AuditStorageStatus.CREATED.name());
     } else {
       entity.setResult(AuditStorageStatus.SENT.name());
       entity.setStorageKey(storage.uploadKey());
     }
     return entity;
+  }
+
+  public static List<DailyAuditStorage> toModel(Stream<AuditStorageEntity> entityStream) {
+    return entityStream.collect(Collectors.groupingBy(AuditStorageEntity::getLogDate)).entrySet()
+        .stream().map(entry -> new DailyAuditStorage(DateUtils.parse(entry.getKey()),
+            AuditStorageMapper.toModel(entry.getValue())))
+        .collect(Collectors.toList());
+  }
+
+  public static List<AuditStorageReference> toModel(List<AuditStorageEntity> entityList) {
+    return entityList.stream().map(AuditStorageMapper::toModel).collect(Collectors.toList());
+  }
+
+  public static AuditStorageReference toModel(AuditStorageEntity entity) {
+    return Objects.isNull(entity) ? null
+        : AuditStorageReference.builder().retention(Retention.valueOf(entity.getRetention()))
+            .exportType(ExportType.valueOf(entity.getContentType())).fileName(entity.getFileName())
+            .logDate(DateUtils.parse(entity.getLogDate())).uploadKey(entity.getStorageKey())
+            .status(AuditStorageStatus.valueOf(entity.getResult())).build();
   }
 
 

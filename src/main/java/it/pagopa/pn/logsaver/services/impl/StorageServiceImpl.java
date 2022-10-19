@@ -2,6 +2,8 @@ package it.pagopa.pn.logsaver.services.impl;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.safestorage.PnSafeStorageClient;
@@ -11,11 +13,14 @@ import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
+import it.pagopa.pn.logsaver.model.AuditStorageReference;
+import it.pagopa.pn.logsaver.model.DailyAuditStorage;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.services.StorageService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.logstash.logback.encoder.org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @Service
@@ -25,6 +30,30 @@ public class StorageServiceImpl implements StorageService {
   private final PnSafeStorageClient safeStorageClient;
 
   private final StorageDao storageDao;
+
+  @Override
+  public List<DailyAuditStorage> getAuditFile(LocalDate from, LocalDate to) {
+    log.info("Read execution from {} to {}", from.toString(), to.toString());
+    List<ExecutionEntity> executionList = storageDao.getExecutionBetween(from, to);
+    // Raggruppo le partizioni dove sono memorizzate le informazioni dei file
+    Set<String> partitionSet =
+        executionList.stream().flatMap(exec -> exec.getRetentionResult().keySet().stream())
+            .distinct().collect(Collectors.toSet());
+    // Per ogni partizione leggo le info dei file per il range di date specificato
+    List<DailyAuditStorage> resList = AuditStorageMapper
+        .toModel(partitionSet.stream().flatMap(key -> storageDao.getAudits(key, from, to)));
+    // Per i file che hanno la chiave di safeStorage recupero le info per il download
+    resList.stream().flatMap(daily -> daily.audits().stream())
+        .filter(audit -> StringUtils.isNoneEmpty(audit.uploadKey()))
+        .forEach(safeStorageClient::dowloadFileInfo);
+    return resList;
+  }
+
+  @Override
+  public AuditStorageReference dowloadAuditFile(AuditStorageReference audit,
+      UnaryOperator<AuditStorageReference> downloadFunction) {
+    return safeStorageClient.dowloadFile(audit, downloadFunction);
+  }
 
   @Override
   public StorageExecution getLatestStorageExecution() {
@@ -62,7 +91,7 @@ public class StorageServiceImpl implements StorageService {
 
     log.info("Sending Audit file {} ", file.fileName());
     AuditStorage itemUpd = safeStorageClient.uploadFile(AuditStorage.from(file));
-    log.info("Sent: {} ", !itemUpd.sendingError());
+    log.info("Sent: {} ", !itemUpd.haveError());
     return itemUpd;
 
   }
