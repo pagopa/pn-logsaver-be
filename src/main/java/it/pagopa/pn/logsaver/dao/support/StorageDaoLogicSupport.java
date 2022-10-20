@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -64,10 +65,7 @@ public class StorageDaoLogicSupport {
     } else {
       return dateFrom;
     }
-
-
   }
-
 
   public static boolean hasErrors(ExecutionEntity storExec) {
     return storExec.getRetentionResult().values().stream()
@@ -77,5 +75,16 @@ public class StorageDaoLogicSupport {
   private static Map<LocalDate, ExecutionEntity> groupByDate(List<ExecutionEntity> execList) {
     return execList.stream()
         .collect(Collectors.toMap(ex -> DateUtils.parse(ex.getLogDate()), Function.identity()));
+  }
+
+  public static Map<String, RetentionResult> mergeRetentionResult(Map<String, RetentionResult> main,
+      Map<String, RetentionResult> branch) {
+    if (Objects.isNull(main)) {
+      return branch;
+    } else {
+      branch.entrySet().stream().forEach(entry -> main.put(entry.getKey(), entry.getValue()));
+      return main;
+    }
+
   }
 }

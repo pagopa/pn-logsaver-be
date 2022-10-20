@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -148,9 +149,13 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
     // Riga dettaglio esecuzione
     ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types);
+    ExecutionEntity oldExecution = getExecution(logDate);
+    if (Objects.nonNull(oldExecution)) {
+      newExecution.setRetentionResult(StorageDaoLogicSupport.mergeRetentionResult(
+          oldExecution.getRetentionResult(), newExecution.getRetentionResult()));
+    }
     TransactUpdateItemEnhancedRequest<ExecutionEntity> executionUpdate =
         TransactUpdateItemEnhancedRequest.builder(ExecutionEntity.class).item(newExecution).build();
-
     final TransactWriteItemsEnhancedRequest.Builder transBuild =
         TransactWriteItemsEnhancedRequest.builder().addUpdateItem(executionTable, executionUpdate);
 
@@ -179,6 +184,13 @@ public class StorageDaoDynamoImpl implements StorageDao {
     enhancedClient.transactWriteItems(transBuild.build());
 
   }
+
+  private ExecutionEntity getExecution(LocalDate logDate) {
+
+    return executionTable.getItem(Key.builder().partitionValue(ExtraType.LOG_SAVER_EXECUTION.name())
+        .sortValue(logDate.toString()).build());
+  }
+
 
 
   @Override
