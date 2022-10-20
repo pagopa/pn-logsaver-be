@@ -30,8 +30,8 @@ public class AuditStorage extends AuditFile {
 
 
   public static AuditStorage from(AuditFile arc) {
-    return AuditStorage.builder().retention(arc.retention()).filePath(arc.filePath())
-        .logDate(arc.logDate()).exportType(arc.exportType()).build();
+    return (AuditStorage) new AuditStorage().retention(arc.retention()).filePath(arc.filePath())
+        .logDate(arc.logDate()).exportType(arc.exportType());
   }
 
   public boolean haveError() {

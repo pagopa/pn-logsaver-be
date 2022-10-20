@@ -30,7 +30,6 @@ public class DailyDownloadResultList implements LogSaverResult {
       return resDaily;
     }).filter(DailyDownloadResult::hasErrors).count();
     exitCode = exitCode > 0 ? 1 : 0;
-    log.info("Log Saver Applicantion ends with status as {}", exitCode);
     return Math.toIntExact(exitCode);
   }
 

@@ -21,7 +21,9 @@ public abstract class BaseCommand implements Command {
 
   @Override
   public void onSuccess(LogSaverResult result) {
-    eventPublisher.publishEvent(new ExitEvent(result.exitCodeAndLogResult()));
+    int exitCode = result.exitCodeAndLogResult();
+    log.info("Log Saver Applicantion ends with status as {}", exitCode);
+    eventPublisher.publishEvent(new ExitEvent(exitCode));
 
   }
 

@@ -41,7 +41,8 @@ public class AuditDownloadServiceImpl implements AuditDownloadService {
     return DailyDownloadResultList.builder().results(files).build();
   }
 
-  private DailyDownloadResult dowloadDailyAudit(DailyAuditDownloadable dailyFiles, String destFolder) {
+  private DailyDownloadResult dowloadDailyAudit(DailyAuditDownloadable dailyFiles,
+      String destFolder) {
     DailyDownloadResultBuilder resBuilder = DailyDownloadResult.builder();
     try {
       log.info("Download files for date {}", dailyFiles.logDate().toString());
@@ -86,7 +87,7 @@ public class AuditDownloadServiceImpl implements AuditDownloadService {
   private byte[] handleReportCsv(List<AuditDownloadReference> audits) {
 
     return audits.stream()
-        .map(audit -> StringUtils.join(";", audit.logDate().toString(), audit.status().name(),
+        .map(audit -> StringUtils.joinWith(";", audit.logDate().toString(), audit.status().name(),
             audit.fileName(), audit.getErrorMessage()))
         .collect(Collectors.joining("\n")).getBytes();
 
