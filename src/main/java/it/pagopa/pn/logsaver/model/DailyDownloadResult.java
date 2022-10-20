@@ -20,14 +20,14 @@ import lombok.Setter;
 @AllArgsConstructor
 public class DailyDownloadResult {
 
-  private DailyAuditStorage audit;
+  private DailyAuditDownloadable audit;
 
   private Throwable error;
 
 
   public boolean hasErrors() {
     return Objects.nonNull(error) || CollectionUtils.emptyIfNull(audit.audits()).stream()
-        .filter(AuditStorageReference::haveError).count() > 0;
+        .filter(AuditDownloadReference::haveError).count() > 0;
   }
 
   public List<String> successMessages() {
@@ -39,27 +39,27 @@ public class DailyDownloadResult {
   }
 
 
-  private boolean haveError(AuditStorageReference file) {
+  private boolean haveError(AuditDownloadReference file) {
     return file.haveError() || AuditStorageStatus.SENT != file.status();
   }
 
-  private String handleErrorMessage(AuditStorageReference audit) {
+  private String handleErrorMessage(AuditDownloadReference audit) {
     return handleBaseMessage(audit).concat(
         String.format("Status: '%s' Error: '%s'", audit.status().name(), audit.getErrorMessage()));
   }
 
-  private String handleSuccessMessage(AuditStorageReference audit) {
+  private String handleSuccessMessage(AuditDownloadReference audit) {
     return handleBaseMessage(audit)
         .concat(String.format("Download: '%s'", audit.destinationFolder()));
   }
 
-  private String handleBaseMessage(AuditStorageReference audit) {
+  private String handleBaseMessage(AuditDownloadReference audit) {
     return String.format("File '%s' Retention '%s' ExportType '%s' ", audit.fileName(),
         audit.retention().name(), audit.exportType().name());
   }
 
-  private List<String> messages(Predicate<AuditStorageReference> predicate,
-      Function<AuditStorageReference, String> mapper) {
+  private List<String> messages(Predicate<AuditDownloadReference> predicate,
+      Function<AuditDownloadReference, String> mapper) {
     return CollectionUtils.emptyIfNull(audit.audits()).stream().filter(predicate).map(mapper)
         .collect(Collectors.toList());
   }

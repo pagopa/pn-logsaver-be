@@ -13,8 +13,8 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.AuditStorageReference;
-import it.pagopa.pn.logsaver.model.DailyAuditStorage;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
+import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.StorageExecution.ExecutionDetails;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
@@ -54,20 +54,20 @@ public class AuditStorageMapper {
     return entity;
   }
 
-  public static List<DailyAuditStorage> toModel(Stream<AuditStorageEntity> entityStream) {
+  public static List<DailyAuditDownloadable> toModel(Stream<AuditStorageEntity> entityStream) {
     return entityStream.collect(Collectors.groupingBy(AuditStorageEntity::getLogDate)).entrySet()
-        .stream().map(entry -> new DailyAuditStorage(DateUtils.parse(entry.getKey()),
+        .stream().map(entry -> new DailyAuditDownloadable(DateUtils.parse(entry.getKey()),
             AuditStorageMapper.toModel(entry.getValue())))
         .collect(Collectors.toList());
   }
 
-  public static List<AuditStorageReference> toModel(List<AuditStorageEntity> entityList) {
+  public static List<AuditDownloadReference> toModel(List<AuditStorageEntity> entityList) {
     return entityList.stream().map(AuditStorageMapper::toModel).collect(Collectors.toList());
   }
 
-  public static AuditStorageReference toModel(AuditStorageEntity entity) {
+  public static AuditDownloadReference toModel(AuditStorageEntity entity) {
     return Objects.isNull(entity) ? null
-        : AuditStorageReference.builder().retention(Retention.valueOf(entity.getRetention()))
+        : AuditDownloadReference.builder().retention(Retention.valueOf(entity.getRetention()))
             .exportType(ExportType.valueOf(entity.getContentType())).fileName(entity.getFileName())
             .logDate(DateUtils.parse(entity.getLogDate())).uploadKey(entity.getStorageKey())
             .status(AuditStorageStatus.valueOf(entity.getResult())).build();

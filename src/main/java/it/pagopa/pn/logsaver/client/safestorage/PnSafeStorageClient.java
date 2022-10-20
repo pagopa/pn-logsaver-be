@@ -2,15 +2,15 @@ package it.pagopa.pn.logsaver.client.safestorage;
 
 import java.util.function.UnaryOperator;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorageReference;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 
 public interface PnSafeStorageClient {
 
   AuditStorage uploadFile(AuditStorage itemUpd);
 
-  AuditStorageReference dowloadFileInfo(AuditStorageReference audit);
+  AuditDownloadReference dowloadFileInfo(AuditDownloadReference audit);
 
-  AuditStorageReference dowloadFile(AuditStorageReference audit,
-      UnaryOperator<AuditStorageReference> downloadFunction);
+  AuditDownloadReference dowloadFile(AuditDownloadReference audit,
+      UnaryOperator<AuditDownloadReference> downloadFunction);
 
 }

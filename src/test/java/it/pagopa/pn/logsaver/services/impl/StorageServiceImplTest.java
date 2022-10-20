@@ -30,8 +30,8 @@ import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.AuditStorageReference;
-import it.pagopa.pn.logsaver.model.DailyAuditStorage;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
+import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
@@ -68,12 +68,12 @@ class StorageServiceImplTest {
     when(storageDao.getAudits(any(), any(), any())).thenAnswer(ans -> auditFiles.stream());
 
     when(safeStorageClient.dowloadFileInfo(any())).thenAnswer(inTarg -> {
-      AuditStorageReference audit = inTarg.getArgument(0, AuditStorageReference.class);
+      AuditDownloadReference audit = inTarg.getArgument(0, AuditDownloadReference.class);
       return audit.downloadUrl("http://downloadurl");
     });
 
 
-    List<DailyAuditStorage> auditStorageRes =
+    List<DailyAuditDownloadable> auditStorageRes =
         service.getAuditFile(TestCostant.LOGDATE, TestCostant.LOGDATE);
 
 
@@ -83,7 +83,7 @@ class StorageServiceImplTest {
 
     assertNotNull(auditStorageRes);
     assertEquals(1, auditStorageRes.size());
-    DailyAuditStorage dailyRes = auditStorageRes.get(0);
+    DailyAuditDownloadable dailyRes = auditStorageRes.get(0);
     assertEquals(auditFiles.size() * 6, dailyRes.audits().size());
 
     dailyRes.audits().forEach(aud -> {
@@ -94,16 +94,16 @@ class StorageServiceImplTest {
 
   @Test
   void dowloadAuditFile() throws IOException {
-    AuditStorageReference file = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference file = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .uploadKey("updKey").build();
 
     when(safeStorageClient.dowloadFile(any(), any())).thenAnswer(inTarg -> {
-      AuditStorageReference audit = inTarg.getArgument(0, AuditStorageReference.class);
+      AuditDownloadReference audit = inTarg.getArgument(0, AuditDownloadReference.class);
       return audit.content(IOUtils.toInputStream("test", Charset.defaultCharset()));
     });
 
-    AuditStorageReference auditStorageRes =
+    AuditDownloadReference auditStorageRes =
         service.dowloadAuditFile(file, UnaryOperator.identity());
     verify(safeStorageClient, times(1)).dowloadFile(any(), any());
     assertEquals("test", IOUtils.toString(auditStorageRes.content(), Charset.defaultCharset()));

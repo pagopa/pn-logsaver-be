@@ -23,8 +23,8 @@ import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
 import it.pagopa.pn.logsaver.exceptions.ExternalException;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.AuditStorageReference;
-import it.pagopa.pn.logsaver.model.DailyAuditStorage;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
+import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.DailyDownloadResultList;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
@@ -54,11 +54,11 @@ class AuditDownloadServiceImplTest {
 
   @Test
   void downloadAudits() {
-    AuditStorageReference file = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference file = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .downloadUrl("http://test").uploadKey("updKey").build();
-    DailyAuditStorage dailyAuditStorage =
-        DailyAuditStorage.builder().logDate(TestCostant.LOGDATE).audits(List.of(file)).build();
+    DailyAuditDownloadable dailyAuditStorage =
+        DailyAuditDownloadable.builder().logDate(TestCostant.LOGDATE).audits(List.of(file)).build();
     when(storageService.getAuditFile(any(), any())).thenReturn(List.of(dailyAuditStorage));
     when(storageService.dowloadAuditFile(any(), any())).thenReturn(file);
 
@@ -83,11 +83,11 @@ class AuditDownloadServiceImplTest {
 
   @Test
   void downloadAudits_WithDestFolder() {
-    AuditStorageReference file = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference file = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .downloadUrl("http://test").uploadKey("updKey").build();
-    DailyAuditStorage dailyAuditStorage =
-        DailyAuditStorage.builder().logDate(TestCostant.LOGDATE).audits(List.of(file)).build();
+    DailyAuditDownloadable dailyAuditStorage =
+        DailyAuditDownloadable.builder().logDate(TestCostant.LOGDATE).audits(List.of(file)).build();
     when(storageService.getAuditFile(any(), any())).thenReturn(List.of(dailyAuditStorage));
     when(storageService.dowloadAuditFile(any(), any())).thenReturn(file);
 
@@ -111,11 +111,11 @@ class AuditDownloadServiceImplTest {
 
   @Test
   void downloadAudits_Error() {
-    AuditStorageReference file = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference file = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .downloadUrl("http://test").uploadKey("updKey").build();
-    DailyAuditStorage dailyAuditStorage =
-        DailyAuditStorage.builder().logDate(TestCostant.LOGDATE).audits(List.of(file)).build();
+    DailyAuditDownloadable dailyAuditStorage =
+        DailyAuditDownloadable.builder().logDate(TestCostant.LOGDATE).audits(List.of(file)).build();
     when(storageService.getAuditFile(any(), any())).thenReturn(List.of(dailyAuditStorage));
     when(storageService.dowloadAuditFile(any(), any())).thenThrow(ExternalException.class);
 
@@ -136,14 +136,14 @@ class AuditDownloadServiceImplTest {
 
   @Test
   void dowloadAuditFileConsumer() {
-    AuditStorageReference file = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference file = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .size(BigDecimal.valueOf(8L)).fileName("fileName").logDate(TestCostant.LOGDATE)
         .retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .destinationFolder("destination/").downloadUrl("http://test").uploadKey("updKey").build();
 
     doNothing().when(clientS3).uploadContent(key.capture(), any(), anyLong(), any());
 
-    AuditStorageReference result = service.dowloadAuditFileConsumer(file);
+    AuditDownloadReference result = service.dowloadAuditFileConsumer(file);
 
     verify(clientS3, times(1)).uploadContent(any(), any(), anyLong(), any());
 

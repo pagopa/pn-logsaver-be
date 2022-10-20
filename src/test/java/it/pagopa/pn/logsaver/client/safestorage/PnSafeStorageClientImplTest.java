@@ -40,7 +40,7 @@ import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDow
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadResponse;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.AuditStorageReference;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
@@ -271,11 +271,11 @@ class PnSafeStorageClientImplTest {
         .thenReturn(ResponseEntity.ok(respCF));
 
 
-    AuditStorageReference req = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .uploadKey("updKey").build();
 
-    AuditStorageReference res = client.dowloadFileInfo(req);
+    AuditDownloadReference res = client.dowloadFileInfo(req);
 
     verify(restTemplate, times(1)).exchange(any(RequestEntity.class),
         any(ParameterizedTypeReference.class));
@@ -301,11 +301,11 @@ class PnSafeStorageClientImplTest {
         .thenReturn(ResponseEntity.notFound().build());
 
 
-    AuditStorageReference req = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .uploadKey("updKey").build();
 
-    AuditStorageReference res = client.dowloadFileInfo(req);
+    AuditDownloadReference res = client.dowloadFileInfo(req);
 
     verify(restTemplate, times(1)).exchange(any(RequestEntity.class),
         any(ParameterizedTypeReference.class));
@@ -317,17 +317,17 @@ class PnSafeStorageClientImplTest {
 
   @Test
   void downloadFile() throws IOException {
-    AuditStorageReference mock = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference mock = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .uploadKey("updKey").build();
     when(restTemplate.execute(any(URI.class), any(HttpMethod.class), any(), any()))
         .thenReturn(mock);
 
-    AuditStorageReference req = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .downloadUrl("https://test.it/").uploadKey("updKey").build();
 
-    AuditStorageReference res = client.dowloadFile(req, UnaryOperator.identity());
+    AuditDownloadReference res = client.dowloadFile(req, UnaryOperator.identity());
 
     verify(restTemplate, times(1)).execute(any(URI.class), any(HttpMethod.class), any(), any());
     assertNotNull(res);
@@ -338,11 +338,11 @@ class PnSafeStorageClientImplTest {
   @Test
   void downloadFile_Error() throws IOException {
 
-    AuditStorageReference req = AuditStorageReference.builder().exportType(ExportType.PDF_SIGNED)
+    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .uploadKey("updKey").build();
 
-    AuditStorageReference res = client.dowloadFile(req, UnaryOperator.identity());
+    AuditDownloadReference res = client.dowloadFile(req, UnaryOperator.identity());
 
     assertNotNull(res);
     assertNotNull(res.error());

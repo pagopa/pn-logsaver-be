@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.function.UnaryOperator;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorageReference;
-import it.pagopa.pn.logsaver.model.DailyAuditStorage;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
+import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 
@@ -20,9 +20,9 @@ public interface StorageService {
 
   List<StorageExecution> getStorageExecutionBetween(LocalDate from, LocalDate to);
 
-  List<DailyAuditStorage> getAuditFile(LocalDate from, LocalDate to);
+  List<DailyAuditDownloadable> getAuditFile(LocalDate from, LocalDate to);
 
-  AuditStorageReference dowloadAuditFile(AuditStorageReference audit,
-      UnaryOperator<AuditStorageReference> downloadFunction);
+  AuditDownloadReference dowloadAuditFile(AuditDownloadReference audit,
+      UnaryOperator<AuditDownloadReference> downloadFunction);
 
 }

@@ -9,8 +9,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
-import it.pagopa.pn.logsaver.model.AuditStorageReference;
-import it.pagopa.pn.logsaver.model.DailyAuditStorage;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
+import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.DailyDownloadResult;
 import it.pagopa.pn.logsaver.model.DailyDownloadResult.DailyDownloadResultBuilder;
 import it.pagopa.pn.logsaver.model.DailyDownloadResultList;
@@ -41,7 +41,7 @@ public class AuditDownloadServiceImpl implements AuditDownloadService {
     return DailyDownloadResultList.builder().results(files).build();
   }
 
-  private DailyDownloadResult dowloadDailyAudit(DailyAuditStorage dailyFiles, String destFolder) {
+  private DailyDownloadResult dowloadDailyAudit(DailyAuditDownloadable dailyFiles, String destFolder) {
     DailyDownloadResultBuilder resBuilder = DailyDownloadResult.builder();
     try {
       log.info("Download files for date {}", dailyFiles.logDate().toString());
@@ -60,7 +60,7 @@ public class AuditDownloadServiceImpl implements AuditDownloadService {
     }
   }
 
-  public AuditStorageReference dowloadAuditFileConsumer(AuditStorageReference auditFile) {
+  public AuditDownloadReference dowloadAuditFileConsumer(AuditDownloadReference auditFile) {
     String destFolder = auditFile.destinationFolder().concat(auditFile.fileName());
     log.info("Upload file to {}", destFolder);
     clientS3.uploadContent(destFolder, auditFile.content(), auditFile.size().longValue(),
@@ -71,7 +71,7 @@ public class AuditDownloadServiceImpl implements AuditDownloadService {
   }
 
 
-  private void writeDailyReport(List<AuditStorageReference> audits, String destFolder) {
+  private void writeDailyReport(List<AuditDownloadReference> audits, String destFolder) {
     if (CollectionUtils.isEmpty(audits)) {
       return;
     }
@@ -83,7 +83,7 @@ public class AuditDownloadServiceImpl implements AuditDownloadService {
   }
 
 
-  private byte[] handleReportCsv(List<AuditStorageReference> audits) {
+  private byte[] handleReportCsv(List<AuditDownloadReference> audits) {
 
     return audits.stream()
         .map(audit -> StringUtils.join(";", audit.logDate().toString(), audit.status().name(),

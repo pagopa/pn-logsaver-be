@@ -13,8 +13,8 @@ import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorageReference;
-import it.pagopa.pn.logsaver.model.DailyAuditStorage;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
+import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.services.StorageService;
@@ -32,7 +32,7 @@ public class StorageServiceImpl implements StorageService {
   private final StorageDao storageDao;
 
   @Override
-  public List<DailyAuditStorage> getAuditFile(LocalDate from, LocalDate to) {
+  public List<DailyAuditDownloadable> getAuditFile(LocalDate from, LocalDate to) {
     log.info("Read execution from {} to {}", from.toString(), to.toString());
     List<ExecutionEntity> executionList = storageDao.getExecutionBetween(from, to);
     // Raggruppo le partizioni dove sono memorizzate le informazioni dei file
@@ -40,7 +40,7 @@ public class StorageServiceImpl implements StorageService {
         executionList.stream().flatMap(exec -> exec.getRetentionResult().keySet().stream())
             .distinct().collect(Collectors.toSet());
     // Per ogni partizione leggo le info dei file per il range di date specificato
-    List<DailyAuditStorage> resList = AuditStorageMapper
+    List<DailyAuditDownloadable> resList = AuditStorageMapper
         .toModel(partitionSet.stream().flatMap(key -> storageDao.getAudits(key, from, to)));
     // Per i file che hanno la chiave di safeStorage recupero le info per il download
     resList.stream().flatMap(daily -> daily.audits().stream())
@@ -50,8 +50,8 @@ public class StorageServiceImpl implements StorageService {
   }
 
   @Override
-  public AuditStorageReference dowloadAuditFile(AuditStorageReference audit,
-      UnaryOperator<AuditStorageReference> downloadFunction) {
+  public AuditDownloadReference dowloadAuditFile(AuditDownloadReference audit,
+      UnaryOperator<AuditDownloadReference> downloadFunction) {
     return safeStorageClient.dowloadFile(audit, downloadFunction);
   }
 

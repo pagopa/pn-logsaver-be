@@ -23,7 +23,7 @@ import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCre
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationResponse;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadResponse;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorageReference;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -121,7 +121,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
 
   @Override
-  public AuditStorageReference dowloadFileInfo(AuditStorageReference audit) {
+  public AuditDownloadReference dowloadFileInfo(AuditDownloadReference audit) {
     try {
       log.info("Read download info from SafeStorage for file {}", audit.fileName());
 
@@ -140,8 +140,8 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
   }
 
   @Override
-  public AuditStorageReference dowloadFile(AuditStorageReference audit,
-      UnaryOperator<AuditStorageReference> downloadFunction) {
+  public AuditDownloadReference dowloadFile(AuditDownloadReference audit,
+      UnaryOperator<AuditDownloadReference> downloadFunction) {
     try {
       log.info("Download from SafeStorage for file {}", audit.fileName());
 
