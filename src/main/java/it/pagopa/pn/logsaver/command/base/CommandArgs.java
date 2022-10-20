@@ -45,11 +45,11 @@ public enum CommandArgs
     this.parseFunction = parseFunction;
   }
 
-  public <T> T getArgValue(String valueStr, Class<T> type) {
+  public <T> T convertArgValue(String valueStr, Class<T> type) {
     return type.cast(this.parseFunction.apply(valueStr));
   }
 
-  public <T> T getArgValue(String valueStr, TypeReference<T> type) {
+  public <T> T convertArgValue(String valueStr, TypeReference<T> type) {
     return type.cast(this.parseFunction.apply(valueStr));
   }
 

@@ -5,11 +5,11 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
+import com.google.common.collect.HashBasedTable;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
@@ -27,6 +27,9 @@ public class StorageDaoInMemoryImpl implements StorageDao {
 
   HashMap<LocalDate, ExecutionEntity> execution = new HashMap<>();
 
+
+  HashBasedTable<String, LocalDate, AuditStorageEntity> auditStorage = HashBasedTable.create(0, 0);
+
   LocalDate continuosExecution = FIRST_START_DAY_MOCK;
 
   @PostConstruct
@@ -37,6 +40,13 @@ public class StorageDaoInMemoryImpl implements StorageDao {
   }
 
 
+  public void insertExecution(LocalDate logDate, ExecutionEntity exec) {
+    execution.put(logDate, exec);
+  }
+
+  public void insertAuditStorage(AuditStorageEntity exec) {
+    auditStorage.put(exec.getType(), DateUtils.parse(exec.getLogDate()), exec);
+  }
 
   @Override
   public ExecutionEntity getLatestExecution() {
@@ -46,9 +56,13 @@ public class StorageDaoInMemoryImpl implements StorageDao {
 
   @Override
   public List<ExecutionEntity> getExecutionBetween(LocalDate dateFrom, LocalDate dateTo) {
-    return execution.entrySet().stream()
-        .filter(e -> (dateFrom.compareTo(e.getKey()) * e.getKey().compareTo(dateTo) >= 0))
-        .map(Entry::getValue).collect(Collectors.toList());
+    List<ExecutionEntity> retList = execution.entrySet().stream().filter(e -> {
+      int ret = (dateFrom.compareTo(e.getKey()) * e.getKey().compareTo(dateTo));
+      return ret >= 0;
+    }).map(ent -> {
+      return ent.getValue();
+    }).collect(Collectors.toList());
+    return retList;
 
   }
 
@@ -88,8 +102,13 @@ public class StorageDaoInMemoryImpl implements StorageDao {
 
   @Override
   public Stream<AuditStorageEntity> getAudits(String key, LocalDate dateFrom, LocalDate dateTo) {
-    // TODO Auto-generated method stub
-    return null;
+
+    List<AuditStorageEntity> list = dateFrom.datesUntil(dateTo.plusDays(1)).filter(data -> {
+      return auditStorage.columnMap().containsKey(data)
+          && auditStorage.columnMap().get(data).containsKey(key);
+    }).map(data -> auditStorage.columnMap().get(data).get(key)).collect(Collectors.toList());
+    // auditStorage.
+    return list.stream();
   }
 
 

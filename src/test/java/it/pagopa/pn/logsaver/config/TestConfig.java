@@ -5,18 +5,26 @@ import static org.mockito.Mockito.when;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
 import org.mockito.Mockito;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.MediaType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.dao.StorageDao;
+import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
+import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
+import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import it.pagopa.pn.logsaver.utils.DateUtils;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -49,6 +57,17 @@ public class TestConfig {
     server.when(request().withMethod("PUT").withPath("/sage-storage/v1/upload-with-presigned-url"))
         .respond(response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON)
             .withBody(""));
+
+    server.when(request().withMethod("GET").withPath("/safe-storage/v1/files/updKey")).respond(
+        response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON).withBody(
+            "{\n  \"key\": \"random/path/of/the/file\",\n  \"versionId\": \"3Z9SdhZ50PBeIj617KEMrztNKDMJj8FZ\",\n  \"contentType\": \"application/pdf\",\n  \"contentLength\": 30438,\n  \"checksum\": \"91375e9e5a9510087606894437a6a382fa5bc74950f932e2b85a788303cf5ba0\",\n  \"retentionUntil\": \"2032-04-12T12:32:04.000Z\",\n  \"documentType\": \"PN_LEGALFACT\",\n  \"documentStatus\": \"SAVED\",\n  \"download\": {\n    \"url\": \"http://localhost:8089/sage-storage/v1/download\"\n  }\n}"));
+
+    server.when(request().withMethod("GET").withPath("/sage-storage/v1/download")).respond(req -> {
+      Resource file = new ClassPathResource(StringUtils.remove(TestCostant.FILE_PDF, "classpath:"));
+      return response().withStatusCode(200).withContentType(MediaType.PDF)
+          .withBody(file.getInputStream().readAllBytes());
+    });
+
     return server;
 
   }
@@ -61,6 +80,23 @@ public class TestConfig {
   @Bean
   StorageDao storageDao() {
     return new StorageDaoInMemoryImpl();
+
+  }
+
+  @Autowired
+  @Profile("test-download")
+  void initDb(StorageDao dao) {
+    Map<String, RetentionResult> retentionResult = StorageDaoLogicSupport.defaultResultMap();
+    ExecutionEntity exec = ExecutionEntity.builder().logFileTypes(LogFileType.valuesAsString())
+        .retentionResult(retentionResult).logDate(DateUtils.yesterday().minusDays(1).toString())
+        .build();
+    ((StorageDaoInMemoryImpl) dao).insertExecution(DateUtils.yesterday().minusDays(1), exec);
+
+    TestCostant.auditFilesEntity.stream().forEach(ent -> {
+      ent.setLogDate(DateUtils.yesterday().minusDays(1).toString());
+      ((StorageDaoInMemoryImpl) dao).insertAuditStorage(ent);
+    });
+
 
   }
 

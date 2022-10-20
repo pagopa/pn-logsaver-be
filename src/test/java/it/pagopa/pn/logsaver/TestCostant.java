@@ -15,7 +15,7 @@ import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 
 public final class TestCostant {
-
+  public static final String FILE_PDF = "classpath:files/audit-log-10y-2022-10-02.pdf";
   public static final String FILE_LOG =
       "classpath:files/s3/pn-pnDelivery-ecs-delivery-stream-1-2022-07-12-00-05-07-ed57bcd0-ce62-4566-a943-04f9e462e54c";
   public static final String TMP_FOLDER = "/tmp/logsaver/";
@@ -83,22 +83,28 @@ public final class TestCostant {
 
   public static List<AuditStorageEntity> auditFilesEntity = List.of(
       AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
-          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT10Y)
-          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+          .fileName("audit-log-10y-2022-10-02.pdf").logDate(TestCostant.LOGDATE.toString())
+          .retention(Retention.AUDIT10Y).result(AuditStorageStatus.SENT.name()).storageKey("updKey")
+          .build(),
       AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
-          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT5Y)
-          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+          .fileName("audit-log-5y-2022-10-02.pdf").logDate(TestCostant.LOGDATE.toString())
+          .retention(Retention.AUDIT5Y).result(AuditStorageStatus.SENT.name()).storageKey("updKey")
+          .build(),
       AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
-          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.DEVELOPER)
-          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+          .fileName("audit-log-120d-2022-10-02.pdf").logDate(TestCostant.LOGDATE.toString())
+          .retention(Retention.DEVELOPER).result(AuditStorageStatus.SENT.name())
+          .storageKey("updKey").build(),
       AuditStorageEntity.builder().exportType(ExportType.ZIP)
-          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT10Y)
-          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+          .fileName("audit-log-10y-2022-10-02.zip").logDate(TestCostant.LOGDATE.toString())
+          .retention(Retention.AUDIT10Y).result(AuditStorageStatus.SENT.name()).storageKey("updKey")
+          .build(),
       AuditStorageEntity.builder().exportType(ExportType.ZIP)
-          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT5Y)
-          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build(),
+          .fileName("audit-log-5y-2022-10-02.zip").logDate(TestCostant.LOGDATE.toString())
+          .retention(Retention.AUDIT5Y).result(AuditStorageStatus.SENT.name()).storageKey("updKey")
+          .build(),
       AuditStorageEntity.builder().exportType(ExportType.ZIP)
-          .logDate(TestCostant.LOGDATE.toString()).retention(Retention.DEVELOPER)
-          .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build());
+          .fileName("audit-log-120d-2022-10-02.zip").logDate(TestCostant.LOGDATE.toString())
+          .retention(Retention.DEVELOPER).result(AuditStorageStatus.SENT.name())
+          .storageKey("updKey").build());
 
 }

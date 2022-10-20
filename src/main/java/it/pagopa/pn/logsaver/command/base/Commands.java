@@ -11,11 +11,13 @@ public enum Commands {
 
   DAILY_LOGSAVER(Commands.DAILY_LOGSAVER_S), //
   DATELIST_LOGSAVER(Commands.DATELIST_LOGSAVER_S), //
-  DOWNLOAD_AUDIT(Commands.DOWNLOAD_AUDIT_S);
+  DOWNLOAD_AUDIT(Commands.DOWNLOAD_AUDIT_S), //
+  DATERANGE_DOWNLOAD_AUDIT(Commands.DATERANGE_DOWNLOAD_AUDIT_S);
 
   public static final String DAILY_LOGSAVER_S = "daily-saver";
   public static final String DATELIST_LOGSAVER_S = "datelist-saver";
   public static final String DOWNLOAD_AUDIT_S = "download";
+  public static final String DATERANGE_DOWNLOAD_AUDIT_S = "daterange-download";
 
   private String commandName;
   private List<String> argNames;
@@ -36,8 +38,7 @@ public enum Commands {
 
   public static Commands getCommand(String commandName) {
     return IEnum.valuesSet(Commands.class).stream()
-        .filter(cmd -> cmd.getCommandName().equalsIgnoreCase(commandName)).findFirst()
-        .orElseThrow();
+        .filter(cmd -> cmd.getCommandName().equalsIgnoreCase(commandName)).findFirst().orElse(null);
   }
 
 
