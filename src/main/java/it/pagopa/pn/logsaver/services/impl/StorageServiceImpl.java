@@ -11,9 +11,9 @@ import it.pagopa.pn.logsaver.dao.AuditStorageMapper;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.StorageExecution;
@@ -45,7 +45,7 @@ public class StorageServiceImpl implements StorageService {
     // Per i file che hanno la chiave di safeStorage recupero le info per il download
     resList.stream().flatMap(daily -> daily.audits().stream())
         .filter(audit -> StringUtils.isNoneEmpty(audit.uploadKey()))
-        .forEach(safeStorageClient::dowloadFileInfo);
+        .forEach(safeStorageClient::downloadFileInfo);
     return resList;
   }
 
@@ -91,7 +91,7 @@ public class StorageServiceImpl implements StorageService {
 
     log.info("Sending Audit file {} ", file.fileName());
     AuditStorage itemUpd = safeStorageClient.uploadFile(AuditStorage.from(file));
-    log.info("Sent: {} ", !itemUpd.haveError());
+    log.info("Sent: {} ", !itemUpd.hasError());
     return itemUpd;
 
   }

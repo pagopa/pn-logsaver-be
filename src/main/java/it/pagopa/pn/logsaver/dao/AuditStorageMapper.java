@@ -45,7 +45,7 @@ public class AuditStorageMapper {
         .logDate(DateUtils.format(storage.logDate())).retention(storage.retention())
         .exportType(storage.exportType()).build();
 
-    if (storage.haveError()) {
+    if (storage.hasError()) {
       entity.setResult(AuditStorageStatus.CREATED.name());
     } else {
       entity.setResult(AuditStorageStatus.SENT.name());

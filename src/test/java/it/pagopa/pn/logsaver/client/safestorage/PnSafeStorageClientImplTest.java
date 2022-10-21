@@ -38,9 +38,9 @@ import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCre
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationResponse.UploadMethodEnum;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadInfo;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadResponse;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
@@ -275,7 +275,7 @@ class PnSafeStorageClientImplTest {
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .uploadKey("updKey").build();
 
-    AuditDownloadReference res = client.dowloadFileInfo(req);
+    AuditDownloadReference res = client.downloadFileInfo(req);
 
     verify(restTemplate, times(1)).exchange(any(RequestEntity.class),
         any(ParameterizedTypeReference.class));
@@ -305,7 +305,7 @@ class PnSafeStorageClientImplTest {
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .uploadKey("updKey").build();
 
-    AuditDownloadReference res = client.dowloadFileInfo(req);
+    AuditDownloadReference res = client.downloadFileInfo(req);
 
     verify(restTemplate, times(1)).exchange(any(RequestEntity.class),
         any(ParameterizedTypeReference.class));
@@ -327,7 +327,7 @@ class PnSafeStorageClientImplTest {
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .downloadUrl("https://test.it/").uploadKey("updKey").build();
 
-    AuditDownloadReference res = client.dowloadFile(req, UnaryOperator.identity());
+    AuditDownloadReference res = client.downloadFile(req, UnaryOperator.identity());
 
     verify(restTemplate, times(1)).execute(any(URI.class), any(HttpMethod.class), any(), any());
     assertNotNull(res);
@@ -342,7 +342,7 @@ class PnSafeStorageClientImplTest {
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .uploadKey("updKey").build();
 
-    AuditDownloadReference res = client.dowloadFile(req, UnaryOperator.identity());
+    AuditDownloadReference res = client.downloadFile(req, UnaryOperator.identity());
 
     assertNotNull(res);
     assertNotNull(res.error());

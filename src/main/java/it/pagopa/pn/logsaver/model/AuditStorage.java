@@ -34,11 +34,11 @@ public class AuditStorage extends AuditFile {
         .logDate(arc.logDate()).exportType(arc.exportType());
   }
 
-  public boolean haveError() {
+  public boolean hasError() {
     return Objects.nonNull(error);
   }
 
   public String getErrorMessage() {
-    return haveError() ? error.getMessage() : StringUtils.EMPTY;
+    return hasError() ? error.getMessage() : StringUtils.EMPTY;
   }
 }

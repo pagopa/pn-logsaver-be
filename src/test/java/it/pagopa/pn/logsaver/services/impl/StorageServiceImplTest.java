@@ -27,10 +27,10 @@ import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
@@ -67,7 +67,7 @@ class StorageServiceImplTest {
     List<AuditStorageEntity> auditFiles = TestCostant.auditFilesEntity;
     when(storageDao.getAudits(any(), any(), any())).thenAnswer(ans -> auditFiles.stream());
 
-    when(safeStorageClient.dowloadFileInfo(any())).thenAnswer(inTarg -> {
+    when(safeStorageClient.downloadFileInfo(any())).thenAnswer(inTarg -> {
       AuditDownloadReference audit = inTarg.getArgument(0, AuditDownloadReference.class);
       return audit.downloadUrl("http://downloadurl");
     });
@@ -79,7 +79,7 @@ class StorageServiceImplTest {
 
     verify(storageDao, times(1)).getExecutionBetween(any(), any());
     verify(storageDao, times(6)).getAudits(any(), any(), any());
-    verify(safeStorageClient, times(auditFiles.size() * 6)).dowloadFileInfo(any());
+    verify(safeStorageClient, times(auditFiles.size() * 6)).downloadFileInfo(any());
 
     assertNotNull(auditStorageRes);
     assertEquals(1, auditStorageRes.size());
@@ -98,14 +98,14 @@ class StorageServiceImplTest {
         .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
         .uploadKey("updKey").build();
 
-    when(safeStorageClient.dowloadFile(any(), any())).thenAnswer(inTarg -> {
+    when(safeStorageClient.downloadFile(any(), any())).thenAnswer(inTarg -> {
       AuditDownloadReference audit = inTarg.getArgument(0, AuditDownloadReference.class);
       return audit.content(IOUtils.toInputStream("test", Charset.defaultCharset()));
     });
 
     AuditDownloadReference auditStorageRes =
         service.dowloadAuditFile(file, UnaryOperator.identity());
-    verify(safeStorageClient, times(1)).dowloadFile(any(), any());
+    verify(safeStorageClient, times(1)).downloadFile(any(), any());
     assertEquals("test", IOUtils.toString(auditStorageRes.content(), Charset.defaultCharset()));
 
   }

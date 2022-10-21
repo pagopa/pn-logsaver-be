@@ -27,20 +27,20 @@ public class DailyDownloadResult {
 
   public boolean hasErrors() {
     return Objects.nonNull(error) || CollectionUtils.emptyIfNull(audit.audits()).stream()
-        .filter(AuditDownloadReference::haveError).count() > 0;
+        .filter(AuditDownloadReference::hasError).count() > 0;
   }
 
   public List<String> successMessages() {
-    return messages(au -> !this.haveError(au), this::handleSuccessMessage);
+    return messages(au -> !this.auditFileHasError(au), this::handleSuccessMessage);
   }
 
   public List<String> errorMessages() {
-    return messages(this::haveError, this::handleErrorMessage);
+    return messages(this::auditFileHasError, this::handleErrorMessage);
   }
 
 
-  private boolean haveError(AuditDownloadReference file) {
-    return file.haveError() || AuditStorageStatus.SENT != file.status();
+  private boolean auditFileHasError(AuditDownloadReference file) {
+    return file.hasError() || AuditStorageStatus.SENT != file.status();
   }
 
   private String handleErrorMessage(AuditDownloadReference audit) {
