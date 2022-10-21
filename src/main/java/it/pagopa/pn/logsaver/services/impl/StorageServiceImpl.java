@@ -52,7 +52,7 @@ public class StorageServiceImpl implements StorageService {
   @Override
   public AuditDownloadReference dowloadAuditFile(AuditDownloadReference audit,
       UnaryOperator<AuditDownloadReference> downloadFunction) {
-    return safeStorageClient.dowloadFile(audit, downloadFunction);
+    return safeStorageClient.downloadFile(audit, downloadFunction);
   }
 
   @Override
