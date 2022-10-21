@@ -26,9 +26,9 @@ class LogSaverApplicationIntegrationTest {
     LogSaverApplication.main(new String[] {"datelist-saver", "--spring.profiles.active=test",
         "--spring.config.location=classpath:application-test.properties", "--date.list=" + data});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
-        .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
+        .until(() -> output.getAll().contains("Log Saver Application ends"));
 
-    assertThat(output).contains("Log Saver Applicantion ends with status as 0");
+    assertThat(output).contains("Log Saver Application ends with status as 0");
     TestConfig.destroy();
   }
 
@@ -40,9 +40,9 @@ class LogSaverApplicationIntegrationTest {
         "--spring.config.location=classpath:application-test.properties",
         "--retention.export.type=AUDIT10Y$ZIP|PDF_SIGNED,AUDIT5Y$ZIP", "--log.file.types=LOGS"});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
-        .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
+        .until(() -> output.getAll().contains("Log Saver Application ends"));
 
-    assertThat(output).contains("Log Saver Applicantion ends with status as 1");
+    assertThat(output).contains("Log Saver Application ends with status as 1");
   }
 
   @Test
@@ -54,9 +54,9 @@ class LogSaverApplicationIntegrationTest {
         .main(new String[] {"download", "--spring.profiles.active=test,test-download",
             "--spring.config.location=classpath:application-test.properties", "--date=" + data});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
-        .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
+        .until(() -> output.getAll().contains("Log Saver Application ends"));
 
-    assertThat(output).contains("Log Saver Applicantion ends with status as 0");
+    assertThat(output).contains("Log Saver Application ends with status as 0");
     TestConfig.destroy();
   }
 
@@ -71,9 +71,9 @@ class LogSaverApplicationIntegrationTest {
         "--spring.config.location=classpath:application-test.properties", "--date.from=" + data,
         "--date.to=" + data,});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
-        .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
+        .until(() -> output.getAll().contains("Log Saver Application ends"));
 
-    assertThat(output).contains("Log Saver Applicantion ends with status as 0");
+    assertThat(output).contains("Log Saver Application ends with status as 0");
     TestConfig.destroy();
   }
 
@@ -99,9 +99,9 @@ class LogSaverApplicationIntegrationTest {
         .main(new String[] {"download", "--date=" + data, "--spring.profiles.active=test",
             "--spring.config.location=classpath:application-test.properties"});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
-        .until(() -> output.getAll().contains("Log Saver Applicantion ends"));
+        .until(() -> output.getAll().contains("Log Saver Application ends"));
 
-    assertThat(output).contains("Log Saver Applicantion ends with status as 1");
+    assertThat(output).contains("Log Saver Application ends with status as 1");
   }
 
 }
