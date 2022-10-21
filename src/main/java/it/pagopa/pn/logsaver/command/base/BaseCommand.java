@@ -22,7 +22,7 @@ public abstract class BaseCommand implements Command {
   @Override
   public void onSuccess(LogSaverResult result) {
     int exitCode = result.exitCodeAndLogResult();
-    log.info("Log Saver Applicantion ends with status as {}", exitCode);
+    log.info("Log Saver Application ends with status as {}", exitCode);
     eventPublisher.publishEvent(new ExitEvent(exitCode));
 
   }
