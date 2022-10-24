@@ -12,6 +12,8 @@ import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import it.pagopa.pn.logsaver.config.ClApplicationArguments;
+import it.pagopa.pn.logsaver.dao.AuditStorageMapper;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ContinuosExecutionEntity;
@@ -48,6 +50,8 @@ public class StorageDaoDynamoImpl implements StorageDao {
   @NonNull
   private final AwsConfigs cfg;
   @NonNull
+  private final ClApplicationArguments args;
+  @NonNull
   private final DynamoDbEnhancedClient enhancedClient;
   private DynamoDbTable<AuditStorageEntity> auditStorageTable;
   private DynamoDbTable<ExecutionEntity> executionTable;
@@ -82,7 +86,10 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   private ExecutionEntity insertFirtsExecution() {
-    ExecutionEntity last = StorageDaoLogicSupport.firstExececutionRow();
+    ExecutionEntity first = StorageDaoLogicSupport.firstExececutionRow();
+    if (Objects.nonNull(args.getRetentionExportTypesMap())) {
+      first.setRetentionResult(AuditStorageMapper.toEntity(args.getRetentionExportTypesMap()));
+    }
 
     Map<String, AttributeValue> expressionValues = new HashMap<>();
     expressionValues.put(":execution",
@@ -95,14 +102,14 @@ public class StorageDaoDynamoImpl implements StorageDao {
         .builder(ExecutionEntity.class)
         .conditionExpression(Expression.builder().expression(" #type <> :execution ")
             .expressionValues(expressionValues).expressionNames(Map.of("#type", "type")).build())
-        .item(last).build();
+        .item(first).build();
     try {
       executionTable.putItem(insert);
       log.info("Insert first execution with date {}", FIRST_START_DAY);
     } catch (ConditionalCheckFailedException e) {
       log.info("Execution date in the table. ");
     }
-    return last;
+    return first;
   }
 
   @Override

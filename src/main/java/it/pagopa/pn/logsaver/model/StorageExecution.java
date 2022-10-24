@@ -35,5 +35,6 @@ public class StorageExecution {
     private Retention retention;
     private AuditStorageStatus status;
     private ExportType exportType;
+
   }
 }

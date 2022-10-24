@@ -29,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.util.ReflectionUtils;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.TestUtils;
+import it.pagopa.pn.logsaver.config.ClApplicationArguments;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ContinuosExecutionEntity;
@@ -66,6 +67,8 @@ class StorageDaoDynamoImplTest {
   private StorageDao storageDao;
   @Mock
   private AwsConfigs awsCfg;
+  @Mock
+  private ClApplicationArguments args;
 
   @Captor
   private ArgumentCaptor<TransactWriteItemsEnhancedRequest> transacRequest;
@@ -91,7 +94,7 @@ class StorageDaoDynamoImplTest {
       }
     });
 
-    storageDao = new StorageDaoDynamoImpl(awsCfg, enhancedClient);
+    storageDao = new StorageDaoDynamoImpl(awsCfg, args, enhancedClient);
     Method init = ReflectionUtils.findMethod(StorageDaoDynamoImpl.class, "init");
     ReflectionUtils.makeAccessible(init);
     ReflectionUtils.invokeMethod(init, storageDao);
