@@ -9,6 +9,6 @@
     "SafeStorageDocTypesZip10y": "PN_LOGS_ARCHIVE_AUDIT10Y",
     "SafeStorageDocTypesZip5y": "PN_LOGS_ARCHIVE_AUDIT5Y",
     "SafeStorageDocTypesZip120d": "PN_LOGS_ARCHIVE_TEMP",
-    "RetentionExportTypes": "AUDIT10Y$ZIP|PDF_SIGNED,AUDIT05Y$ZIP|PDF_SIGNED"
+    "RetentionExportTypes": "AUDIT10Y$ZIP|PDF_SIGNED,AUDIT5Y$ZIP|PDF_SIGNED"
   }
 }
