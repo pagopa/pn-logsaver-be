@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -102,6 +103,23 @@ class LogSaverApplicationIntegrationTest {
         .until(() -> output.getAll().contains("Log Saver Application ends"));
 
     assertThat(output).contains("Log Saver Application ends with status as 1");
+  }
+
+
+  @Test
+  void downloadDateRangeCommand_whenApplicationTeminated_thenThrowsException(CapturedOutput output)
+          throws Exception {
+      String from = DateUtils.yesterday().minusDays(1).toString();
+      String to = DateUtils.yesterday().minusDays(2).toString();
+      LogSaverApplication
+              .main(new String[] {Commands.DATERANGE_DOWNLOAD_AUDIT_S, "--date=" + from, "--spring.profiles.active=test",
+                      "--spring.config.location=classpath:application-test.properties","--date.from=" + from,
+                      "--date.to=" + to,});
+
+    Awaitility.await().atMost(120, TimeUnit.SECONDS)
+            .until(() -> output.getAll().contains("Failure executing log saver"));
+
+    assertThat(output).contains("dateFrom argument must be less than or equal to dateTo argument.");
   }
 
 }
