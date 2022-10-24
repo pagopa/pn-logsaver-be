@@ -132,7 +132,7 @@ Parameters:
 
   BatchJobMaxAttempts:
     Type: Number
-    Default: 3
+    Default: 1
     Description: The maximum number of batch job attempts.
 
 Conditions:
