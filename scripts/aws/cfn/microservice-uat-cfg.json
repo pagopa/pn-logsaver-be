@@ -10,7 +10,7 @@
     "SafeStorageDocTypesZip5y": "PN_LOGS_ARCHIVE_AUDIT5Y",
     "SafeStorageDocTypesZip120d": "PN_LOGS_ARCHIVE_TEMP",
     "RetentionExportTypes": "AUDIT10Y$ZIP|PDF_SIGNED,AUDIT5Y$ZIP|PDF_SIGNED",
-    "BatchJobMaxAttempts": 1,
-    "MaxvCpus": 2
+    "BatchJobMaxAttempts": "1",
+    "MaxvCpus": "2"
   }
 }
