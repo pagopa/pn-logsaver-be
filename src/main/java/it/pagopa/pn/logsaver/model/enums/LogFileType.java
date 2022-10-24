@@ -1,4 +1,4 @@
-package it.pagopa.pn.logsaver.model;
+package it.pagopa.pn.logsaver.model.enums;
 
 import java.util.Collection;
 import java.util.List;
@@ -6,6 +6,8 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import org.apache.commons.collections4.SetUtils;
+import it.pagopa.pn.logsaver.model.DailyContextCfg;
+import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
 import it.pagopa.pn.logsaver.services.impl.functions.LogProcessFunction;
 import lombok.Getter;

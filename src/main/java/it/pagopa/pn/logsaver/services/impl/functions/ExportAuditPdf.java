@@ -16,7 +16,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.pdf.PdfWriter;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.services.functions.ExportAudit;
 import lombok.extern.slf4j.Slf4j;
 

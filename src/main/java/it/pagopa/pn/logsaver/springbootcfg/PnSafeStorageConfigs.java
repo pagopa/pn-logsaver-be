@@ -6,8 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import com.google.common.collect.HashBasedTable;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import lombok.Getter;
 import lombok.Setter;
 

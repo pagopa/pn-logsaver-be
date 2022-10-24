@@ -12,7 +12,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 

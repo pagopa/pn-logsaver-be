@@ -27,7 +27,7 @@ import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
 import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference;
-import it.pagopa.pn.logsaver.model.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.services.LogFileReaderService;
 import software.amazon.awssdk.services.s3.model.S3Object;
 

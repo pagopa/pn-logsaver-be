@@ -11,10 +11,10 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.Retention;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.StorageExecution.ExecutionDetails;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass

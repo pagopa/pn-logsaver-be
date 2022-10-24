@@ -13,6 +13,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,15 +29,20 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.api.FileUploadApi;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationRequest;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationResponse;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationResponse.UploadMethodEnum;
+import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadInfo;
+import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadResponse;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
 
 @ExtendWith(MockitoExtension.class)
@@ -244,5 +250,101 @@ class PnSafeStorageClientImplTest {
     assertNotNull(res.error());
 
     Files.delete(file.toPath());
+  }
+
+
+
+  @Test
+  void downloadFileInfo() throws IOException {
+
+    FileDownloadResponse respCF = new FileDownloadResponse();
+    respCF.setKey("updKey");
+    respCF.setContentType("application/pdf");
+    respCF.setDocumentStatus("SAVED");
+    respCF.setDocumentType("PN_LOGS_PDF_AUDIT10Y");
+    FileDownloadInfo info = new FileDownloadInfo();
+    info.setUrl("http://");
+    respCF.setDownload(info);
+
+
+    when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
+        .thenReturn(ResponseEntity.ok(respCF));
+
+
+    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
+        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
+        .uploadKey("updKey").build();
+
+    AuditDownloadReference res = client.downloadFileInfo(req);
+
+    verify(restTemplate, times(1)).exchange(any(RequestEntity.class),
+        any(ParameterizedTypeReference.class));
+
+    assertNotNull(res);
+    assertEquals("http://", res.downloadUrl());
+  }
+
+  @Test
+  void downloadFileInfo_InternalServerError() throws IOException {
+
+    FileDownloadResponse respCF = new FileDownloadResponse();
+    respCF.setKey("updKey");
+    respCF.setContentType("application/pdf");
+    respCF.setDocumentStatus("SAVED");
+    respCF.setDocumentType("PN_LOGS_PDF_AUDIT10Y");
+    FileDownloadInfo info = new FileDownloadInfo();
+    info.setUrl("http://");
+    respCF.setDownload(info);
+
+
+    when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
+        .thenReturn(ResponseEntity.notFound().build());
+
+
+    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
+        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
+        .uploadKey("updKey").build();
+
+    AuditDownloadReference res = client.downloadFileInfo(req);
+
+    verify(restTemplate, times(1)).exchange(any(RequestEntity.class),
+        any(ParameterizedTypeReference.class));
+
+    assertNotNull(res);
+    assertEquals(RestClientException.class, res.error().getClass());
+  }
+
+
+  @Test
+  void downloadFile() throws IOException {
+    AuditDownloadReference mock = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
+        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
+        .uploadKey("updKey").build();
+    when(restTemplate.execute(any(URI.class), any(HttpMethod.class), any(), any()))
+        .thenReturn(mock);
+
+    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
+        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
+        .downloadUrl("https://test.it/").uploadKey("updKey").build();
+
+    AuditDownloadReference res = client.downloadFile(req, UnaryOperator.identity());
+
+    verify(restTemplate, times(1)).execute(any(URI.class), any(HttpMethod.class), any(), any());
+    assertNotNull(res);
+
+  }
+
+
+  @Test
+  void downloadFile_Error() throws IOException {
+
+    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
+        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
+        .uploadKey("updKey").build();
+
+    AuditDownloadReference res = client.downloadFile(req, UnaryOperator.identity());
+
+    assertNotNull(res);
+    assertNotNull(res.error());
   }
 }

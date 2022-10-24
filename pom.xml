@@ -99,9 +99,7 @@
 		  <groupId>com.github.librepdf</groupId>
 		  <artifactId>openpdf</artifactId>
 		  <version>1.3.30</version>
-		</dependency>
-
-		
+		</dependency>		
 		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

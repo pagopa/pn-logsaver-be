@@ -1,4 +1,4 @@
-package it.pagopa.pn.logsaver.model;
+package it.pagopa.pn.logsaver.model.enums;
 
 import java.util.Collection;
 import java.util.List;

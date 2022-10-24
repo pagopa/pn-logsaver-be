@@ -3,11 +3,13 @@ package it.pagopa.pn.logsaver.client.safestorage;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.function.UnaryOperator;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -15,9 +17,12 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import it.pagopa.pn.logsaver.exceptions.ExternalException;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.ApiClient;
+import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.api.FileDownloadApi;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.api.FileUploadApi;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationRequest;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationResponse;
+import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadResponse;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
@@ -29,6 +34,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
   public static final String SAVED = "SAVED";
 
   private final FileUploadApi fileUploadApi;
+  private final FileDownloadApi fileDownloadApi;
   private final PnSafeStorageConfigs cfg;
   private final RestTemplate restTemplate;
 
@@ -36,6 +42,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
     ApiClient newApiClient = new ApiClient(rest);
     newApiClient.setBasePath(cfg.getSafeStorageBaseUrl());
     this.fileUploadApi = new FileUploadApi(newApiClient);
+    this.fileDownloadApi = new FileDownloadApi(newApiClient);
     this.cfg = cfg;
     this.restTemplate = rest;
   }
@@ -43,10 +50,9 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
   @Override
   public AuditStorage uploadFile(AuditStorage audit) {
-
-    String sha256 = FilesUtils.computeSha256(audit.filePath());
     String mediaType = audit.exportType().getMediaType();
     try {
+      String sha256 = FilesUtils.computeSha256(audit.filePath());
       log.info("Send fileCreationRequest for file {}", audit.filePath().toString());
       FileCreationResponse res = createFile(sha256, mediaType, cfg.getStorageDocumentType(audit));
 
@@ -113,5 +119,51 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
     }
   }
 
+
+  @Override
+  public AuditDownloadReference downloadFileInfo(AuditDownloadReference audit) {
+    try {
+      log.info("Read download info from SafeStorage for file {}", audit.fileName());
+
+      FileDownloadResponse res =
+          fileDownloadApi.getFile(audit.uploadKey(), this.cfg.getSafeStorageCxId(), Boolean.FALSE);
+      log.info("Download info {} readed successfully. SafeStorage key {}", audit.fileName(),
+          res.getKey());
+      return audit.size(res.getContentLength()).downloadUrl(res.getDownload().getUrl());
+
+    } catch (Exception e) {
+      log.error("Exception on downloadFileInfo {}", audit.fileName());
+      audit.error(e);
+      return audit;
+    }
+
+  }
+
+  @Override
+  public AuditDownloadReference downloadFile(AuditDownloadReference audit,
+      UnaryOperator<AuditDownloadReference> downloadFunction) {
+    try {
+      log.info("Download from SafeStorage for file {}", audit.fileName());
+
+      return restTemplate.execute(URI.create(audit.downloadUrl()), HttpMethod.GET, null,
+          clientHttpResponse -> {
+            HttpStatus respStatus = clientHttpResponse.getStatusCode();
+            if (respStatus == HttpStatus.OK) {
+              audit.content(clientHttpResponse.getBody());
+              return downloadFunction.apply(audit);
+            } else {
+              throw new ExternalException(
+                  String.format("File not retrived. Url: %s, ResponseCode: %s", audit.downloadUrl(),
+                      respStatus.name()));
+            }
+          });
+
+    } catch (Exception e) {
+      log.error("Exception on download file {}", audit.fileName());
+      audit.error(e);
+      return audit;
+    }
+
+  }
 
 }

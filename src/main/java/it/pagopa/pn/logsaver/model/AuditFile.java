@@ -3,6 +3,8 @@ package it.pagopa.pn.logsaver.model;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.Objects;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

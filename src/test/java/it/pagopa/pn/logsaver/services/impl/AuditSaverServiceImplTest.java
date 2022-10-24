@@ -18,11 +18,11 @@ import it.pagopa.pn.logsaver.TestUtils;
 import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
-import it.pagopa.pn.logsaver.model.DailySaverResult;
-import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.LogFileType;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.DailySaverResultList;
 import it.pagopa.pn.logsaver.model.StorageExecution;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.services.AuditSaverService;
 import it.pagopa.pn.logsaver.services.LogFileProcessorService;
 import it.pagopa.pn.logsaver.services.LogFileReaderService;
@@ -70,12 +70,12 @@ class AuditSaverServiceImplTest {
     when(storageService.store(any(), any())).thenReturn(TestCostant.auditStorage);
 
 
-    List<DailySaverResult> res = service.dailySaverFromLatestExecutionToYesterday(
+    DailySaverResultList res = service.dailySaverFromLatestExecutionToYesterday(
         Set.of(LogFileType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
 
     List<DailyContextCfg> ctxList = ctxCaptor.getAllValues();
 
-    assertEquals(3, res.size());
+    assertEquals(3, res.getResults().size());
 
     ctxList.forEach(ctx -> {
       assertEquals(Set.of(Retention.values()), ctx.retentionExportTypeMap().keySet());
@@ -115,12 +115,12 @@ class AuditSaverServiceImplTest {
     when(storageService.store(any(), any())).thenReturn(TestCostant.auditStorage);
 
 
-    List<DailySaverResult> res = service.dailySaverFromLatestExecutionToYesterday(
+    DailySaverResultList res = service.dailySaverFromLatestExecutionToYesterday(
         Set.of(LogFileType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
 
     List<DailyContextCfg> ctxList = ctxCaptor.getAllValues();
 
-    assertEquals(1, res.size());
+    assertEquals(1, res.getResults().size());
 
     DailyContextCfg ctx = ctxList.get(0);
     assertEquals(Set.of(Retention.values()), ctx.retentionExportTypeMap().keySet());
@@ -163,12 +163,12 @@ class AuditSaverServiceImplTest {
     when(storageService.store(any(), any())).thenReturn(TestCostant.auditStorage);
 
 
-    List<DailySaverResult> res = service.dailySaverFromLatestExecutionToYesterday(
+    DailySaverResultList res = service.dailySaverFromLatestExecutionToYesterday(
         Set.of(LogFileType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
 
     List<DailyContextCfg> ctxList = ctxCaptor.getAllValues();
 
-    assertEquals(1, res.size());
+    assertEquals(1, res.getResults().size());
 
     DailyContextCfg ctx = ctxList.get(0);
     assertEquals(Set.of(Retention.AUDIT10Y), ctx.retentionExportTypeMap().keySet());
@@ -203,14 +203,14 @@ class AuditSaverServiceImplTest {
     when(procService.process(any(), any())).thenThrow(FileSystemException.class);
 
 
-    List<DailySaverResult> res = service.dailySaverFromLatestExecutionToYesterday(
+    DailySaverResultList res = service.dailySaverFromLatestExecutionToYesterday(
         Set.of(LogFileType.values()), LogSaverUtils.defaultRetentionExportTypeMap());
 
     // List<DailyContextCfg> ctxList = ctxCaptor.getAllValues();
 
-    assertEquals(1, res.size());
+    assertEquals(1, res.getResults().size());
 
-    assertTrue(res.get(0).hasErrors());
+    assertTrue(res.getResults().get(0).hasErrors());
 
 
   }

@@ -34,6 +34,11 @@ public class DateUtils {
     return LocalDateTime.now(italianZoneId).format(DateTimeFormatter.ISO_DATE_TIME);
   }
 
+  public static String dateTime() {
+    return LocalDateTime.now(italianZoneId)
+        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss"));
+  }
+
   public static String getYear(LocalDate data) {
     return data.format(DateTimeFormatter.ofPattern("yyyy"));
   }

@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver.dao.dynamo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -35,9 +37,9 @@ import it.pagopa.pn.logsaver.dao.entity.ExtraType;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.LogFileType;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -46,6 +48,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.BeanTableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.Put;
@@ -66,6 +69,9 @@ class StorageDaoDynamoImplTest {
 
   @Captor
   private ArgumentCaptor<TransactWriteItemsEnhancedRequest> transacRequest;
+
+  @Captor
+  private ArgumentCaptor<QueryConditional> queryCond;
 
   @BeforeEach
   void init() {
@@ -264,6 +270,44 @@ class StorageDaoDynamoImplTest {
     assertEquals(1, updAuditDevPdf.size());
     // :AMZN_MAPPED_
     assertEquals("2022-07-13", updContinuosExec.get(0).item().get("latestExecutionDate").s());
+
+  }
+
+  @Test
+  void getAudits() {
+    AuditStorageEntity mock = AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
+        .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT10Y)
+        .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build();
+    when(auditStorageTable.query(queryCond.capture())).thenReturn(execListMockAudit(List.of(mock)));
+    Stream<AuditStorageEntity> exEnt =
+        storageDao.getAudits("", TestCostant.LOGDATE, TestCostant.LOGDATE);
+    assertNotNull(exEnt);
+    verify(auditStorageTable, times(1)).query(any(QueryConditional.class));
+  }
+
+  private PageIterable<AuditStorageEntity> execListMockAudit(List<AuditStorageEntity> mockList) {
+    return new PageIterable<AuditStorageEntity>() {
+      @Override
+      public Iterator<Page<AuditStorageEntity>> iterator() {
+        return new Iterator<Page<AuditStorageEntity>>() {
+
+          private Page<AuditStorageEntity> page = Page.create(mockList);
+          private Iterator iterable = page.items().iterator();
+          int cnt = 0;
+
+          @Override
+          public boolean hasNext() {
+            return cnt < mockList.size();
+          }
+
+          @Override
+          public Page<AuditStorageEntity> next() {
+            return cnt++ < mockList.size() ? page : null;
+          }
+        };
+      }
+
+    };
 
   }
 }

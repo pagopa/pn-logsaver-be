@@ -1,64 +1,88 @@
 package it.pagopa.pn.logsaver.config;
 
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
-import it.pagopa.pn.logsaver.model.ExportType;
-import it.pagopa.pn.logsaver.model.LogFileType;
-import it.pagopa.pn.logsaver.model.Retention;
-import it.pagopa.pn.logsaver.utils.DateUtils;
-import it.pagopa.pn.logsaver.utils.LogSaverUtils;
-import lombok.Getter;
+import it.pagopa.pn.logsaver.command.base.CommandArgs;
+import it.pagopa.pn.logsaver.command.base.CommandArgs.TypeReference;
+import it.pagopa.pn.logsaver.command.base.Commands;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import lombok.Setter;
 
 
 @Component
-@Getter
 @Setter
 public class ClApplicationArguments {
 
-  private List<LocalDate> dateList;
-
-  private Set<LogFileType> logFileTypes;
-
-  private Map<Retention, Set<ExportType>> retentionExportTypesMap;
-
+  /*
+   * Uso il component Environment invece del component ApplicationArguments in modo da poter gestire
+   * command e applicationArgs come variabili di ambiente
+   */
   @Autowired
-  void initDateList(
-      @Value("${date.list:#{T(java.util.Collections).emptyList()}}") List<String> dateListStr) {
-    this.dateList = dateListStr.stream().map(DateUtils::parse).collect(Collectors.toList());
+  private Environment env;
+
+  private Commands command;
+
+  @PostConstruct
+  void init() {
+    this.command = Optional.ofNullable(Commands.getCommand(env.getProperty("nonOptionArgs")))
+        .orElse(Commands.DAILY_LOGSAVER);
   }
 
-  @Autowired
-  void initTypeList(
-      @Value("${log.file.types:#{T(it.pagopa.pn.logsaver.model.LogFileType).valuesAsString()}}") List<String> typeListStr) {
-    this.logFileTypes = typeListStr.stream().map(LogFileType::valueOf).collect(Collectors.toSet());
+  public Commands getCommand() {
+    return command;
   }
 
-  @Autowired
-  void initRetentionExportType(@Value("${retention.export.type:}") String retentionExportType) {
+  public List<LocalDate> getDateList() {
+    String valueStr = optionValueString(CommandArgs.DATELIST.getArgName(), StringUtils.EMPTY);
+    return CommandArgs.DATELIST.convertArgValue(valueStr, new TypeReference<List<LocalDate>>() {});
+  }
 
-    this.retentionExportTypesMap = StringUtils.isNoneEmpty(retentionExportType)
-        ? Stream.of(StringUtils.split(retentionExportType, ","))
-            .map(retExTypes -> StringUtils.split(retExTypes, "$"))
-            .collect(groupingBy(arr -> Retention.valueOf(arr[0]),
-                collectingAndThen(toList(),
-                    list -> list.stream()
-                        .flatMap(el -> Stream.of(StringUtils.split(el[1], "|"))
-                            .map(ExportType::valueOf).distinct())
-                        .distinct().collect(toSet()))))
-        : LogSaverUtils.defaultRetentionExportTypeMap();
+  public Set<LogFileType> getLogFileTypes() {
+    String valueStr = optionValueString(CommandArgs.FILETYPE_LIST.getArgName(), StringUtils.EMPTY);
+    return CommandArgs.FILETYPE_LIST.convertArgValue(valueStr,
+        new TypeReference<Set<LogFileType>>() {});
+  }
+
+  public Map<Retention, Set<ExportType>> getRetentionExportTypesMap() {
+    String valueStr =
+        optionValueString(CommandArgs.RETENTION_EXPORT_TYPE.getArgName(), StringUtils.EMPTY);
+    return CommandArgs.RETENTION_EXPORT_TYPE.convertArgValue(valueStr,
+        new TypeReference<Map<Retention, Set<ExportType>>>() {});
+  }
+
+  public String getDownloadFolder() {
+    String valueStr =
+        optionValueString(CommandArgs.DOWNLOAD_FOLDER_DEST.getArgName(), StringUtils.EMPTY);
+    return CommandArgs.DOWNLOAD_FOLDER_DEST.convertArgValue(valueStr, String.class);
+  }
+
+  public LocalDate getDate() {
+    String valueStr = optionValueString(CommandArgs.DATE.getArgName(), StringUtils.EMPTY);
+    return CommandArgs.DATE.convertArgValue(valueStr, LocalDate.class);
+  }
+
+  public LocalDate getDateFrom() {
+    String valueStr = optionValueString(CommandArgs.DATE_FROM.getArgName(), StringUtils.EMPTY);
+    return CommandArgs.DATE_FROM.convertArgValue(valueStr, LocalDate.class);
+  }
+
+  public LocalDate getDateTo() {
+    String valueStr = optionValueString(CommandArgs.DATE_TO.getArgName(), StringUtils.EMPTY);
+    return CommandArgs.DATE_TO.convertArgValue(valueStr, LocalDate.class);
+  }
+
+  private String optionValueString(String name, String defValue) {
+    return StringUtils.isEmpty(env.getProperty(name)) ? defValue : env.getProperty(name);
   }
 
 }

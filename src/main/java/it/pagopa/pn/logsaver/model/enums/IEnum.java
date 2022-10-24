@@ -1,4 +1,4 @@
-package it.pagopa.pn.logsaver.model;
+package it.pagopa.pn.logsaver.model.enums;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,5 +20,9 @@ public class IEnum {
 
   public static <T extends Enum<T>> Set<T> values(List<String> list, Class<T> enumType) {
     return list.stream().map(v -> Enum.valueOf(enumType, v)).collect(Collectors.toSet());
+  }
+
+  public static <T extends Enum<T>> Set<T> valuesSet(Class<T> enumType) {
+    return Set.of(enumType.getEnumConstants());
   }
 }

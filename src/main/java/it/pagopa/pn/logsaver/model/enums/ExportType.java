@@ -1,4 +1,4 @@
-package it.pagopa.pn.logsaver.model;
+package it.pagopa.pn.logsaver.model.enums;
 
 import java.nio.file.Path;
 import java.time.LocalDate;

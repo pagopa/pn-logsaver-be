@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
@@ -27,6 +28,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @ExtendWith(MockitoExtension.class)
@@ -106,4 +109,22 @@ class S3BucketClientImplTest {
     verify(clientS3, times(1)).getObject(any(GetObjectRequest.class));
     assertEquals(fileContent, IOUtils.toString(res, Charset.defaultCharset()));
   }
+
+
+  @Test
+  void uploadContent() throws IOException {
+    String fileContent = "TEST";
+    AbortableInputStream inStream =
+        AbortableInputStream.create(IOUtils.toInputStream(fileContent, Charset.defaultCharset()));
+
+    when(clientS3.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+        .thenReturn(PutObjectResponse.builder().build());
+
+    client.uploadContent(
+        "logs/ecs/pnDelivery/2022/07/11/12/pn-pnDelivery-ecs-delivery-stream-1-2022-07-11-12-56-15",
+        inStream, 4L, "");
+
+    verify(clientS3, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+  }
+
 }

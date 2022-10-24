@@ -2,7 +2,7 @@ package it.pagopa.pn.logsaver.services.functions;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
-import it.pagopa.pn.logsaver.model.Retention;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 
 @FunctionalInterface
 public interface ExportAudit {

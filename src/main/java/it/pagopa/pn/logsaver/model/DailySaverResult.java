@@ -34,20 +34,19 @@ public class DailySaverResult {
 
   public boolean hasErrors() {
     return Objects.nonNull(error) || CollectionUtils.emptyIfNull(auditStorageList).stream()
-        .filter(AuditStorage::sendingError).count() > 0;
+        .filter(AuditStorage::hasError).count() > 0;
   }
 
   public List<String> successMessages() {
-    return messages(au -> !au.sendingError(), this::handleSuccessMessage);
+    return messages(au -> !au.hasError(), this::handleSuccessMessage);
   }
 
   public List<String> errorMessages() {
-    return messages(AuditStorage::sendingError, this::handleErrorMessage);
+    return messages(AuditStorage::hasError, this::handleErrorMessage);
   }
 
   private String handleErrorMessage(AuditStorage audit) {
-    return handleBaseMessage(audit)
-        .concat(String.format("Error: '%s'", audit.error().getMessage()));
+    return handleBaseMessage(audit).concat(String.format("Error: '%s'", audit.getErrorMessage()));
   }
 
   private String handleSuccessMessage(AuditStorage audit) {
