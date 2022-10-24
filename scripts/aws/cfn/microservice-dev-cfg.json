@@ -2,7 +2,7 @@
   "Parameters" : {
     "SafeStorageBaseUrl": "https://14ej9p2krd.execute-api.eu-south-1.amazonaws.com/dev",
     "SafeStorageCxId": "pn-delivery-push",
-    "ScheduleExpression": "cron(*/15 * * * ? *)",
+    "ScheduleExpression": "cron(0 */1 * * ? *)",
     "SafeStorageDocTypesPdf10y": "PN_LEGAL_FACTS",
     "SafeStorageDocTypesPdf5y": "PN_LEGAL_FACTS",
     "SafeStorageDocTypesPdf120d": "PN_LEGAL_FACTS",

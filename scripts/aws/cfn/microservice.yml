@@ -263,7 +263,7 @@ Resources:
             awslogs-stream-prefix: !Sub '${ProjectName}-${AppName}-logs'
         Environment:
           - Name: NONOPTIONARGS
-            Value: "Download"
+            Value: "download"
           - Name: DATE
             Value: ""
           - Name: FOLDER_DEST
