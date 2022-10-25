@@ -25,7 +25,7 @@ public class DateRangeDowloadAuditCommand extends BaseCommand {
   public DailyDownloadResultList execute(ClApplicationArguments args) {
     LocalDate dateFrom = args.getDateFrom();
     LocalDate dateTo = args.getDateTo();
-    Validate.isTrue(dateFrom.isAfter(dateTo) || dateFrom.isEqual(dateTo),
+    Validate.isTrue(dateFrom.isBefore(dateTo) || dateFrom.isEqual(dateTo),
         "dateFrom argument must be less than or equal to dateTo argument.");
     return service.downloadAudits(dateFrom, dateTo, args.getDownloadFolder());
   }

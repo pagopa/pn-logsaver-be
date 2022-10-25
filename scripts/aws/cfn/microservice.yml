@@ -19,6 +19,11 @@ Parameters:
     Type: String
     Description: 'The S3 bucket from which to fetch the templates used by this stack.'
 
+  RetentionExportTypes:
+    Type: String
+    Default: ''
+    Description: 'Pipe separated list of retention export types'
+
   SafeStorageBaseUrl:
      Type: String
      Description: 'Url to the SafeStorage microservice'
@@ -127,7 +132,7 @@ Parameters:
 
   BatchJobMaxAttempts:
     Type: Number
-    Default: 3
+    Default: 1
     Description: The maximum number of batch job attempts.
 
 Conditions:
@@ -202,6 +207,71 @@ Resources:
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: !Sub '${ProjectName}-${AppName}-logs'
         Environment:
+          - Name: RETENTION_EXPORT_TYPE
+            Value: !Ref RetentionExportTypes
+          - Name: PN_SAFESTORAGEBASEURL
+            Value: !Ref SafeStorageBaseUrl
+          - Name: PN_SAFESTORAGECXID
+            Value: !Ref SafeStorageCxId
+          - Name: PN_SAFESTORAGEDOCTYPESPDF_10Y
+            Value: !Ref SafeStorageDocTypesPdf10y
+          - Name: PN_SAFESTORAGEDOCTYPESPDF_5Y
+            Value: !Ref SafeStorageDocTypesPdf5y
+          - Name: PN_SAFESTORAGEDOCTYPESPDF_120D
+            Value: !Ref SafeStorageDocTypesPdf120d
+          - Name: PN_SAFESTORAGEDOCTYPESZIP_10Y
+            Value: !Ref SafeStorageDocTypesZip10y
+          - Name: PN_SAFESTORAGEDOCTYPESZIP_5Y
+            Value: !Ref SafeStorageDocTypesZip5y
+          - Name: PN_SAFESTORAGEDOCTYPESZIP_120D
+            Value: !Ref SafeStorageDocTypesZip120d
+          - Name: AWS_REGIONCODE
+            Value: !Ref AWS::Region
+          - Name: AWS_S3BUCKETNAME
+            Value: !Ref LogsBucketName
+          - Name: AWS_DYNAMODBTABLENAME
+            Value: !Ref LogSaverDynamoTableName
+      PlatformCapabilities:
+        - FARGATE
+      Tags:
+        Service: Batch
+        Name: JobDefinitionTag
+        Expected: MergeTag
+
+  BatchDownloadJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      Type: container
+      PropagateTags: true
+      JobDefinitionName: !Sub '${ProjectName}-${AppName}-download-job-definition'
+      ContainerProperties:
+        Image: !Ref ContainerImageUri
+        FargatePlatformConfiguration:
+          PlatformVersion: LATEST
+        ResourceRequirements:
+          - Value: !Ref VCPU
+            Type: VCPU
+          - Value: !Ref Memory
+            Type: MEMORY
+        JobRoleArn: !GetAtt "BatchTaskExecutionRole.Arn"
+        ExecutionRoleArn: !GetAtt "BatchTaskExecutionRole.Arn"
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref "BatchLogGroup"
+            awslogs-region: !Ref AWS::Region
+            awslogs-stream-prefix: !Sub '${ProjectName}-${AppName}-logs'
+        Environment:
+          - Name: NONOPTIONARGS
+            Value: "download"
+          - Name: DATE
+            Value: ""
+          - Name: FOLDER_DEST
+            Value: ""
+          - Name: DATE_FROM
+            Value: ""
+          - Name: DATE_TO
+            Value: ""
           - Name: PN_SAFESTORAGEBASEURL
             Value: !Ref SafeStorageBaseUrl
           - Name: PN_SAFESTORAGECXID

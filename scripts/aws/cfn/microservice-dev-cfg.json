@@ -2,12 +2,15 @@
   "Parameters" : {
     "SafeStorageBaseUrl": "https://14ej9p2krd.execute-api.eu-south-1.amazonaws.com/dev",
     "SafeStorageCxId": "pn-delivery-push",
-    "ScheduleExpression": "cron(*/15 * * * ? *)",
+    "ScheduleExpression": "cron(0 */1 * * ? *)",
     "SafeStorageDocTypesPdf10y": "PN_LEGAL_FACTS",
     "SafeStorageDocTypesPdf5y": "PN_LEGAL_FACTS",
     "SafeStorageDocTypesPdf120d": "PN_LEGAL_FACTS",
     "SafeStorageDocTypesZip10y": "PN_LOGS_ARCHIVE_AUDIT10Y",
     "SafeStorageDocTypesZip5y": "PN_LOGS_ARCHIVE_AUDIT5Y",
-    "SafeStorageDocTypesZip120d": "PN_LOGS_ARCHIVE_TEMP"
+    "SafeStorageDocTypesZip120d": "PN_LOGS_ARCHIVE_TEMP",
+    "RetentionExportTypes": "AUDIT10Y$ZIP|PDF_SIGNED,AUDIT5Y$ZIP|PDF_SIGNED",
+    "BatchJobMaxAttempts": "1",
+    "MaxvCpus": "2"
   }
 }

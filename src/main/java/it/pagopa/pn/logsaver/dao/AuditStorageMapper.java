@@ -3,6 +3,7 @@ package it.pagopa.pn.logsaver.dao;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -11,9 +12,9 @@ import org.apache.commons.collections4.MapUtils;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.StorageExecution.ExecutionDetails;
@@ -86,4 +87,14 @@ public class AuditStorageMapper {
         .collect(Collectors.toList());
   }
 
+
+  public static Map<String, RetentionResult> toEntity(Map<Retention, Set<ExportType>> resList) {
+    return resList.keySet().stream()
+        .flatMap(key -> resList.get(key).stream()
+            .map(ex -> new RetentionResult(key.name(), AuditStorageStatus.SENT.name(), ex.name())))
+        .collect(Collectors.toMap(
+            en -> en.getRetention().concat(KEY_SEPARATOR).concat(en.getExportType()),
+            Function.identity()));
+
+  }
 }
