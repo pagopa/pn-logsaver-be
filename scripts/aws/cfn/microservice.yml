@@ -499,3 +499,14 @@ Resources:
             JobName: !Sub '${ProjectName}-${AppName}-rule-job'
             RetryStrategy:
               Attempts: !Ref BatchJobMaxAttempts
+
+  ## Dashboard
+  LogsaverBeMicroserviceCloudWatchDashboard:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/microservice-cloudwatch-dashboard.yaml"
+      Parameters:
+        DashboardName: !Sub "${ProjectName}-logsaver-be"
+        DynamoDBTableNames: !Join 
+          - ',' 
+          - - !Ref LogSaverDynamoTableName
