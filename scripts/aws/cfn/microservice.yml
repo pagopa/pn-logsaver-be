@@ -135,9 +135,9 @@ Parameters:
     Default: 1
     Description: The maximum number of batch job attempts.
 
-  AlarmSNSTopicName:
+  AlarmSNSTopicArn:
     Type: String
-    Description: name of SNS alarm topic
+    Description: name of SNS alarm topic arn
 
 Conditions:
   SendLogToKinesis: !Not [ !Equals [ !Ref LogsKinesisSourceStreamArn, '' ] ]
@@ -459,7 +459,7 @@ Resources:
            - FAILED
      State: ENABLED
      Targets:
-       - Arn: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AlarmSNSTopicName}"
+       - Arn: !Ref AlarmSNSTopicArn
          Id: !Sub "${ProjectName}-logsaver-be" 
 
   ### Event Rule setup ###
