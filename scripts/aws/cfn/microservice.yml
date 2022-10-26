@@ -135,10 +135,6 @@ Parameters:
     Default: 1
     Description: The maximum number of batch job attempts.
 
-  AlarmSNSTopicArn:
-    Type: String
-    Description: name of SNS alarm topic arn
-
 Conditions:
   SendLogToKinesis: !Not [ !Equals [ !Ref LogsKinesisSourceStreamArn, '' ] ]
 
