@@ -135,6 +135,10 @@ Parameters:
     Default: 1
     Description: The maximum number of batch job attempts.
 
+  AlarmSNSTopicName:
+    Type: String
+    Description: name of SNS alarm topic
+
 Conditions:
   SendLogToKinesis: !Not [ !Equals [ !Ref LogsKinesisSourceStreamArn, '' ] ]
 
@@ -440,25 +444,23 @@ Resources:
                 Effect: Allow
                 Resource: "*"
 
-  #BatchBridgeStateRule:
-  #  Type: AWS::Events::Rule
-  #  Properties:
-  #    Description: The EventBridge rule to match Batch state change
-  #    EventBusName: !Ref EventBusName
-  #    EventPattern:
-  #      source:
-  #        - aws.batch
-  #      detail-type:
-  #        - Batch Job State Change
-  #      detail:
-  #        status:
-  #          # - STARTED
-  #          # - SUCCEEDED
-  #          - FAILED
-  #    State: ENABLED
-  #    Targets:
-  #      - Arn: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AlarmSNSTopicName}"
-  #        Id: !Ref EventBridgeName
+  ### Enable sending notifications to SNS topic when the job is in failed status.
+  BatchBridgeStateRule:
+   Type: AWS::Events::Rule
+   Properties:
+     Description: The EventBridge rule to match Batch state change
+     EventPattern:
+       source:
+         - aws.batch
+       detail-type:
+         - Batch Job State Change
+       detail:
+         status:
+           - FAILED
+     State: ENABLED
+     Targets:
+       - Arn: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AlarmSNSTopicName}"
+         Id: !Sub "${ProjectName}-logsaver-be" 
 
   ### Event Rule setup ###
   ScheduleRole:
