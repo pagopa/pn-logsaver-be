@@ -265,13 +265,13 @@ Resources:
           - Name: NONOPTIONARGS
             Value: "download"
           - Name: DATE
-            Value: ""
+            Value: "YYYY-MM-DD"
           - Name: FOLDER_DEST
-            Value: ""
+            Value: "YYYY-MM-DD"
           - Name: DATE_FROM
-            Value: ""
+            Value: "YYYY-MM-DD"
           - Name: DATE_TO
-            Value: ""
+            Value: "YYYY-MM-DD"
           - Name: PN_SAFESTORAGEBASEURL
             Value: !Ref SafeStorageBaseUrl
           - Name: PN_SAFESTORAGECXID
