@@ -267,7 +267,7 @@ Resources:
           - Name: DATE
             Value: "YYYY-MM-DD"
           - Name: FOLDER_DEST
-            Value: "YYYY-MM-DD"
+            Value: ""
           - Name: DATE_FROM
             Value: "YYYY-MM-DD"
           - Name: DATE_TO
