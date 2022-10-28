@@ -498,6 +498,65 @@ Resources:
             RetryStrategy:
               Attempts: !Ref BatchJobMaxAttempts
 
+  # CloudWatch metric to filer ERROR - FATAL lines, in Log group
+  ErrorFatalLogsMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref BatchLogGroup
+      FilterPattern: '?ERROR ?FATAL ?CRITICAL'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricNamespace: "ErrorFatalLogs"
+          MetricName: !Sub "${MicroServiceUniqueName}-ErrorFatalMetric"
+
+  # Create alarm
+  ErrorFatalLogsMetricAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn: ErrorFatalLogsMetricFilter
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${AppName}-ErrorFatalLogs-Alarm"
+      AlarmDescription: "CloudWatch alarm for when LogSaver LogGroup has ERROR or FATAL line."
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmSNSTopicArn
+      #InsufficientDataActions:
+      #  - !Ref AlarmSNSTopicArn
+      OKActions:
+        - !Ref AlarmSNSTopicArn
+      DatapointsToAlarm: 1
+      MetricName: !Sub "${ProjectName}-${AppName}-ErrorFatalMetric"
+      Namespace: "ErrorFatalLogs"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 60
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+
+  # Create alarm
+  FailedInvocationMetricAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${AppName}-FailedInvocation-Alarm"
+      AlarmDescription: "CloudWatch alarm for when LogSaver job failes."
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmSNSTopicArn
+      #InsufficientDataActions:
+      #  - !Ref AlarmSNSTopicArn
+      OKActions:
+        - !Ref AlarmSNSTopicArn
+      Dimensions:
+        - Name: RuleName
+          Value: !GetAtt BatchBridgeStateRule.Name
+      DatapointsToAlarm: 1
+      MetricName: "FailedInvocations"
+      Namespace: "AWS/Events"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Period: 86400
+      Statistic: Sum
+      Threshold: 1
+
   ## Dashboard
   LogsaverBeMicroserviceCloudWatchDashboard:
     Type: AWS::CloudFormation::Stack
@@ -508,3 +567,7 @@ Resources:
         DynamoDBTableNames: !Join 
           - ',' 
           - - !Ref LogSaverDynamoTableName
+        AlarmArns: !Join
+          - ','
+          - - !GetAtt ErrorFatalLogsMetricAlarm.Arn
+            - !GetAtt FailedInvocationMetricAlarm.Arn
