@@ -440,25 +440,23 @@ Resources:
                 Effect: Allow
                 Resource: "*"
 
-  #BatchBridgeStateRule:
-  #  Type: AWS::Events::Rule
-  #  Properties:
-  #    Description: The EventBridge rule to match Batch state change
-  #    EventBusName: !Ref EventBusName
-  #    EventPattern:
-  #      source:
-  #        - aws.batch
-  #      detail-type:
-  #        - Batch Job State Change
-  #      detail:
-  #        status:
-  #          # - STARTED
-  #          # - SUCCEEDED
-  #          - FAILED
-  #    State: ENABLED
-  #    Targets:
-  #      - Arn: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AlarmSNSTopicName}"
-  #        Id: !Ref EventBridgeName
+  ### Enable sending notifications to SNS topic when the job is in failed status.
+  BatchBridgeStateRule:
+   Type: AWS::Events::Rule
+   Properties:
+     Description: The EventBridge rule to match Batch state change
+     EventPattern:
+       source:
+         - aws.batch
+       detail-type:
+         - Batch Job State Change
+       detail:
+         status:
+           - FAILED
+     State: ENABLED
+     Targets:
+       - Arn: !Ref AlarmSNSTopicArn
+         Id: !Sub "${ProjectName}-logsaver-be" 
 
   ### Event Rule setup ###
   ScheduleRole:
@@ -499,3 +497,14 @@ Resources:
             JobName: !Sub '${ProjectName}-${AppName}-rule-job'
             RetryStrategy:
               Attempts: !Ref BatchJobMaxAttempts
+
+  ## Dashboard
+  LogsaverBeMicroserviceCloudWatchDashboard:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/microservice-cloudwatch-dashboard.yaml"
+      Parameters:
+        DashboardName: !Sub "${ProjectName}-logsaver-be"
+        DynamoDBTableNames: !Join 
+          - ',' 
+          - - !Ref LogSaverDynamoTableName
