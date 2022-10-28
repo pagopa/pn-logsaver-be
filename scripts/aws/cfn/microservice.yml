@@ -507,7 +507,7 @@ Resources:
       MetricTransformations:
         - MetricValue: 1
           MetricNamespace: "ErrorFatalLogs"
-          MetricName: !Sub "${MicroServiceUniqueName}-ErrorFatalMetric"
+          MetricName: !Sub "${ProjectName}-${AppName}-ErrorFatalMetric"
 
   # Create alarm
   ErrorFatalLogsMetricAlarm:
