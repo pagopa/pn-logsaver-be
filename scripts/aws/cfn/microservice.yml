@@ -468,6 +468,7 @@ Resources:
      State: ENABLED
      Targets:
        - Arn: !Ref AlarmSNSTopicArn
+         RoleArn: !GetAtt PublishAlarmTopicRole.Arn
          Id: !Sub "${ProjectName}-logsaver-be" 
 
   ### Event Rule setup ###
@@ -490,6 +491,26 @@ Resources:
                 Action:
                   - "batch:SubmitJob"
                 Resource: "*"
+
+  PublishAlarmTopicRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${AppName}-publish-alarm-topic-role'
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ events.amazonaws.com ]
+            Action: [ "sts:AssumeRole" ]
+      Path: /
+      Policies:
+        - PolicyName: !Sub '${ProjectName}-${AppName}-publish-alarm-topic-policy'
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "sns:Publish"
+                Resource: !Ref AlarmSNSTopicArn
 
   ScheduledRule:
     Type: AWS::Events::Rule
