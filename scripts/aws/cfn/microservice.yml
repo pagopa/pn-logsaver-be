@@ -456,6 +456,7 @@ Resources:
    Type: AWS::Events::Rule
    Properties:
      Description: The EventBridge rule to match Batch state change
+     RoleArn: !GetAtt PublishAlarmTopicRole.Arn
      EventPattern:
        source:
          - aws.batch
@@ -469,8 +470,7 @@ Resources:
      State: ENABLED
      Targets:
        - Arn: !Ref AlarmSNSTopicArn
-         RoleArn: !GetAtt PublishAlarmTopicRole.Arn
-         Id: !Sub "${ProjectName}-logsaver-be" 
+         Id: !Sub "${ProjectName}-logsaver-be"
 
   ### Event Rule setup ###
   ScheduleRole:
