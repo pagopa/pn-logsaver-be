@@ -258,7 +258,7 @@ Resources:
         LogConfiguration:
           LogDriver: awslogs
           Options:
-            awslogs-group: !Ref "BatchLogGroup"
+            awslogs-group: !Ref "ManualBatchLogGroup"
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: !Sub '${ProjectName}-${AppName}-logs'
         Environment:
@@ -306,6 +306,17 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '${ProjectName}-${AppName}-logs'
+      RetentionInDays: 3
+      KmsKeyId:
+        Fn::GetAtt:
+          - BatchLogGroupKmsKey
+          - Arn
+
+  # Batch Log group
+  ManualBatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '${ProjectName}-${AppName}-download-logs'
       RetentionInDays: 3
       KmsKeyId:
         Fn::GetAtt:
@@ -453,6 +464,7 @@ Resources:
        detail:
          status:
            - FAILED
+         jobDefinition: !Ref BatchProcessingJobDefinition
      State: ENABLED
      Targets:
        - Arn: !Ref AlarmSNSTopicArn
@@ -549,7 +561,7 @@ Resources:
         - Name: RuleName
           Value: !Ref BatchBridgeStateRule
       DatapointsToAlarm: 1
-      MetricName: "FailedInvocations"
+      MetricName: "Invocations"
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanOrEqualToThreshold
       EvaluationPeriods: 1
