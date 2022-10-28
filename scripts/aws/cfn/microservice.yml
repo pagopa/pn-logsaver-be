@@ -258,7 +258,7 @@ Resources:
         LogConfiguration:
           LogDriver: awslogs
           Options:
-            awslogs-group: !Ref "BatchLogGroup"
+            awslogs-group: !Ref "ManualBatchLogGroup"
             awslogs-region: !Ref AWS::Region
             awslogs-stream-prefix: !Sub '${ProjectName}-${AppName}-logs'
         Environment:
@@ -306,6 +306,17 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '${ProjectName}-${AppName}-logs'
+      RetentionInDays: 3
+      KmsKeyId:
+        Fn::GetAtt:
+          - BatchLogGroupKmsKey
+          - Arn
+
+  # Batch Log group
+  ManualBatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '${ProjectName}-${AppName}-download-logs'
       RetentionInDays: 3
       KmsKeyId:
         Fn::GetAtt:
@@ -445,6 +456,7 @@ Resources:
    Type: AWS::Events::Rule
    Properties:
      Description: The EventBridge rule to match Batch state change
+     RoleArn: !GetAtt PublishAlarmTopicRole.Arn
      EventPattern:
        source:
          - aws.batch
@@ -453,10 +465,12 @@ Resources:
        detail:
          status:
            - FAILED
+         jobDefinition:
+          - !Ref BatchProcessingJobDefinition
      State: ENABLED
      Targets:
        - Arn: !Ref AlarmSNSTopicArn
-         Id: !Sub "${ProjectName}-logsaver-be" 
+         Id: !Sub "${ProjectName}-logsaver-be"
 
   ### Event Rule setup ###
   ScheduleRole:
@@ -479,6 +493,26 @@ Resources:
                   - "batch:SubmitJob"
                 Resource: "*"
 
+  PublishAlarmTopicRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${AppName}-publish-alarm-topic-role'
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ events.amazonaws.com ]
+            Action: [ "sts:AssumeRole" ]
+      Path: /
+      Policies:
+        - PolicyName: !Sub '${ProjectName}-${AppName}-publish-alarm-topic-policy'
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "sns:Publish"
+                Resource: !Ref AlarmSNSTopicArn
+
   ScheduledRule:
     Type: AWS::Events::Rule
     Properties:
@@ -498,6 +532,65 @@ Resources:
             RetryStrategy:
               Attempts: !Ref BatchJobMaxAttempts
 
+  # CloudWatch metric to filer ERROR - FATAL lines, in Log group
+  ErrorFatalLogsMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref BatchLogGroup
+      FilterPattern: '?ERROR ?FATAL ?CRITICAL'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricNamespace: "ErrorFatalLogs"
+          MetricName: !Sub "${ProjectName}-${AppName}-ErrorFatalMetric"
+
+  # Create alarm
+  ErrorFatalLogsMetricAlarm:
+    Type: AWS::CloudWatch::Alarm
+    DependsOn: ErrorFatalLogsMetricFilter
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${AppName}-ErrorFatalLogs-Alarm"
+      AlarmDescription: "CloudWatch alarm for when LogSaver LogGroup has ERROR or FATAL line."
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmSNSTopicArn
+      #InsufficientDataActions:
+      #  - !Ref AlarmSNSTopicArn
+      OKActions:
+        - !Ref AlarmSNSTopicArn
+      DatapointsToAlarm: 1
+      MetricName: !Sub "${ProjectName}-${AppName}-ErrorFatalMetric"
+      Namespace: "ErrorFatalLogs"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 60
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+
+  # Create alarm
+  FailedInvocationMetricAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${AppName}-FailedInvocation-Alarm"
+      AlarmDescription: "CloudWatch alarm for when LogSaver job failes."
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmSNSTopicArn
+      #InsufficientDataActions:
+      #  - !Ref AlarmSNSTopicArn
+      OKActions:
+        - !Ref AlarmSNSTopicArn
+      Dimensions:
+        - Name: RuleName
+          Value: !Ref BatchBridgeStateRule
+      DatapointsToAlarm: 1
+      MetricName: "Invocations"
+      Namespace: "AWS/Events"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Period: 86400
+      Statistic: Sum
+      Threshold: 1
+
   ## Dashboard
   LogsaverBeMicroserviceCloudWatchDashboard:
     Type: AWS::CloudFormation::Stack
@@ -508,3 +601,7 @@ Resources:
         DynamoDBTableNames: !Join 
           - ',' 
           - - !Ref LogSaverDynamoTableName
+        AlarmArns: !Join
+          - ','
+          - - !GetAtt ErrorFatalLogsMetricAlarm.Arn
+            - !GetAtt FailedInvocationMetricAlarm.Arn
