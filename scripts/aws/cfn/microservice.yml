@@ -464,7 +464,8 @@ Resources:
        detail:
          status:
            - FAILED
-         jobDefinition: !Ref BatchProcessingJobDefinition
+         jobDefinition:
+          - !Ref BatchProcessingJobDefinition
      State: ENABLED
      Targets:
        - Arn: !Ref AlarmSNSTopicArn
