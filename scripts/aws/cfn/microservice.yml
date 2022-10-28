@@ -547,7 +547,7 @@ Resources:
         - !Ref AlarmSNSTopicArn
       Dimensions:
         - Name: RuleName
-          Value: !GetAtt BatchBridgeStateRule.Name
+          Value: !Ref BatchBridgeStateRule
       DatapointsToAlarm: 1
       MetricName: "FailedInvocations"
       Namespace: "AWS/Events"
