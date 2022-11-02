@@ -306,7 +306,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '${ProjectName}-${AppName}-logs'
-      RetentionInDays: 3
+      RetentionInDays: 14
       KmsKeyId:
         Fn::GetAtt:
           - BatchLogGroupKmsKey
@@ -317,7 +317,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '${ProjectName}-${AppName}-download-logs'
-      RetentionInDays: 3
+      RetentionInDays: 14
       KmsKeyId:
         Fn::GetAtt:
           - BatchLogGroupKmsKey
