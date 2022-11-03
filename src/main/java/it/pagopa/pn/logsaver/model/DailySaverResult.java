@@ -54,8 +54,8 @@ public class DailySaverResult {
   }
 
   private String handleBaseMessage(AuditStorage audit) {
-    return String.format("File '%s' Retention '%s' ExportType '%s' ", audit.fileName(),
-        audit.retention().name(), audit.exportType().name());
+    return String.format("File  Retention '%s' ExportType '%s' ", audit.retention().name(),
+        audit.exportType().name());
   }
 
   private List<String> messages(Predicate<AuditStorage> predicate,

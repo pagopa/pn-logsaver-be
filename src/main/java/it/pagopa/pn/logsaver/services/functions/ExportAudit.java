@@ -2,9 +2,11 @@ package it.pagopa.pn.logsaver.services.functions;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 
 @FunctionalInterface
 public interface ExportAudit {
-  public void export(Path folder, Path file, Retention retention, LocalDate logDate);
+  public List<Path> export(Path folderIn, Path folderOut, String patternFileName,
+      Retention retention, LocalDate logDate);
 }

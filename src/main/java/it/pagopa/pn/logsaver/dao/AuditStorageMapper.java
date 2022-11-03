@@ -42,9 +42,9 @@ public class AuditStorageMapper {
     if (Objects.isNull(storage)) {
       return null;
     }
-    AuditStorageEntity entity = AuditStorageEntity.builder().fileName(storage.fileName())
-        .logDate(DateUtils.format(storage.logDate())).retention(storage.retention())
-        .exportType(storage.exportType()).build();
+    AuditStorageEntity entity =
+        AuditStorageEntity.builder().logDate(DateUtils.format(storage.logDate()))
+            .retention(storage.retention()).exportType(storage.exportType()).build();
 
     if (storage.hasError()) {
       entity.setResult(AuditStorageStatus.CREATED.name());
@@ -63,17 +63,27 @@ public class AuditStorageMapper {
   }
 
   public static List<AuditDownloadReference> toModel(List<AuditStorageEntity> entityList) {
-    return entityList.stream().map(AuditStorageMapper::toModel).collect(Collectors.toList());
+    return entityList.stream().flatMap(AuditStorageMapper::toModel).collect(Collectors.toList());
   }
 
-  public static AuditDownloadReference toModel(AuditStorageEntity entity) {
+  public static AuditDownloadReference toModel2(AuditStorageEntity entity) {
     return Objects.isNull(entity) ? null
-        : AuditDownloadReference.builder().retention(Retention.valueOf(entity.getRetention()))
-            .exportType(ExportType.valueOf(entity.getContentType())).fileName(entity.getFileName())
-            .logDate(DateUtils.parse(entity.getLogDate())).uploadKey(entity.getStorageKey())
-            .status(AuditStorageStatus.valueOf(entity.getResult())).build();
+        : AuditDownloadReference.builder()// .retention(Retention.valueOf(entity.getRetention()))
+            // .exportType(ExportType.valueOf(entity.getContentType()))
+            // .logDate(DateUtils.parse(entity.getLogDate())).uploadKey(entity.getStorageKey())
+            // .status(AuditStorageStatus.valueOf(entity.getResult()))
+            .build();
   }
 
+  public static Stream<AuditDownloadReference> toModel(AuditStorageEntity entity) {
+
+    return Objects.isNull(entity) ? null
+        : entity.getStorageKey().entrySet().stream()
+            .map(entry -> AuditDownloadReference.builder()
+                .logDate(DateUtils.parse(entity.getLogDate()))
+                .status(AuditStorageStatus.valueOf(entity.getResult())).fileName(entry.getKey())
+                .uploadKey(entry.getValue()).build());
+  }
 
   public static StorageExecution toModel(ExecutionEntity entity) {
     return new StorageExecution(DateUtils.parse(entity.getLogDate()),

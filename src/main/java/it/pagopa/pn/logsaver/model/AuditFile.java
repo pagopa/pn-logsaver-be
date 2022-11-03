@@ -2,6 +2,7 @@ package it.pagopa.pn.logsaver.model;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
@@ -20,13 +21,13 @@ public class AuditFile {
 
   private Retention retention;
 
-  private Path filePath;
+  private List<Path> filePath;
 
   private LocalDate logDate;
 
   private ExportType exportType;
 
-  public String fileName() {
+  public String fileName(Path filePath) {
     return Objects.nonNull(filePath) ? filePath.getFileName().toString() : null;
   }
 

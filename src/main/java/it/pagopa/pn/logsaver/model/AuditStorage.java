@@ -1,5 +1,6 @@
 package it.pagopa.pn.logsaver.model;
 
+import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
 import lombok.EqualsAndHashCode;
@@ -21,7 +22,7 @@ public class AuditStorage extends AuditFile {
     CREATED, SENT
   }
 
-  private String uploadKey;
+  private Map<String, String> uploadKey;
 
   private Throwable error;
 
@@ -41,4 +42,5 @@ public class AuditStorage extends AuditFile {
   public String getErrorMessage() {
     return hasError() ? error.getMessage() : StringUtils.EMPTY;
   }
+
 }

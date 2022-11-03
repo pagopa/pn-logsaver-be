@@ -54,8 +54,7 @@ public class DailyDownloadResult {
   }
 
   private String handleBaseMessage(AuditDownloadReference audit) {
-    return String.format("File '%s' Retention '%s' ExportType '%s' ", audit.fileName(),
-        audit.retention().name(), audit.exportType().name());
+    return String.format("File '%s'  ", audit.fileName());
   }
 
   private List<String> messages(Predicate<AuditDownloadReference> predicate,
