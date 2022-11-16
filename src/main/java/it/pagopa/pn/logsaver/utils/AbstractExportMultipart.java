@@ -33,7 +33,7 @@ abstract class AbstractExportMultipart<T> {
 
 
 
-  protected abstract void setFileOut(Path fileOut) throws IOException;
+  protected abstract void setCurrentFileOut(Path fileOut) throws IOException;
 
   protected abstract void addLogFile(File filePath) throws IOException;
 
@@ -45,7 +45,7 @@ abstract class AbstractExportMultipart<T> {
 
     try {
       currentPathFile = newFileOutPathPart(folderOut, patternFileOut, 1);
-      setFileOut(currentPathFile);
+      setCurrentFileOut(currentPathFile);
       outFileList.add(currentPathFile);
       exportFolder(folderIn.toFile());
       closeCurrentFile();
@@ -70,7 +70,7 @@ abstract class AbstractExportMultipart<T> {
           closeCurrentFile();
           currentPathFile = newFileOutPathPart(folderOut, patternFileOut, outFileList.size() + 1);
           outFileList.add(currentPathFile);
-          setFileOut(currentPathFile);
+          setCurrentFileOut(currentPathFile);
         }
         addLogFile(filePath);
 
@@ -81,10 +81,14 @@ abstract class AbstractExportMultipart<T> {
 
 
   protected long fileSize(Path pathFile, File nextFile) throws IOException {
-    return pathFile.toFile().exists()
-        ? Files.readAttributes(pathFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS)
-            .size()
-        : -1L;
+    long currentSize =
+        pathFile.toFile().exists()
+            ? Files.readAttributes(pathFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS)
+                .size()
+            : -1L;
+    return currentSize + Files
+        .readAttributes(nextFile.toPath(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS)
+        .size();
   }
 
   private static Path newFileOutPathPart(Path zipPathout, String patternFileOut, int nPart) {

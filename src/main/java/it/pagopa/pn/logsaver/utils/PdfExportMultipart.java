@@ -66,7 +66,7 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
   }
 
   @Override
-  protected void setFileOut(Path fileOut) throws IOException {
+  protected void setCurrentFileOut(Path fileOut) throws IOException {
     this.fileSize = FILE_SIZE_EMPTY;
 
     this.currentFileOut = new Document();

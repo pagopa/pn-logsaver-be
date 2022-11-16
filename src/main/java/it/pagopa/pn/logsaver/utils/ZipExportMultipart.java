@@ -22,7 +22,7 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
   }
 
   @Override
-  protected void setFileOut(Path fileOut) throws IOException {
+  protected void setCurrentFileOut(Path fileOut) throws IOException {
 
     this.currentFileOut = new ZipOutputStream(
         Files.newOutputStream(fileOut, StandardOpenOption.APPEND, StandardOpenOption.CREATE_NEW));
@@ -37,7 +37,6 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
       IOUtils.copy(fis, currentFileOut);
       currentFileOut.closeEntry();
     }
-    // zos.flush();
   }
 
   @Override
