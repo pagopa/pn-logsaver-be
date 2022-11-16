@@ -280,7 +280,7 @@ class StorageDaoDynamoImplTest {
   void getAudits() {
     AuditStorageEntity mock = AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT10Y)
-        .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build();
+        .result(AuditStorageStatus.SENT.name()).storageKey(TestCostant.uploadKey).build();
     when(auditStorageTable.query(queryCond.capture())).thenReturn(execListMockAudit(List.of(mock)));
     Stream<AuditStorageEntity> exEnt =
         storageDao.getAudits("", TestCostant.LOGDATE, TestCostant.LOGDATE);

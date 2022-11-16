@@ -27,6 +27,6 @@ public class LogSaverCfg {
   @Value("${log-saver.cdc-tables:}#{T(java.util.Collections).emptyList()}")
   private List<String> cdcTables;
 
-  @Value("${log-saver.export-max-file-size:100MB}")
+  @Value("${log-saver.export-max-file-size:5MB}")
   private DataSize maxSize;
 }

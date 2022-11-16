@@ -22,14 +22,14 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
   }
 
   @Override
-  protected ZipOutputStream newOutputStream(Path fileOut) throws IOException {
+  protected ZipOutputStream newFileOut(Path fileOut) throws IOException {
 
     return new ZipOutputStream(
         Files.newOutputStream(fileOut, StandardOpenOption.APPEND, StandardOpenOption.CREATE_NEW));
   }
 
   @Override
-  protected void addFile(File filePath) throws IOException {
+  protected void addLogFile(File filePath) throws IOException {
     ZipEntry ze = new ZipEntry(folderIn.relativize(filePath.toPath()).toString());
     log.info(currentPathFile + "-" + ze.getName());
     currentFile.putNextEntry(ze);

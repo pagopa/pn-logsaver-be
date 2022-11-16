@@ -2,6 +2,7 @@ package it.pagopa.pn.logsaver.services.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
@@ -33,9 +34,7 @@ import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.StorageExecution;
-import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
-import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.services.StorageService;
 
 @ExtendWith(MockitoExtension.class)
@@ -79,12 +78,12 @@ class StorageServiceImplTest {
 
     verify(storageDao, times(1)).getExecutionBetween(any(), any());
     verify(storageDao, times(6)).getAudits(any(), any(), any());
-    verify(safeStorageClient, times(auditFiles.size() * 6)).downloadFileInfo(any());
+    verify(safeStorageClient, times(auditFiles.size() * 2 * 6)).downloadFileInfo(any());
 
     assertNotNull(auditStorageRes);
     assertEquals(1, auditStorageRes.size());
     DailyAuditDownloadable dailyRes = auditStorageRes.get(0);
-    assertEquals(auditFiles.size() * 6, dailyRes.audits().size());
+    assertEquals(auditFiles.size() * 2 * 6, dailyRes.audits().size());
 
     dailyRes.audits().forEach(aud -> {
       assertEquals("http://downloadurl", aud.downloadUrl());
@@ -94,9 +93,8 @@ class StorageServiceImplTest {
 
   @Test
   void dowloadAuditFile() throws IOException {
-    AuditDownloadReference file = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
-        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
-        .uploadKey("updKey").build();
+    AuditDownloadReference file = AuditDownloadReference.builder().logDate(TestCostant.LOGDATE)
+        .status(AuditStorageStatus.SENT).uploadKey("updKey").build();
 
     when(safeStorageClient.downloadFile(any(), any())).thenAnswer(inTarg -> {
       AuditDownloadReference audit = inTarg.getArgument(0, AuditDownloadReference.class);
@@ -116,7 +114,7 @@ class StorageServiceImplTest {
 
     when(safeStorageClient.uploadFile(any())).thenAnswer(inTarg -> {
       AuditStorage audit = inTarg.getArgument(0, AuditStorage.class);
-      return audit.uploadKey("KEY");
+      return audit.uploadKey(TestCostant.uploadKey);
     });
     doNothing().when(storageDao).updateExecution(any(), any(), any());
 
@@ -128,7 +126,7 @@ class StorageServiceImplTest {
     assertNotNull(auditStorageRes);
     assertEquals(3, auditStorageRes.size());
     auditStorageRes.forEach(aud -> {
-      assertEquals("KEY", aud.uploadKey());
+      assertTrue(aud.uploadKey().values().contains("updKey"));
     });
   }
 

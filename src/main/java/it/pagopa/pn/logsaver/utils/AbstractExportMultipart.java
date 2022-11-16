@@ -33,9 +33,9 @@ abstract class AbstractExportMultipart<T> {
 
 
 
-  protected abstract T newOutputStream(Path fileOut) throws IOException;
+  protected abstract T newFileOut(Path fileOut) throws IOException;
 
-  protected abstract void addFile(File filePath) throws IOException;
+  protected abstract void addLogFile(File filePath) throws IOException;
 
   protected abstract void closeCurrentFile() throws IOException;
 
@@ -45,7 +45,7 @@ abstract class AbstractExportMultipart<T> {
 
     try {
       currentPathFile = newFileOutPathPart(folderOut, patternFileOut, 1);
-      currentFile = newOutputStream(currentPathFile);
+      currentFile = newFileOut(currentPathFile);
       outFileList.add(currentPathFile);
       exportFolder(folderIn.toFile());
       closeCurrentFile();
@@ -66,13 +66,13 @@ abstract class AbstractExportMultipart<T> {
         exportFolder(filePath);
       } else {
 
-        if (fileSize(currentPathFile) > maxSize.toBytes()) {
+        if (fileSize(currentPathFile, filePath) > maxSize.toBytes()) {
           closeCurrentFile();
           currentPathFile = newFileOutPathPart(folderOut, patternFileOut, outFileList.size() + 1);
           outFileList.add(currentPathFile);
-          currentFile = newOutputStream(currentPathFile);
+          currentFile = newFileOut(currentPathFile);
         }
-        addFile(filePath);
+        addLogFile(filePath);
 
       }
     }
@@ -80,7 +80,7 @@ abstract class AbstractExportMultipart<T> {
 
 
 
-  protected long fileSize(Path pathFile) throws IOException {
+  protected long fileSize(Path pathFile, File nextFile) throws IOException {
     return pathFile.toFile().exists()
         ? Files.readAttributes(pathFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS)
             .size()

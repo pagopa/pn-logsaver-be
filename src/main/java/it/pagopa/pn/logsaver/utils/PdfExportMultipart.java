@@ -11,10 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import org.apache.commons.io.IOUtils;
 import org.springframework.util.unit.DataSize;
-import org.springframework.util.unit.DataUnit;
 import com.lowagie.text.Document;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.pdf.PdfWriter;
@@ -35,11 +33,11 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
   private static final String PARAGRAPH =
       "Questo pdf contiente i file di audit della Piattaforma Notifiche.";
   private static final long FILE_SIZE_EMPTY = 1029L;
-  private static final long METADATA_EMPTY = 2L;
+  private static final long METADATA_EMPTY = 1500L;
   private final Retention retention;
   private PdfWriter writer;
   private long fileSize = 0L;
-
+  private String nextEntry;
   private final LocalDate logDate;
 
   public PdfExportMultipart(@NonNull Path folderIn, @NonNull DataSize maxSize,
@@ -50,18 +48,6 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
     this.logDate = logDate;
   }
 
-
-
-  public static void main(String[] args) {
-    String pattern = "'all-audit-log-10y-'yyyy-MM-dd'_part%d".concat(".pdf'");
-    String fileName = LocalDate.now().format(DateTimeFormatter.ofPattern(pattern));
-    Path in = Path.of("/tmp/10y");
-    Path out = Path.of("/tmp/");
-    PdfExportMultipart export = new PdfExportMultipart(in, DataSize.of(1000, DataUnit.KILOBYTES),
-        out, fileName, Retention.AUDIT10Y, LocalDate.now());
-
-    export.export();
-  }
 
   private String handleXmlContent(Path filePath, Retention retention, LocalDate logDate) {
     try {
@@ -80,7 +66,7 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
   }
 
   @Override
-  protected Document newOutputStream(Path fileOut) throws IOException {
+  protected Document newFileOut(Path fileOut) throws IOException {
     this.fileSize = FILE_SIZE_EMPTY;
     return newDocument(fileOut);
   }
@@ -103,17 +89,16 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
   }
 
   @Override
-  protected void addFile(File filePath) throws IOException {
-    String xmlContent = handleXmlContent(filePath.toPath(), retention, logDate);
-    this.fileSize += xmlContent.length() + filePath.getName().length() + METADATA_EMPTY;
-    currentFile.addHeader(filePath.getName(), xmlContent);
+  protected void addLogFile(File filePath) throws IOException {
+    this.fileSize += nextEntry.length() + filePath.getName().length() + METADATA_EMPTY;
+    currentFile.addHeader(filePath.getName(), nextEntry);
     writer.flush();
   }
 
   @Override
-  protected long fileSize(Path pathFile) throws IOException {
-    log.info(pathFile.getFileName().toString() + " Size " + fileSize);
-    return fileSize;
+  protected long fileSize(Path pathFile, File nextFile) throws IOException {
+    this.nextEntry = handleXmlContent(nextFile.toPath(), retention, logDate);
+    return fileSize + nextEntry.length() + nextFile.getName().length() + METADATA_EMPTY;
   }
 
   @Override

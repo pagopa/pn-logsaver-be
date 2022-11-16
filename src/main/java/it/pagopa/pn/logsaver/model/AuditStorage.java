@@ -1,8 +1,10 @@
 package it.pagopa.pn.logsaver.model;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
+import lombok.Builder.Default;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,7 +24,8 @@ public class AuditStorage extends AuditFile {
     CREATED, SENT
   }
 
-  private Map<String, String> uploadKey;
+  @Default
+  private Map<String, String> uploadKey = new HashMap<>();
 
   private Throwable error;
 

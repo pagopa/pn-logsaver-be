@@ -2,6 +2,7 @@ package it.pagopa.pn.logsaver.client.safestorage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -12,6 +13,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 import org.apache.commons.io.FileUtils;
@@ -99,8 +101,9 @@ class PnSafeStorageClientImplTest {
         .thenReturn(ResponseEntity.ok(respCF));
 
 
-    AuditStorage req = AuditStorage.builder().exportType(ExportType.PDF_SIGNED)
-        .filePath(file.toPath()).logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
+    AuditStorage req =
+        AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
+            .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
 
     AuditStorage res = client.uploadFile(req);
 
@@ -119,7 +122,7 @@ class PnSafeStorageClientImplTest {
         any(ParameterizedTypeReference.class));
 
     assertNotNull(res);
-    assertEquals("KEY", res.uploadKey());
+    assertTrue(res.uploadKey().values().contains("KEY"));
 
     Files.delete(file.toPath());
   }
@@ -140,8 +143,9 @@ class PnSafeStorageClientImplTest {
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
         .thenReturn(ResponseEntity.internalServerError().body(""));
 
-    AuditStorage req = AuditStorage.builder().exportType(ExportType.PDF_SIGNED)
-        .filePath(file.toPath()).logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
+    AuditStorage req =
+        AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
+            .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
 
     AuditStorage res = client.uploadFile(req);
 
@@ -182,8 +186,9 @@ class PnSafeStorageClientImplTest {
         .thenReturn(ResponseEntity.ok(respCF));
 
 
-    AuditStorage req = AuditStorage.builder().exportType(ExportType.PDF_SIGNED)
-        .filePath(file.toPath()).logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
+    AuditStorage req =
+        AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
+            .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
 
     AuditStorage res = client.uploadFile(req);
 
@@ -227,8 +232,9 @@ class PnSafeStorageClientImplTest {
         .thenReturn(ResponseEntity.ok(respCF));
 
 
-    AuditStorage req = AuditStorage.builder().exportType(ExportType.PDF_SIGNED)
-        .filePath(file.toPath()).logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
+    AuditStorage req =
+        AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
+            .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
 
     AuditStorage res = client.uploadFile(req);
 
@@ -271,9 +277,8 @@ class PnSafeStorageClientImplTest {
         .thenReturn(ResponseEntity.ok(respCF));
 
 
-    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
-        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
-        .uploadKey("updKey").build();
+    AuditDownloadReference req = AuditDownloadReference.builder().logDate(TestCostant.LOGDATE)
+        .status(AuditStorageStatus.SENT).uploadKey("updKey").build();
 
     AuditDownloadReference res = client.downloadFileInfo(req);
 
@@ -301,9 +306,8 @@ class PnSafeStorageClientImplTest {
         .thenReturn(ResponseEntity.notFound().build());
 
 
-    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
-        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
-        .uploadKey("updKey").build();
+    AuditDownloadReference req = AuditDownloadReference.builder().logDate(TestCostant.LOGDATE)
+        .status(AuditStorageStatus.SENT).uploadKey("updKey").build();
 
     AuditDownloadReference res = client.downloadFileInfo(req);
 
@@ -317,15 +321,14 @@ class PnSafeStorageClientImplTest {
 
   @Test
   void downloadFile() throws IOException {
-    AuditDownloadReference mock = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
-        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
-        .uploadKey("updKey").build();
+    AuditDownloadReference mock = AuditDownloadReference.builder().logDate(TestCostant.LOGDATE)
+        .status(AuditStorageStatus.SENT).uploadKey("updKey").build();
     when(restTemplate.execute(any(URI.class), any(HttpMethod.class), any(), any()))
         .thenReturn(mock);
 
-    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
-        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
-        .downloadUrl("https://test.it/").uploadKey("updKey").build();
+    AuditDownloadReference req = AuditDownloadReference.builder().logDate(TestCostant.LOGDATE)
+        .status(AuditStorageStatus.SENT).downloadUrl("https://test.it/").uploadKey("updKey")
+        .build();
 
     AuditDownloadReference res = client.downloadFile(req, UnaryOperator.identity());
 
@@ -338,9 +341,8 @@ class PnSafeStorageClientImplTest {
   @Test
   void downloadFile_Error() throws IOException {
 
-    AuditDownloadReference req = AuditDownloadReference.builder().exportType(ExportType.PDF_SIGNED)
-        .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).status(AuditStorageStatus.SENT)
-        .uploadKey("updKey").build();
+    AuditDownloadReference req = AuditDownloadReference.builder().logDate(TestCostant.LOGDATE)
+        .status(AuditStorageStatus.SENT).uploadKey("updKey").build();
 
     AuditDownloadReference res = client.downloadFile(req, UnaryOperator.identity());
 

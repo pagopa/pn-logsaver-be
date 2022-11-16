@@ -23,6 +23,7 @@ import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.experimental.UtilityClass;
+import net.logstash.logback.encoder.org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class AuditStorageMapper {
@@ -50,10 +51,24 @@ public class AuditStorageMapper {
       entity.setResult(AuditStorageStatus.CREATED.name());
     } else {
       entity.setResult(AuditStorageStatus.SENT.name());
-      entity.setStorageKey(storage.uploadKey());
     }
+    entity.setStorageKey(mergeStorageKeyMap(storage));
     return entity;
   }
+
+  private static Map<String, String> mergeStorageKeyMap(AuditStorage storage) {
+    Map<String, String> branch = storage.uploadKey();
+    Map<String, String> main = storage.filePath().stream().collect(Collectors
+        .toMap(filePath -> filePath.getFileName().toString(), filePath -> StringUtils.EMPTY));
+    if (Objects.isNull(branch) || branch.isEmpty()) {
+      return main;
+    } else {
+      branch.entrySet().stream().forEach(entry -> main.put(entry.getKey(), entry.getValue()));
+      return main;
+    }
+
+  }
+
 
   public static List<DailyAuditDownloadable> toModel(Stream<AuditStorageEntity> entityStream) {
     return entityStream.collect(Collectors.groupingBy(AuditStorageEntity::getLogDate)).entrySet()
