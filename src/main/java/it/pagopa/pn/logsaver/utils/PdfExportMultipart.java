@@ -66,32 +66,27 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
   }
 
   @Override
-  protected Document newFileOut(Path fileOut) throws IOException {
+  protected void setFileOut(Path fileOut) throws IOException {
     this.fileSize = FILE_SIZE_EMPTY;
-    return newDocument(fileOut);
-  }
 
-  protected Document newDocument(Path fileOut) throws IOException {
-    Document document = new Document();
-    writer = PdfWriter.getInstance(document,
+    this.currentFileOut = new Document();
+    writer = PdfWriter.getInstance(this.currentFileOut,
         Files.newOutputStream(fileOut, StandardOpenOption.APPEND, StandardOpenOption.CREATE));
+    this.currentFileOut.addTitle(TITLE);
+    this.currentFileOut.addSubject(String.format(SUBJECT, retention.getText(), logDate.toString()));
+    this.currentFileOut.addCreator(CREATOR);
+    this.currentFileOut.addAuthor(CREATOR);
+    this.currentFileOut.addProducer();
+    this.currentFileOut.addCreationDate();
+    this.currentFileOut.open();
+    this.currentFileOut.add(new Paragraph(PARAGRAPH));
 
-    document.addTitle(TITLE);
-    document.addSubject(String.format(SUBJECT, retention.getText(), logDate.toString()));
-    document.addCreator(CREATOR);
-    document.addAuthor(CREATOR);
-    document.addProducer();
-    document.addCreationDate();
-
-    document.open();
-    document.add(new Paragraph(PARAGRAPH));
-    return document;
   }
 
   @Override
   protected void addLogFile(File filePath) throws IOException {
     this.fileSize += nextEntry.length() + filePath.getName().length() + METADATA_EMPTY;
-    currentFile.addHeader(filePath.getName(), nextEntry);
+    currentFileOut.addHeader(filePath.getName(), nextEntry);
     writer.flush();
   }
 
@@ -104,7 +99,7 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
   @Override
   protected void closeCurrentFile() throws IOException {
     log.info(currentPathFile.getFileName().toString() + " END Size " + fileSize);
-    currentFile.close();
+    currentFileOut.close();
   }
 
 

@@ -28,12 +28,12 @@ abstract class AbstractExportMultipart<T> {
   private Path folderOut;
   @NonNull
   private String patternFileOut;
-  protected T currentFile;
+  protected T currentFileOut;
   protected Path currentPathFile;
 
 
 
-  protected abstract T newFileOut(Path fileOut) throws IOException;
+  protected abstract void setFileOut(Path fileOut) throws IOException;
 
   protected abstract void addLogFile(File filePath) throws IOException;
 
@@ -45,7 +45,7 @@ abstract class AbstractExportMultipart<T> {
 
     try {
       currentPathFile = newFileOutPathPart(folderOut, patternFileOut, 1);
-      currentFile = newFileOut(currentPathFile);
+      setFileOut(currentPathFile);
       outFileList.add(currentPathFile);
       exportFolder(folderIn.toFile());
       closeCurrentFile();
@@ -70,7 +70,7 @@ abstract class AbstractExportMultipart<T> {
           closeCurrentFile();
           currentPathFile = newFileOutPathPart(folderOut, patternFileOut, outFileList.size() + 1);
           outFileList.add(currentPathFile);
-          currentFile = newFileOut(currentPathFile);
+          setFileOut(currentPathFile);
         }
         addLogFile(filePath);
 

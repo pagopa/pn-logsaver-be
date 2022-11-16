@@ -22,9 +22,9 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
   }
 
   @Override
-  protected ZipOutputStream newFileOut(Path fileOut) throws IOException {
+  protected void setFileOut(Path fileOut) throws IOException {
 
-    return new ZipOutputStream(
+    this.currentFileOut = new ZipOutputStream(
         Files.newOutputStream(fileOut, StandardOpenOption.APPEND, StandardOpenOption.CREATE_NEW));
   }
 
@@ -32,17 +32,17 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
   protected void addLogFile(File filePath) throws IOException {
     ZipEntry ze = new ZipEntry(folderIn.relativize(filePath.toPath()).toString());
     log.info(currentPathFile + "-" + ze.getName());
-    currentFile.putNextEntry(ze);
+    currentFileOut.putNextEntry(ze);
     try (FileInputStream fis = new FileInputStream(filePath);) {
-      IOUtils.copy(fis, currentFile);
-      currentFile.closeEntry();
+      IOUtils.copy(fis, currentFileOut);
+      currentFileOut.closeEntry();
     }
     // zos.flush();
   }
 
   @Override
   protected void closeCurrentFile() throws IOException {
-    currentFile.close();
+    currentFileOut.close();
 
   }
 
