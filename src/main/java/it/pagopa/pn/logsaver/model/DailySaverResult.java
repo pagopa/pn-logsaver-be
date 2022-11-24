@@ -37,7 +37,7 @@ public class DailySaverResult extends DailyResult<AuditStorage> {
   }
 
   @Override
-  boolean auditFileHasError(AuditStorage audit) {
+  boolean itemHasError(AuditStorage audit) {
     return audit.hasError();
   }
 

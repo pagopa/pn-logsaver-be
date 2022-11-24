@@ -22,7 +22,7 @@ public class DailyDownloadResult extends DailyResult<AuditDownloadReference> {
   }
 
   @Override
-  boolean auditFileHasError(AuditDownloadReference file) {
+  boolean itemHasError(AuditDownloadReference file) {
     return file.hasError() || AuditStorageStatus.SENT != file.status();
   }
 

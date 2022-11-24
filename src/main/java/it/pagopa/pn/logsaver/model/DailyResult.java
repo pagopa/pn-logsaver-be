@@ -21,7 +21,7 @@ public abstract class DailyResult<T extends ErrorAware> {
 
   abstract List<T> getItems();
 
-  abstract boolean auditFileHasError(T err);
+  abstract boolean itemHasError(T err);
 
   abstract String detailErrorMessage(T err);
 
@@ -38,11 +38,11 @@ public abstract class DailyResult<T extends ErrorAware> {
   }
 
   public List<String> successMessages() {
-    return messages(au -> !this.auditFileHasError(au), this::handleSuccessMessage);
+    return messages(au -> !this.itemHasError(au), this::handleSuccessMessage);
   }
 
   public List<String> errorMessages() {
-    return messages(this::auditFileHasError, this::handleErrorMessage);
+    return messages(this::itemHasError, this::handleErrorMessage);
   }
 
   private String handleErrorMessage(T item) {
