@@ -3,7 +3,7 @@ package it.pagopa.pn.logsaver.model;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;

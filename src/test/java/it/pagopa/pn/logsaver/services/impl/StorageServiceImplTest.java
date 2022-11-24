@@ -31,9 +31,9 @@ import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.StorageExecution;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.services.StorageService;
 
@@ -112,7 +112,7 @@ class StorageServiceImplTest {
   void store() {
     List<AuditFile> auditFiles = TestCostant.auditFiles;
 
-    when(safeStorageClient.uploadFile(any())).thenAnswer(inTarg -> {
+    when(safeStorageClient.uploadFiles(any())).thenAnswer(inTarg -> {
       AuditStorage audit = inTarg.getArgument(0, AuditStorage.class);
       return audit.uploadKey(TestCostant.uploadKey);
     });
@@ -121,7 +121,7 @@ class StorageServiceImplTest {
 
     List<AuditStorage> auditStorageRes = service.store(auditFiles, TestCostant.CTX);
 
-    verify(safeStorageClient, times(auditFiles.size())).uploadFile(any());
+    verify(safeStorageClient, times(auditFiles.size())).uploadFiles(any());
     verify(storageDao, times(1)).updateExecution(any(), any(), any());
     assertNotNull(auditStorageRes);
     assertEquals(3, auditStorageRes.size());

@@ -1,66 +1,44 @@
 package it.pagopa.pn.logsaver.model;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import org.apache.commons.collections4.CollectionUtils;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
-@Builder
-@EqualsAndHashCode
-@AllArgsConstructor
-public class DailyDownloadResult {
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class DailyDownloadResult extends DailyResult<AuditDownloadReference> {
 
   private DailyAuditDownloadable audit;
 
-  private Throwable error;
 
-
-  public boolean hasErrors() {
-    return Objects.nonNull(error) || CollectionUtils.emptyIfNull(audit.audits()).stream()
-        .filter(AuditDownloadReference::hasError).count() > 0;
+  @Override
+  List<AuditDownloadReference> getItems() {
+    return audit.audits();
   }
 
-  public List<String> successMessages() {
-    return messages(au -> !this.auditFileHasError(au), this::handleSuccessMessage);
-  }
-
-  public List<String> errorMessages() {
-    return messages(this::auditFileHasError, this::handleErrorMessage);
-  }
-
-
-  private boolean auditFileHasError(AuditDownloadReference file) {
+  @Override
+  boolean auditFileHasError(AuditDownloadReference file) {
     return file.hasError() || AuditStorageStatus.SENT != file.status();
   }
 
-  private String handleErrorMessage(AuditDownloadReference audit) {
-    return handleBaseMessage(audit).concat(
-        String.format("Status: '%s' Error: '%s'", audit.status().name(), audit.getErrorMessage()));
+  @Override
+  String detailErrorMessage(AuditDownloadReference file) {
+    return String.format("Status: '%s' Error: '%s'", file.status().name(), file.getErrorMessage());
   }
 
-  private String handleSuccessMessage(AuditDownloadReference audit) {
-    return handleBaseMessage(audit)
-        .concat(String.format("Download: '%s'", audit.destinationFolder()));
+  @Override
+  String detailSuccessMessage(AuditDownloadReference file) {
+    return String.format("Download: '%s'", file.destinationFolder());
   }
 
-  private String handleBaseMessage(AuditDownloadReference audit) {
-    return String.format("File '%s'  ", audit.fileName());
-  }
-
-  private List<String> messages(Predicate<AuditDownloadReference> predicate,
-      Function<AuditDownloadReference, String> mapper) {
-    return CollectionUtils.emptyIfNull(audit.audits()).stream().filter(predicate).map(mapper)
-        .collect(Collectors.toList());
+  @Override
+  String handleBaseMessage(AuditDownloadReference file) {
+    return String.format("File '%s'  ", file.fileName());
   }
 
 }

@@ -171,7 +171,8 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
   private DailySaverResult dailySaver(DailyContextCfg dailyCtx) {
 
-    DailySaverResultBuilder resBuilder = DailySaverResult.builder().logDate(dailyCtx.logDate());
+    DailySaverResultBuilder<?, ?> resBuilder =
+        DailySaverResult.builder().logDate(dailyCtx.logDate());
     try {
 
       dailyCtx.initContext();
@@ -187,7 +188,8 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
     } catch (Exception e) {
       log.error("Error processing audit for day " + dailyCtx.logDate().toString(), e);
-      return resBuilder.error(e).build();
+      resBuilder.error(e);
+      return resBuilder.build();
     } finally {
       dailyCtx.destroy();
     }

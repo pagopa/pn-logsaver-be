@@ -3,28 +3,21 @@ package it.pagopa.pn.logsaver.model;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import org.apache.commons.collections4.CollectionUtils;
-import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
-@Builder
-@EqualsAndHashCode
-public class DailySaverResult {
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class DailySaverResult extends DailyResult<AuditStorage> {
 
   private LocalDate logDate;
   @Default
   private List<AuditStorage> auditStorageList = new ArrayList<>();
-
-  private Throwable error;
 
   @Override
   public String toString() {
@@ -32,35 +25,30 @@ public class DailySaverResult {
         (!hasErrors() ? "SUCCESS" : "ERRORS"), auditStorageList.size());
   }
 
-  public boolean hasErrors() {
-    return Objects.nonNull(error) || CollectionUtils.emptyIfNull(auditStorageList).stream()
-        .filter(AuditStorage::hasError).count() > 0;
-  }
-
-  public List<String> successMessages() {
-    return messages(au -> !au.hasError(), this::handleSuccessMessage);
-  }
-
-  public List<String> errorMessages() {
-    return messages(AuditStorage::hasError, this::handleErrorMessage);
-  }
-
-  private String handleErrorMessage(AuditStorage audit) {
-    return handleBaseMessage(audit).concat(String.format("Error: '%s'", audit.getErrorMessage()));
-  }
-
-  private String handleSuccessMessage(AuditStorage audit) {
-    return handleBaseMessage(audit).concat(String.format(" StorageKey: '%s'", audit.uploadKey()));
-  }
-
-  private String handleBaseMessage(AuditStorage audit) {
+  @Override
+  String handleBaseMessage(AuditStorage audit) {
     return String.format("File  Retention '%s' ExportType '%s' ", audit.retention().name(),
         audit.exportType().name());
   }
 
-  private List<String> messages(Predicate<AuditStorage> predicate,
-      Function<AuditStorage, String> mapper) {
-    return CollectionUtils.emptyIfNull(auditStorageList).stream().filter(predicate).map(mapper)
-        .collect(Collectors.toList());
+  @Override
+  List<AuditStorage> getItems() {
+    return auditStorageList;
   }
+
+  @Override
+  boolean auditFileHasError(AuditStorage audit) {
+    return audit.hasError();
+  }
+
+  @Override
+  String detailErrorMessage(AuditStorage audit) {
+    return String.format("Error: '%s'", audit.getErrorMessage());
+  }
+
+  @Override
+  String detailSuccessMessage(AuditStorage audit) {
+    return String.format(" StorageKey: '%s'", audit.uploadKey());
+  }
+
 }

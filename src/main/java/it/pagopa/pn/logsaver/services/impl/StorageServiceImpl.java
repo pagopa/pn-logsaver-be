@@ -14,10 +14,10 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.StorageExecution;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.services.StorageService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,7 +90,7 @@ public class StorageServiceImpl implements StorageService {
   private AuditStorage send(AuditFile file) {
 
     log.info("Sending Audit file retention {} ", file.retention());
-    AuditStorage itemUpd = safeStorageClient.uploadFile(AuditStorage.from(file));
+    AuditStorage itemUpd = safeStorageClient.uploadFiles(AuditStorage.from(file));
     log.info("Sent: {} ", !itemUpd.hasError());
     return itemUpd;
 

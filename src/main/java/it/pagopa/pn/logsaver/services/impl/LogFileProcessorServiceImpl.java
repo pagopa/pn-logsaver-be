@@ -102,7 +102,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     return dailyCxt.getExportTypesByRetention(retention)// Ricavo le tipologie di export
         .stream().map(exportType -> { // Per ogni tipologia di export
           // Creo il file
-          String fileNamePattern = handleAuditFileNameePattern(retention, exportType, dailyCxt);
+          String fileNamePattern = handleAuditFileNamePattern(retention, exportType, dailyCxt);
 
           List<Path> exportParts = exportFactory.get(exportType.getName()).export(inputFolder,
               dailyCxt.tmpDailyPath(), fileNamePattern, retention, dailyCxt.logDate());
@@ -112,7 +112,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
         });
   }
 
-  private String handleAuditFileNameePattern(Retention retention, ExportType exportType,
+  private String handleAuditFileNamePattern(Retention retention, ExportType exportType,
       DailyContextCfg dailyCxt) {
     return dailyCxt.logDate().format(DateTimeFormatter.ofPattern(retention.getFileNamePattern()))
         .concat(exportType.getExtension());

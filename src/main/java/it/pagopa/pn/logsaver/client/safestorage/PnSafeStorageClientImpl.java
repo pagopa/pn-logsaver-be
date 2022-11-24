@@ -51,7 +51,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
 
   @Override
-  public AuditStorage uploadFile(AuditStorage audit) {
+  public AuditStorage uploadFiles(AuditStorage audit) {
 
     try {
       audit.filePath().stream()

@@ -42,7 +42,7 @@ import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDow
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadResponse;
 import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
@@ -105,7 +105,7 @@ class PnSafeStorageClientImplTest {
         AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
             .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
 
-    AuditStorage res = client.uploadFile(req);
+    AuditStorage res = client.uploadFiles(req);
 
     assertEquals("application/pdf", httpEntityPre.getValue().getBody().getContentType());
     assertEquals("PN_LOGS_PDF_AUDIT10Y", httpEntityPre.getValue().getBody().getDocumentType());
@@ -147,7 +147,7 @@ class PnSafeStorageClientImplTest {
         AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
             .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
 
-    AuditStorage res = client.uploadFile(req);
+    AuditStorage res = client.uploadFiles(req);
 
     assertEquals("application/pdf", httpEntityPre.getValue().getBody().getContentType());
     assertEquals("PN_LOGS_PDF_AUDIT10Y", httpEntityPre.getValue().getBody().getDocumentType());
@@ -190,7 +190,7 @@ class PnSafeStorageClientImplTest {
         AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
             .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
 
-    AuditStorage res = client.uploadFile(req);
+    AuditStorage res = client.uploadFiles(req);
 
     assertEquals("application/pdf", httpEntityPre.getValue().getBody().getContentType());
     assertEquals("PN_LOGS_PDF_AUDIT10Y", httpEntityPre.getValue().getBody().getDocumentType());
@@ -236,7 +236,7 @@ class PnSafeStorageClientImplTest {
         AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
             .logDate(TestCostant.LOGDATE).retention(Retention.AUDIT10Y).build();
 
-    AuditStorage res = client.uploadFile(req);
+    AuditStorage res = client.uploadFiles(req);
 
     assertEquals("application/pdf", httpEntityPre.getValue().getBody().getContentType());
     assertEquals("PN_LOGS_PDF_AUDIT10Y", httpEntityPre.getValue().getBody().getDocumentType());

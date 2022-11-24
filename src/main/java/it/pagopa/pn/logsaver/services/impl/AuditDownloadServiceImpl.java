@@ -43,7 +43,7 @@ public class AuditDownloadServiceImpl implements AuditDownloadService {
 
   private DailyDownloadResult dowloadDailyAudit(DailyAuditDownloadable dailyFiles,
       String destFolder) {
-    DailyDownloadResultBuilder resBuilder = DailyDownloadResult.builder();
+    DailyDownloadResultBuilder<?, ?> resBuilder = DailyDownloadResult.builder();
     try {
       log.info("Download files for date {}", dailyFiles.logDate().toString());
 
@@ -57,7 +57,8 @@ public class AuditDownloadServiceImpl implements AuditDownloadService {
 
     } catch (Exception e) {
       log.error("Error download audit for day " + dailyFiles.logDate().toString(), e);
-      return resBuilder.error(e).build();
+      resBuilder.error(e);
+      return resBuilder.build();
     }
   }
 

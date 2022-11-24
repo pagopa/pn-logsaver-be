@@ -14,10 +14,10 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.StorageExecution.ExecutionDetails;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
@@ -79,15 +79,6 @@ public class AuditStorageMapper {
 
   public static List<AuditDownloadReference> toModel(List<AuditStorageEntity> entityList) {
     return entityList.stream().flatMap(AuditStorageMapper::toModel).collect(Collectors.toList());
-  }
-
-  public static AuditDownloadReference toModel2(AuditStorageEntity entity) {
-    return Objects.isNull(entity) ? null
-        : AuditDownloadReference.builder()// .retention(Retention.valueOf(entity.getRetention()))
-            // .exportType(ExportType.valueOf(entity.getContentType()))
-            // .logDate(DateUtils.parse(entity.getLogDate())).uploadKey(entity.getStorageKey())
-            // .status(AuditStorageStatus.valueOf(entity.getResult()))
-            .build();
   }
 
   public static Stream<AuditDownloadReference> toModel(AuditStorageEntity entity) {

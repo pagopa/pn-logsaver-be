@@ -23,9 +23,9 @@ import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
 import it.pagopa.pn.logsaver.exceptions.ExternalException;
 import it.pagopa.pn.logsaver.model.AuditDownloadReference;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.DailyDownloadResultList;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.services.StorageService;
 
 @ExtendWith(MockitoExtension.class)
