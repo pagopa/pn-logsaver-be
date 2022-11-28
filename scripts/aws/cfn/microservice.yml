@@ -90,6 +90,11 @@ Parameters:
     Type: String
     Description: 'AuditStorage DynamoDB table name'
 
+  LogSaverExportMaxFileSize:
+    Type: String
+    Default: '5MB'
+    Description: Max export file size
+
   LogsExporterPolicyArn:
     Type: String
     Description: 'Policy per lettura su bucket log'
@@ -231,6 +236,8 @@ Resources:
             Value: !Ref LogsBucketName
           - Name: AWS_DYNAMODBTABLENAME
             Value: !Ref LogSaverDynamoTableName
+          - Name: LOGSAVER_EXPORTMAXFILESIZE
+            Value: !Ref LogSaverExportMaxFileSize
       PlatformCapabilities:
         - FARGATE
       Tags:
