@@ -37,7 +37,7 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExtraType;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
@@ -280,7 +280,7 @@ class StorageDaoDynamoImplTest {
   void getAudits() {
     AuditStorageEntity mock = AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
         .logDate(TestCostant.LOGDATE.toString()).retention(Retention.AUDIT10Y)
-        .result(AuditStorageStatus.SENT.name()).storageKey("updKey").build();
+        .result(AuditStorageStatus.SENT.name()).storageKey(TestCostant.uploadKey).build();
     when(auditStorageTable.query(queryCond.capture())).thenReturn(execListMockAudit(List.of(mock)));
     Stream<AuditStorageEntity> exEnt =
         storageDao.getAudits("", TestCostant.LOGDATE, TestCostant.LOGDATE);

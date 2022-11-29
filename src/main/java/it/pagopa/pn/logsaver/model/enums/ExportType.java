@@ -1,37 +1,28 @@
 package it.pagopa.pn.logsaver.model.enums;
 
-import java.nio.file.Path;
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import it.pagopa.pn.logsaver.services.functions.ExportAudit;
-import it.pagopa.pn.logsaver.services.impl.functions.ExportAuditPdf;
-import it.pagopa.pn.logsaver.utils.ZipUtils;
 import lombok.Getter;
 
 
 public enum ExportType {
-  ZIP(".zip", "application/zip",
-      (exportDir, out, retention, logDate) -> ZipUtils.createZip(exportDir, out)), PDF_SIGNED(
-          ".pdf", "application/pdf", new ExportAuditPdf());
+  ZIP(".zip", "application/zip", ExportType.ZIP_S), PDF_SIGNED(".pdf", "application/pdf",
+      ExportType.PDF_S);
 
+  public static final String ZIP_S = "ZIP";
+  public static final String PDF_S = "PDF_SIGNED";
   @Getter
   private String extension;
-
-  private ExportAudit exportWriter;
-
+  @Getter
+  private String name;
   @Getter
   private String mediaType;
 
-  ExportType(String extension, String mediaType, ExportAudit exportWriter) {
+  ExportType(String extension, String mediaType, String name) {
     this.extension = extension;
-    this.exportWriter = exportWriter;
     this.mediaType = mediaType;
-  }
-
-  public void write(Path folder, Path file, Retention retention, LocalDate logDate) {
-    this.exportWriter.export(folder, file, retention, logDate);
+    this.name = name;
   }
 
   public static List<String> valuesAsString() {

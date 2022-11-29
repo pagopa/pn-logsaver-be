@@ -11,6 +11,7 @@
     "SafeStorageDocTypesZip120d": "PN_LOGS_ARCHIVE_TEMP",
     "RetentionExportTypes": "AUDIT10Y$ZIP|PDF_SIGNED,AUDIT5Y$ZIP|PDF_SIGNED",
     "BatchJobMaxAttempts": "1",
-    "MaxvCpus": "2"
+    "MaxvCpus": "2",
+    "LogSaverExportMaxFileSize": "2MB"
   }
 }

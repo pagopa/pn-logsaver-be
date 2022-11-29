@@ -17,10 +17,10 @@ import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.StorageExecution;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.services.StorageService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.logstash.logback.encoder.org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @Service
@@ -44,7 +44,7 @@ public class StorageServiceImpl implements StorageService {
         .toModel(partitionSet.stream().flatMap(key -> storageDao.getAudits(key, from, to)));
     // Per i file che hanno la chiave di safeStorage recupero le info per il download
     resList.stream().flatMap(daily -> daily.audits().stream())
-        .filter(audit -> StringUtils.isNoneEmpty(audit.uploadKey()))
+        .filter(audit -> AuditStorageStatus.SENT == audit.status())
         .forEach(safeStorageClient::downloadFileInfo);
     return resList;
   }
@@ -89,8 +89,8 @@ public class StorageServiceImpl implements StorageService {
 
   private AuditStorage send(AuditFile file) {
 
-    log.info("Sending Audit file {} ", file.fileName());
-    AuditStorage itemUpd = safeStorageClient.uploadFile(AuditStorage.from(file));
+    log.info("Sending Audit file retention {} ", file.retention());
+    AuditStorage itemUpd = safeStorageClient.uploadFiles(AuditStorage.from(file));
     log.info("Sent: {} ", !itemUpd.hasError());
     return itemUpd;
 

@@ -21,12 +21,12 @@ import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.model.DailySaverResult.DailySaverResultBuilder;
-import it.pagopa.pn.logsaver.model.enums.ExportType;
-import it.pagopa.pn.logsaver.model.enums.LogFileType;
-import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.model.DailySaverResultList;
 import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.StorageExecution;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.services.AuditSaverService;
 import it.pagopa.pn.logsaver.services.LogFileProcessorService;
 import it.pagopa.pn.logsaver.services.LogFileReaderService;
@@ -120,9 +120,9 @@ public class AuditSaverServiceImpl implements AuditSaverService {
           .map(dateToCheck -> recoveryDailyContext(dateToCheck, executionMap))
           .filter(Objects::nonNull).collect(Collectors.toList());
 
-      log.info("There are {} previous days to be processed", workList.size());
+      log.info("There are {} days to be processed", workList.size());
       workList.stream().map(this::dailySaver).collect(toCollection(() -> resList));
-      log.info("Processing previous days finished");
+      log.info("Processing days finished");
     }
 
     return new DailySaverResultList(resList);
@@ -171,7 +171,8 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
   private DailySaverResult dailySaver(DailyContextCfg dailyCtx) {
 
-    DailySaverResultBuilder resBuilder = DailySaverResult.builder().logDate(dailyCtx.logDate());
+    DailySaverResultBuilder<?, ?> resBuilder =
+        DailySaverResult.builder().logDate(dailyCtx.logDate());
     try {
 
       dailyCtx.initContext();
@@ -187,7 +188,8 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
     } catch (Exception e) {
       log.error("Error processing audit for day " + dailyCtx.logDate().toString(), e);
-      return resBuilder.error(e).build();
+      resBuilder.error(e);
+      return resBuilder.build();
     } finally {
       dailyCtx.destroy();
     }

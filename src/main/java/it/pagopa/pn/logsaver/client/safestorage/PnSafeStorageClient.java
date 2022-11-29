@@ -6,7 +6,7 @@ import it.pagopa.pn.logsaver.model.AuditStorage;
 
 public interface PnSafeStorageClient {
 
-  AuditStorage uploadFile(AuditStorage itemUpd);
+  AuditStorage uploadFiles(AuditStorage itemUpd);
 
   AuditDownloadReference downloadFileInfo(AuditDownloadReference audit);
 

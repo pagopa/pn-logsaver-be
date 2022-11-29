@@ -24,6 +24,8 @@ import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCre
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadResponse;
 import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditStorage;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -49,26 +51,45 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
 
   @Override
-  public AuditStorage uploadFile(AuditStorage audit) {
-    String mediaType = audit.exportType().getMediaType();
+  public AuditStorage uploadFiles(AuditStorage audit) {
+
     try {
-      String sha256 = FilesUtils.computeSha256(audit.filePath());
-      log.info("Send fileCreationRequest for file {}", audit.filePath().toString());
-      FileCreationResponse res = createFile(sha256, mediaType, cfg.getStorageDocumentType(audit));
+      audit.filePath().stream()
+          .forEach(fileUpload -> audit.uploadKey().put(fileUpload.getFileName().toString(),
+              uploadFile(fileUpload, audit.exportType(), audit.retention())));
 
-      log.info("Send fileContent to received url {}", res.getUploadUrl());
-      this.uploadContent(res, sha256, audit.filePath(), mediaType);
-
-      log.info("File {} sent successfully. SafeStorage key {}", audit.fileName(), res.getKey());
-
-      return audit.uploadKey(res.getKey());
+      return audit;
 
     } catch (Exception e) {
-      log.error("Exception on upload file {}", audit.filePath().toString());
+      log.error("Exception on upload files for retention {}", audit.retention());
       return audit.error(e);
     }
 
   }
+
+  private String uploadFile(Path filePath, ExportType exportType, Retention retention) {
+    String mediaType = exportType.getMediaType();
+    try {
+      String sha256 = FilesUtils.computeSha256(filePath);
+      log.info("Send fileCreationRequest for file {}", filePath.toString());
+      FileCreationResponse res =
+          createFile(sha256, mediaType, cfg.getStorageDocumentType(exportType, retention));
+
+      log.info("Send fileContent to received url {}", res.getUploadUrl());
+      this.uploadContent(res, sha256, filePath, mediaType);
+
+      log.info("File {} sent successfully. SafeStorage key {}", filePath.getFileName().toString(),
+          res.getKey());
+
+      return res.getKey();
+
+    } catch (Exception e) {
+      log.error("Exception on upload file {}", filePath.toString());
+      throw e;
+    }
+
+  }
+
 
 
   private FileCreationResponse createFile(String sha256, String mediaType, String docType) {

@@ -57,8 +57,9 @@ public class StorageDaoInMemoryImpl implements StorageDao {
   @Override
   public List<ExecutionEntity> getExecutionBetween(LocalDate dateFrom, LocalDate dateTo) {
     List<ExecutionEntity> retList = execution.entrySet().stream().filter(e -> {
-      int ret = (dateFrom.compareTo(e.getKey()) * e.getKey().compareTo(dateTo));
-      return ret >= 0;
+      return e.getKey().isEqual(dateFrom)
+          || (e.getKey().isAfter(dateFrom) && e.getKey().isBefore(dateFrom));
+
     }).map(ent -> {
       return ent.getValue();
     }).collect(Collectors.toList());
@@ -107,7 +108,6 @@ public class StorageDaoInMemoryImpl implements StorageDao {
       return auditStorage.columnMap().containsKey(data)
           && auditStorage.columnMap().get(data).containsKey(key);
     }).map(data -> auditStorage.columnMap().get(data).get(key)).collect(Collectors.toList());
-    // auditStorage.
     return list.stream();
   }
 
