@@ -12,6 +12,6 @@
     "RetentionExportTypes": "AUDIT10Y$ZIP|PDF_SIGNED,AUDIT5Y$ZIP|PDF_SIGNED",
     "BatchJobMaxAttempts": "1",
     "MaxvCpus": "2",
-    "LogSaverExportMaxFileSize": "5MB"
+    "LogSaverExportMaxFileSize": "2MB"
   }
 }
