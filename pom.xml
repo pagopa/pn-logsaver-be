@@ -11,10 +11,15 @@
 	<version>1.0.0</version>
 	<name>pn-logsaver-be</name>
 	<description>LogSaver microservice</description>
+	<scm>
+		<connection>${git.conn}</connection>
+		<developerConnection>${git.devConn}</developerConnection>
+		<url>${git.url}</url>
+	</scm>
 	<properties>
 		<java.version>11</java.version>
-    	<jacoco.min.line.cover.ratio>0.01</jacoco.min.line.cover.ratio>
-    	<mockito.version>4.6.1</mockito.version>
+	    	<jacoco.min.line.cover.ratio>0.01</jacoco.min.line.cover.ratio>
+    		<mockito.version>4.6.1</mockito.version>
 	</properties>
 	<dependencies>
 	
