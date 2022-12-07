@@ -8,14 +8,15 @@
 		<relativePath />
 	</parent>
 	<artifactId>pn-logsaver-be</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>pn-logsaver-be</name>
 	<description>LogSaver microservice</description>
 	<scm>
 		<connection>${git.conn}</connection>
 		<developerConnection>${git.devConn}</developerConnection>
 		<url>${git.url}</url>
-	</scm>
+	  <tag>v1.0.0</tag>
+  </scm>
 	<properties>
 		<java.version>11</java.version>
 	    	<jacoco.min.line.cover.ratio>0.01</jacoco.min.line.cover.ratio>
