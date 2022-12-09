@@ -46,7 +46,9 @@ Resources:
         StreamArn: !Ref CdcKinesisSourceStreamArn
       StreamSpecification:
         StreamViewType: NEW_IMAGE
-
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true    
+        
 Outputs:
   # Dynamo table
   LogSaverDynamoTableName:
