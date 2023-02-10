@@ -47,7 +47,12 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_IMAGE
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true    
+        PointInTimeRecoveryEnabled: true 
+      Tags:
+        - Key: pnInfraFeature
+          Value: pnStorage
+        - Key: pnMicroservice
+          Value: !Sub '${ProjectName}-AuditStorage'
         
 Outputs:
   # Dynamo table
