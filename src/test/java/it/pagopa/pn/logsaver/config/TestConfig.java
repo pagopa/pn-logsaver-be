@@ -1,24 +1,5 @@
 package it.pagopa.pn.logsaver.config;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import org.apache.commons.lang3.StringUtils;
-import org.mockito.Mockito;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.MediaType;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.Environment;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
@@ -26,15 +7,30 @@ import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.dao.support.StorageDaoLogicSupport;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.utils.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.mockito.Mockito;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.model.MediaType;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CommonPrefix;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.model.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 @TestConfiguration
 @Configuration
@@ -88,23 +84,25 @@ public class TestConfig {
 
   }
 
-  @Autowired
-  @Profile("test-download")
-  void initDb(StorageDao dao, Environment env) {
-    if (List.of(env.getActiveProfiles()).stream().filter(prof -> "test-download".equals(prof))
-        .findFirst().isPresent()) {
-      Map<String, RetentionResult> retentionResult = StorageDaoLogicSupport.defaultResultMap();
-      ExecutionEntity exec = ExecutionEntity.builder().logFileTypes(LogFileType.valuesAsString())
-          .retentionResult(retentionResult).logDate(DateUtils.yesterday().minusDays(1).toString())
-          .build();
-      ((StorageDaoInMemoryImpl) dao).insertExecution(DateUtils.yesterday().minusDays(1), exec);
 
-      TestCostant.auditFilesEntity.stream().forEach(ent -> {
-        ent.setLogDate(DateUtils.yesterday().minusDays(1).toString());
-        ((StorageDaoInMemoryImpl) dao).insertAuditStorage(ent);
-      });
+  @Bean
+  CommandLineRunner commandLineRunner(Environment env, StorageDao dao) {
+    return args -> {
+      if (List.of(env.getActiveProfiles()).stream().filter(prof -> "test-download".equals(prof))
+              .findFirst().isPresent()) {
+        Map<String, RetentionResult> retentionResult = StorageDaoLogicSupport.defaultResultMap();
+        ExecutionEntity exec = ExecutionEntity.builder().logFileTypes(LogFileType.valuesAsString())
+                .retentionResult(retentionResult).logDate(DateUtils.yesterday().minusDays(1).toString())
+                .build();
+        ((StorageDaoInMemoryImpl) dao).insertExecution(DateUtils.yesterday().minusDays(1), exec);
 
-    }
+        TestCostant.auditFilesEntity.stream().forEach(ent -> {
+          ent.setLogDate(DateUtils.yesterday().minusDays(1).toString());
+          ((StorageDaoInMemoryImpl) dao).insertAuditStorage(ent);
+        });
+
+      }
+    };
   }
 
   @Bean
