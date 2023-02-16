@@ -64,28 +64,27 @@ abstract class AbstractExportMultipart<T> {
   private void exportFolder(File pathIn) throws IOException {
 
 	  /* In caso di assenza log si crea un file Readme.md con la descrizione della causa */
-	  if(pathIn.listFiles().length == 0) {
-		  List<String> lines = Arrays.asList("Log file not found");
-		  Path file = Paths.get(pathIn.getPath() + File.separator + "Readme.md");
-		  Files.write(file, lines, StandardCharsets.UTF_8);
+	  if (pathIn.listFiles().length == 0) {
+        log.trace("log file not found for path {} ", pathIn.getPath());
+		List<String> lines = Arrays.asList("Log file not found");
+		Path file = Paths.get(pathIn.getPath() + File.separator + "Readme.md");
+		Files.write(file, lines, StandardCharsets.UTF_8);
 	  }
 	  
 	  for (File filePath : pathIn.listFiles()) {
-      log.trace("export file {} ", filePath.getPath());
-      if (filePath.isDirectory()) {
-        exportFolder(filePath);
-      } else {
-
-        if (fileSize(currentPathFile, filePath) > maxSize.toBytes()) {
-          closeCurrentFile();
-          currentPathFile = newFileOutPathPart(folderOut, patternFileOut, outFileList.size() + 1);
-          outFileList.add(currentPathFile);
-          setCurrentFileOut(currentPathFile);
+        log.trace("export file {} ", filePath.getPath());
+        if (filePath.isDirectory()) {
+          exportFolder(filePath);
+        } else {
+          if (fileSize(currentPathFile, filePath) > maxSize.toBytes()) {
+            closeCurrentFile();
+            currentPathFile = newFileOutPathPart(folderOut, patternFileOut, outFileList.size() + 1);
+            outFileList.add(currentPathFile);
+            setCurrentFileOut(currentPathFile);
+          }
+          addLogFile(filePath);
         }
-        addLogFile(filePath);
-
       }
-    }
   }
 
 
