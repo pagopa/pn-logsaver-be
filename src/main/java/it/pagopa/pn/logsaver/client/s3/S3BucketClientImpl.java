@@ -44,7 +44,7 @@ public class S3BucketClientImpl implements S3BucketClient {
         .bucket(awsCfg.getS3BucketName()).prefix(prefix).delimiter("/".concat(suffix)).build());
     return response.commonPrefixes().stream()
         .map(item -> StringUtils.removeStart(item.prefix(), prefix))
-        .map(item -> StringUtils.removeEnd(item, "/"));
+        .map(item -> StringUtils.removeEnd(item, "/".concat(suffix)));
   }
 
 
