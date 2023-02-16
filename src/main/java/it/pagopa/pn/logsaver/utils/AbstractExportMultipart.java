@@ -2,11 +2,14 @@ package it.pagopa.pn.logsaver.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
@@ -60,7 +63,14 @@ abstract class AbstractExportMultipart<T> {
 
   private void exportFolder(File pathIn) throws IOException {
 
-    for (File filePath : pathIn.listFiles()) {
+	  /* In caso di assenza log si crea un file Readme.md con la descrizione della causa */
+	  if(pathIn.listFiles().length == 0) {
+		  List<String> lines = Arrays.asList("Log file not found");
+		  Path file = Paths.get(pathIn.getPath() + File.separator + "Readme.md");
+		  Files.write(file, lines, StandardCharsets.UTF_8);
+	  }
+	  
+	  for (File filePath : pathIn.listFiles()) {
       log.trace("export file {} ", filePath.getPath());
       if (filePath.isDirectory()) {
         exportFolder(filePath);
