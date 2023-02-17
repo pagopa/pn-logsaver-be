@@ -70,9 +70,9 @@ class S3BucketClientImplTest {
   @Test
   void findSubFolders() {
 
-    String prefix1 = "logs/ecs/pnDelivery/";
-    String prefix2 = "logs/ecs/pnDeliveryPush/";
-    String prefix3 = "logs/ecs/pnExternalRegistry/";
+    String prefix1 = "logs/ecs/pnDelivery/2022";
+    String prefix2 = "logs/ecs/pnDeliveryPush/2022";
+    String prefix3 = "logs/ecs/pnExternalRegistry/2022";
     List<CommonPrefix> resPrefixList = List.of(CommonPrefix.builder().prefix(prefix1).build(),
         CommonPrefix.builder().prefix(prefix2).build(),
         CommonPrefix.builder().prefix(prefix3).build());
