@@ -91,6 +91,31 @@ class S3BucketClientImplTest {
     assertTrue(resList.contains("pnExternalRegistry"));
 
   }
+  
+  @Test
+  void findSubFoldersWithPrefix() {
+
+    String prefix1 = "cdcTos3/TABLE_NAME_pn-AuditStorage/2023";
+    String prefix2 = "cdcTos3/TABLE_NAME_pn-Mandate/2023";
+    String prefix3 = "cdcTos3/TABLE_NAME_pn-UserAttributes/2023";
+    List<CommonPrefix> resPrefixList = List.of(CommonPrefix.builder().prefix(prefix1).build(),
+        CommonPrefix.builder().prefix(prefix2).build(),
+        CommonPrefix.builder().prefix(prefix3).build());
+
+
+    when(clientS3.listObjectsV2(any(ListObjectsV2Request.class)))
+        .thenReturn(ListObjectsV2Response.builder().commonPrefixes(resPrefixList).build());
+
+
+    List<String> resList = client.findSubFoldersWithPrefix("cdcTos3/", "TABLE_NAME_","2023").collect(Collectors.toList());
+
+    verify(clientS3, times(1)).listObjectsV2(any(ListObjectsV2Request.class));
+    assertEquals(3, resList.size());
+    assertTrue(resList.contains("TABLE_NAME_pn-AuditStorage"));
+    assertTrue(resList.contains("TABLE_NAME_pn-Mandate"));
+    assertTrue(resList.contains("TABLE_NAME_pn-UserAttributes"));
+
+  }
 
   @Test
   void getObjectContent() throws IOException {
