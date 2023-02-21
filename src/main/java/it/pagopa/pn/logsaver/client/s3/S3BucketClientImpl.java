@@ -53,6 +53,23 @@ public class S3BucketClientImpl implements S3BucketClient {
         .map(item -> StringUtils.removeEnd(item, "/".concat(suffix)));
   }
 
+  @Override
+  /**
+   * Metodo per la ricerca di subFolders per un dato pathPrefix, subFolderPrefix e suffix (delimitatore).
+   * @param String pathPrefix: prefisso del path s3
+   * @param String subFolderPrefix: prefisso dei subFolder oggetto della ricerca
+   * @param String suffix: delimitatore del path s3
+   * @return Stream<String>: stream di subFolders
+   */
+  public Stream<String> findSubFoldersWithPrefix(String pathPrefix, String subFolderPrefix, String suffix) {
+    log.debug("Call s3 bucket for list subfolders between  {} and {} ", pathPrefix, suffix);
+    ListObjectsV2Response response = clientS3.listObjectsV2(ListObjectsV2Request.builder()
+            .bucket(awsCfg.getS3BucketName()).prefix(pathPrefix.concat(subFolderPrefix)).delimiter("/".concat(suffix)).build());
+    return response.commonPrefixes().stream()
+            .map(item -> StringUtils.removeStart(item.prefix(), pathPrefix))
+            .map(item -> StringUtils.removeEnd(item, "/".concat(suffix)));
+  }
+
 
   @Override
   public InputStream getObjectContent(String key) {
@@ -68,21 +85,6 @@ public class S3BucketClientImpl implements S3BucketClient {
         .contentMD5(checksum).build(), RequestBody.fromInputStream(file, size));
   }
   
-  @Override
-  /** 
-   * Metodo per la ricerca di subFolders per un dato pathPrefix, subFolderPrefix e suffix (delimitatore). 
-   * @param String pathPrefix: prefisso del path s3
-   * @param String subFolderPrefix: prefisso dei subFolder oggetto della ricerca
-   * @param String suffix: delimitatore del path s3
-   * @return Stream<String>: stream di subFolders
-   */
-  public Stream<String> findSubFoldersWithPrefix(String pathPrefix, String subFolderPrefix, String suffix) {
-    log.debug("Call s3 bucket for list subfolders between  {} and {} ", pathPrefix, suffix);
-    ListObjectsV2Response response = clientS3.listObjectsV2(ListObjectsV2Request.builder()
-        .bucket(awsCfg.getS3BucketName()).prefix(pathPrefix.concat(subFolderPrefix)).delimiter("/".concat(suffix)).build());
-    return response.commonPrefixes().stream()
-        .map(item -> StringUtils.removeStart(item.prefix(), pathPrefix))
-        .map(item -> StringUtils.removeEnd(item, "/".concat(suffix)));
-  }
+
   
 }
