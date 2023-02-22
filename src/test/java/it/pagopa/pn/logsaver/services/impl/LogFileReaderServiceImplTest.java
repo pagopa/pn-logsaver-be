@@ -59,6 +59,12 @@ class LogFileReaderServiceImplTest {
     when(cfg.getCdcRootPathTemplate()).thenReturn("'cdc/%s/'yyyy/MM/dd");
   }
 
+  void mockCfgBaseWithPrefix() {
+    when(cfg.getLogsRootPathTemplate()).thenReturn("'logs/ecs/%s/'yyyy/MM/dd");
+    when(cfg.getCdcRootPathTemplate()).thenReturn("'cdc/%s/'yyyy/MM/dd");
+    when(cfg.getCdcTablesPrefix()).thenReturn("");
+  }
+
   @Test
   void findItems_WithTableAndMicroserviceByCfg() {
     mockCfgBase();
@@ -93,7 +99,7 @@ class LogFileReaderServiceImplTest {
 
   @Test
   void findItems_WithoutTableAndMicroserviceByCfg() {
-    mockCfgBase();
+    mockCfgBaseWithPrefix();
     List<S3Object> mockResList = List.of(S3Object.builder().key(TestCostant.S3_KEY).build());
     int expFindObjectInvocation = expectedPrefix.size() * mockResList.size();
 
@@ -103,13 +109,14 @@ class LogFileReaderServiceImplTest {
         .thenAnswer((InvocationOnMock invocation) -> mockResList.stream());
 
 
-    when(clientS3.findSubFolders("cdc/", "2022")).thenReturn(TestCostant.TABLES.stream());
-    when(clientS3.findSubFolders("logs/", "2022")).thenReturn(TestCostant.MICROSERVICES.stream());
+    when(clientS3.findSubFoldersWithPrefix("cdc/", "","2022")).thenReturn(TestCostant.TABLES.stream());
+    when(clientS3.findSubFoldersWithPrefix("logs/", "", "2022")).thenReturn(TestCostant.MICROSERVICES.stream());
 
     List<LogFileReference> res = service.findLogFiles(TestCostant.CTX).collect(Collectors.toList());
 
-    verify(clientS3, times(LogFileType.values().length)).findSubFolders(subFolderPrefix.capture(),
-        anyString());
+    verify(clientS3, times(LogFileType.values().length)).findSubFoldersWithPrefix(subFolderPrefix.capture(),
+            anyString(),
+            anyString());
     verify(clientS3, times(expFindObjectInvocation)).findObjects(prefix.capture());
 
     List<String> prefixRes = prefix.getAllValues();
