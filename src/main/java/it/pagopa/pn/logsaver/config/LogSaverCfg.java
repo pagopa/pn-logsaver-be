@@ -29,4 +29,7 @@ public class LogSaverCfg {
 
   @Value("${log-saver.export-max-file-size:5MB}")
   private DataSize maxSize;
+  
+  @Value("${log-saver.cdc-tables.prefix}")
+  private String cdcTablesPrefix;
 }
