@@ -612,3 +612,7 @@ Resources:
           - ','
           - - !GetAtt ErrorFatalLogsMetricAlarm.Arn
             - !GetAtt FailedInvocationMetricAlarm.Arn
+        LogGroupsNames: !Join
+          - ','
+          - - !Ref BatchLogGroup
+            - !Ref ManualBatchLogGroup
