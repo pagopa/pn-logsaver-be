@@ -72,16 +72,6 @@ Parameters:
     Type: String
     Description: 'keep track of used projects commitIds'
 
-  LogsKinesisSourceStreamArn:
-    Type: String
-    Description: 'Kinesis stream that receive logs'
-
-  # - Log exports parameters
-  CloudwatchFilterPattern:
-    Default: ''
-    Type: String
-    Description: filter expression for exported logs
-
   LogSaverDynamoTableArn:
     Type: String
     Description: 'AuditStorage DynamoDB table ARN'
@@ -140,8 +130,13 @@ Parameters:
     Default: 1
     Description: The maximum number of batch job attempts.
 
-Conditions:
-  SendLogToKinesis: !Not [ !Equals [ !Ref LogsKinesisSourceStreamArn, '' ] ]
+  BatchLogGroup:
+    Type: String
+    Description: Batch log group name
+
+  ManualBatchLogGroup:
+    Type: String
+    Description: Manual batch log group name
 
 Resources:
 
@@ -308,63 +303,6 @@ Resources:
         Name: JobDefinitionTag
         Expected: MergeTag
 
-  # Batch Log group
-  BatchLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '${ProjectName}-${AppName}-logs'
-      RetentionInDays: 14
-      KmsKeyId:
-        Fn::GetAtt:
-          - BatchLogGroupKmsKey
-          - Arn
-
-  # Batch Log group
-  ManualBatchLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub '${ProjectName}-${AppName}-download-logs'
-      RetentionInDays: 14
-      KmsKeyId:
-        Fn::GetAtt:
-          - BatchLogGroupKmsKey
-          - Arn
-
-  # KMS Key for Encrypt log data in CloudWatch Logs
-  BatchLogGroupKmsKey:
-    Type: AWS::KMS::Key
-    Properties:
-      KeyPolicy:
-        Statement:
-          - Action: kms:*
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::Join:
-                  - ""
-                  - - "arn:"
-                    - Ref: AWS::Partition
-                    - ":iam::"
-                    - Ref: AWS::AccountId
-                    - :root
-            Resource: "*"
-          - Action:
-              - kms:Encrypt*
-              - kms:Decrypt*
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-              - kms:Describe*
-            Effect: Allow
-            Principal:
-              Service: !Sub logs.${AWS::Region}.amazonaws.com
-            Resource: '*'
-            Condition:
-              ArnLike:
-                'kms:EncryptionContext:aws:logs:arn': !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
-        Version: "2012-10-17"
-    UpdateReplacePolicy: Retain
-    DeletionPolicy: Retain
-
   BatchTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -414,49 +352,6 @@ Resources:
       State: ENABLED
       Priority: 1
       JobQueueName: !Sub '${ProjectName}-${AppName}-job-queue'
-
-  ### Subscription filters with Kinesis  https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html#DestinationKinesisExample
-  SubscriptionFilter:
-    Condition: SendLogToKinesis
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      RoleArn:
-        Fn::GetAtt:
-          - "SubscriptionFilterServiceRole"
-          - "Arn"
-      LogGroupName: !Ref BatchLogGroup
-      FilterPattern: !Ref CloudwatchFilterPattern
-      DestinationArn: !Ref LogsKinesisSourceStreamArn
-
-  ### IAM Role used by Subscription filters to allow read logs from Cloudwatch and send logs to Kinesis Firehose
-  SubscriptionFilterServiceRole:
-    Condition: SendLogToKinesis
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: logs.amazonaws.com
-        Version: "2012-10-17"
-      Path: /
-      Policies:
-        -
-          PolicyName: !Sub '${ProjectName}-${AppName}-batch-logs-subscription-role'
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Action:
-                  - kinesis:PutRecord
-                Effect: Allow
-                Resource: "*"
-              - Action:
-                  - "kms:Encrypt"
-                  - "kms:GenerateDataKey"
-                  - "kms:Decrypt"
-                Effect: Allow
-                Resource: "*"
 
   ### Enable sending notifications to SNS topic when the job is in failed status.
   BatchBridgeStateRule:
