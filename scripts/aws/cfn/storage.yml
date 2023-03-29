@@ -24,6 +24,9 @@ Parameters:
     Type: String
     Description: 'Where to send CDC'
 
+  LogsKinesisSourceStreamArn:
+    Type: String
+    Description: 'Where to send Logs'
 Resources:
 
   # Dynamo Table
@@ -59,6 +62,7 @@ Resources:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/log-group.yaml"
       Parameters:
         LogGroupName: !Sub '${ProjectName}-logsaver-be'
+        LogsKinesisSourceStreamArn: !Ref LogsKinesisSourceStreamArn
 
   PnLogsaverBeManualLogGroup:
     Type: AWS::CloudFormation::Stack
