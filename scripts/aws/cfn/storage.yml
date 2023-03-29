@@ -24,11 +24,16 @@ Parameters:
     Type: String
     Description: 'Where to send CDC'
 
+  LogsKinesisSourceStreamArn:
+    Type: String
+    Description: 'Where to send Logs'
 Resources:
 
   # Dynamo Table
   LogSaverTable:
     Type: AWS::DynamoDB::Table
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain     
     Properties:
       TableName: !Sub '${ProjectName}-AuditStorage'
       AttributeDefinitions:
@@ -49,6 +54,25 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true    
         
+  PnLogsaverBeLogGroup:
+    Type: AWS::CloudFormation::Stack
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain 
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/log-group.yaml"
+      Parameters:
+        LogGroupName: !Sub '${ProjectName}-logsaver-be'
+        LogsKinesisSourceStreamArn: !Ref LogsKinesisSourceStreamArn
+
+  PnLogsaverBeManualLogGroup:
+    Type: AWS::CloudFormation::Stack
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain 
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/log-group.yaml"
+      Parameters:
+        LogGroupName: !Sub '${ProjectName}-logsaver-be-manual'
+        
 Outputs:
   # Dynamo table
   LogSaverDynamoTableName:
@@ -57,3 +81,10 @@ Outputs:
   LogSaverDynamoTableArn:
     Description: ARN of dynamodb table containing notifications
     Value: !Sub '${LogSaverTable.Arn}'
+
+  # Log group exports
+  BatchLogGroup:
+    Value: !GetAtt PnLogsaverBeLogGroup.Outputs.LogGroupName
+
+  ManualBatchLogGroup:
+    Value: !GetAtt PnLogsaverBeManualLogGroup.Outputs.LogGroupName
