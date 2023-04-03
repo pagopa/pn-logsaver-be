@@ -1,6 +1,6 @@
 {
   "Parameters" : {
-    "SafeStorageBaseUrl": "https://ewlg4idc89.execute-api.eu-south-1.amazonaws.com/dev",
+    "SandboxSafeStorageBaseUrl": "https://ewlg4idc89.execute-api.eu-south-1.amazonaws.com/dev",
     "SafeStorageCxId": "pn-delivery-push",
     "ScheduleExpression": "cron(0 10,11,20 * * ? *)",
     "SafeStorageDocTypesPdf10y": "PN_LEGAL_FACTS",

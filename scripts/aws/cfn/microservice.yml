@@ -24,7 +24,7 @@ Parameters:
     Default: ''
     Description: 'Pipe separated list of retention export types'
 
-  SafeStorageBaseUrl:
+  SandboxSafeStorageBaseUrl:
      Type: String
      Description: 'Url to the SafeStorage microservice'
 
@@ -210,7 +210,7 @@ Resources:
           - Name: RETENTION_EXPORT_TYPE
             Value: !Ref RetentionExportTypes
           - Name: PN_SAFESTORAGEBASEURL
-            Value: !Ref SafeStorageBaseUrl
+            Value: !Ref SandboxSafeStorageBaseUrl
           - Name: PN_SAFESTORAGECXID
             Value: !Ref SafeStorageCxId
           - Name: PN_SAFESTORAGEDOCTYPESPDF_10Y
@@ -275,7 +275,7 @@ Resources:
           - Name: DATE_TO
             Value: "YYYY-MM-DD"
           - Name: PN_SAFESTORAGEBASEURL
-            Value: !Ref SafeStorageBaseUrl
+            Value: !Ref SandboxSafeStorageBaseUrl
           - Name: PN_SAFESTORAGECXID
             Value: !Ref SafeStorageCxId
           - Name: PN_SAFESTORAGEDOCTYPESPDF_10Y
