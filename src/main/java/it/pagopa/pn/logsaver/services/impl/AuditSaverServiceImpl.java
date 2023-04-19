@@ -59,7 +59,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     // eseguito correttamente, non lo rifà
 
     log.info("Start LogSaver from latest execution to Yesterday {}. Check for last execution...",
-        yesterday.toString());
+        yesterday);
 
     // Leggo ultima esecuzione consecutiva
     LocalDate lastContExecDate = storageService.getLatestContinuosExecutionDate();
@@ -92,7 +92,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       if (Objects.nonNull(ctx)) {
         resList.add(dailySaver(ctx));
       } else {
-        log.info("Log date {} has already been successfully executed", yesterday.toString());
+        log.info("Log date {} has already been successfully executed", yesterday);
       }
     } else {
       resList.add(dailySaver(DailyContextCfg.builder().logDate(yesterday)
@@ -191,7 +191,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       return resBuilder.auditStorageList(auditStorageList).build();
 
     } catch (Exception e) {
-      log.error("Error processing audit for day " + dailyCtx.logDate().toString(), e);
+      log.error("Error processing audit for day " + dailyCtx.logDate(), e);
       resBuilder.error(e);
       return resBuilder.build();
     } finally {
