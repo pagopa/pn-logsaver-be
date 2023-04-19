@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
@@ -79,7 +78,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
       List<DailyContextCfg> workList = DateUtils.getDatesRange(lastContExecDate, today).stream() //
           .map(dateToCheck -> recoveryDailyContext(dateToCheck, executionMap))
-          .filter(Objects::nonNull).collect(Collectors.toList());
+          .filter(Objects::nonNull).toList();
 
       log.info("There are {} previous days to be processed", workList.size());
       workList.stream().map(this::dailySaver).collect(toCollection(() -> resList));
@@ -94,11 +93,12 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       } else {
         log.info("Log date {} has already been successfully executed", yesterday);
       }
-    } else {
+    } /*else {
       resList.add(dailySaver(DailyContextCfg.builder().logDate(yesterday)
           .retentionExportTypeMap(retentionExportTypeMap).logFileTypes(logFileType)
           .tmpBasePath(cfg.getTmpBasePath()).build()));
-    }
+      // after the changes, this caused a double processing for yesterday
+    }*/
 
     return new DailySaverResultList(resList);
   }
@@ -111,7 +111,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
     List<LocalDate> dateExecutionListFiltered = dateExecutionList.stream()
         .filter(date -> date.isAfter(lastContExecDate) && date.isBefore(LocalDate.now()))
-        .collect(Collectors.toList());
+        .toList();
     Optional<LocalDate> maxDate =
         dateExecutionListFiltered.stream().max(Comparator.comparing(d -> d));
 
@@ -122,7 +122,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
       List<DailyContextCfg> workList = dateExecutionListFiltered.stream() //
           .map(dateToCheck -> recoveryDailyContext(dateToCheck, executionMap))
-          .filter(Objects::nonNull).collect(Collectors.toList());
+          .filter(Objects::nonNull).toList();
 
       log.info("There are {} days to be processed", workList.size());
       workList.stream().map(this::dailySaver).collect(toCollection(() -> resList));
