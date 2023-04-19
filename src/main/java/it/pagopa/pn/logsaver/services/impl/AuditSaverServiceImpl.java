@@ -53,6 +53,10 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
     List<DailySaverResult> resList = new ArrayList<>();
     LocalDate yesterday = DateUtils.yesterday();
+    LocalDate today = yesterday.plusDays(1);
+
+    // non tratta yesterday diversamente dai giorni precedenti: se yesterday è stato precedentemente
+    // eseguito correttamente, non lo rifà
 
     log.info("Start LogSaver from latest execution to Yesterday {}. Check for last execution...",
         yesterday.toString());
@@ -62,7 +66,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     Map<LocalDate, StorageExecution> executionMap = new HashMap<>();
     // se yesterday-lastContExecDate > 1 sono presenti esecuzioni non processate correttamente o
     // date senza esecuzione
-    if (Duration.between(lastContExecDate.atStartOfDay(), yesterday.atStartOfDay()).toDays() > 1) {
+    if (Duration.between(lastContExecDate.atStartOfDay(), today.atStartOfDay()).toDays() >= 1) {
       // Recupero date da elaborare:
       // Leggo tutte le esecuzioni registrate da lastContExecDate a yesterday
       //
@@ -71,9 +75,9 @@ public class AuditSaverServiceImpl implements AuditSaverService {
           lastContExecDate);
 
       AuditSaverLogicSupport.groupByDate(
-          storageService.getStorageExecutionBetween(lastContExecDate, yesterday), executionMap);
+          storageService.getStorageExecutionBetween(lastContExecDate, today), executionMap);
 
-      List<DailyContextCfg> workList = DateUtils.getDatesRange(lastContExecDate, yesterday).stream() //
+      List<DailyContextCfg> workList = DateUtils.getDatesRange(lastContExecDate, today).stream() //
           .map(dateToCheck -> recoveryDailyContext(dateToCheck, executionMap))
           .filter(Objects::nonNull).collect(Collectors.toList());
 
