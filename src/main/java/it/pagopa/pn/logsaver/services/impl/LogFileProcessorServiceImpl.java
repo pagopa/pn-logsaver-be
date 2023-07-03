@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,6 +19,7 @@ import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.services.LogFileProcessorService;
 import it.pagopa.pn.logsaver.services.LogFileReaderService;
+import it.pagopa.pn.logsaver.services.functions.ExportAudit;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 import lombok.NonNull;
@@ -32,7 +34,8 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
 
   @NonNull
   private final LogFileReaderService s3Service;
-
+  @NonNull
+  private final Map<String, ExportAudit> exportFactory;
 
   @Override
   public List<AuditFile> process(Stream<LogFileReference> fileStream, DailyContextCfg dailyCtx) {
@@ -99,20 +102,20 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     return dailyCxt.getExportTypesByRetention(retention)// Ricavo le tipologie di export
         .stream().map(exportType -> { // Per ogni tipologia di export
           // Creo il file
-          Path fileOut = handleAuditFilePath(retention, exportType, dailyCxt);
-          exportType.write(inputFolder, fileOut, retention, dailyCxt.logDate());
+          String fileNamePattern = handleAuditFileNamePattern(retention, exportType, dailyCxt);
 
-          return AuditFile.builder().filePath(fileOut).logDate(dailyCxt.logDate())
+          List<Path> exportParts = exportFactory.get(exportType.getName()).export(inputFolder,
+              dailyCxt.tmpDailyPath(), fileNamePattern, retention, dailyCxt.logDate());
+
+          return AuditFile.builder().filePath(exportParts).logDate(dailyCxt.logDate())
               .exportType(exportType).retention(retention).build();
         });
   }
 
-  private Path handleAuditFilePath(Retention retention, ExportType exportType,
+  private String handleAuditFileNamePattern(Retention retention, ExportType exportType,
       DailyContextCfg dailyCxt) {
-    String fileName =
-        dailyCxt.logDate().format(DateTimeFormatter.ofPattern(retention.getFileNamePattern()))
-            .concat(exportType.getExtension());
-    return Path.of(dailyCxt.tmpDailyPath().toString(), fileName);
+    return dailyCxt.logDate().format(DateTimeFormatter.ofPattern(retention.getFileNamePattern()))
+        .concat(exportType.getExtension());
   }
 
 }

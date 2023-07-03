@@ -14,15 +14,16 @@ import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
 import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 import it.pagopa.pn.logsaver.model.StorageExecution.ExecutionDetails;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class AuditStorageMapper {
@@ -42,18 +43,32 @@ public class AuditStorageMapper {
     if (Objects.isNull(storage)) {
       return null;
     }
-    AuditStorageEntity entity = AuditStorageEntity.builder().fileName(storage.fileName())
-        .logDate(DateUtils.format(storage.logDate())).retention(storage.retention())
-        .exportType(storage.exportType()).build();
+    AuditStorageEntity entity =
+        AuditStorageEntity.builder().logDate(DateUtils.format(storage.logDate()))
+            .retention(storage.retention()).exportType(storage.exportType()).build();
 
     if (storage.hasError()) {
       entity.setResult(AuditStorageStatus.CREATED.name());
     } else {
       entity.setResult(AuditStorageStatus.SENT.name());
-      entity.setStorageKey(storage.uploadKey());
     }
+    entity.setStorageKey(mergeStorageKeyMap(storage));
     return entity;
   }
+
+  private static Map<String, String> mergeStorageKeyMap(AuditStorage storage) {
+    Map<String, String> branch = storage.uploadKey();
+    Map<String, String> main = storage.filePath().stream().collect(Collectors
+        .toMap(filePath -> filePath.getFileName().toString(), filePath -> StringUtils.EMPTY));
+    if (Objects.isNull(branch) || branch.isEmpty()) {
+      return main;
+    } else {
+      branch.entrySet().stream().forEach(entry -> main.put(entry.getKey(), entry.getValue()));
+      return main;
+    }
+
+  }
+
 
   public static List<DailyAuditDownloadable> toModel(Stream<AuditStorageEntity> entityStream) {
     return entityStream.collect(Collectors.groupingBy(AuditStorageEntity::getLogDate)).entrySet()
@@ -63,17 +78,18 @@ public class AuditStorageMapper {
   }
 
   public static List<AuditDownloadReference> toModel(List<AuditStorageEntity> entityList) {
-    return entityList.stream().map(AuditStorageMapper::toModel).collect(Collectors.toList());
+    return entityList.stream().flatMap(AuditStorageMapper::toModel).collect(Collectors.toList());
   }
 
-  public static AuditDownloadReference toModel(AuditStorageEntity entity) {
+  public static Stream<AuditDownloadReference> toModel(AuditStorageEntity entity) {
+
     return Objects.isNull(entity) ? null
-        : AuditDownloadReference.builder().retention(Retention.valueOf(entity.getRetention()))
-            .exportType(ExportType.valueOf(entity.getContentType())).fileName(entity.getFileName())
-            .logDate(DateUtils.parse(entity.getLogDate())).uploadKey(entity.getStorageKey())
-            .status(AuditStorageStatus.valueOf(entity.getResult())).build();
+        : entity.getStorageKey().entrySet().stream()
+            .map(entry -> AuditDownloadReference.builder()
+                .logDate(DateUtils.parse(entity.getLogDate()))
+                .status(AuditStorageStatus.valueOf(entity.getResult())).fileName(entry.getKey())
+                .uploadKey(entry.getValue()).build());
   }
-
 
   public static StorageExecution toModel(ExecutionEntity entity) {
     return new StorageExecution(DateUtils.parse(entity.getLogDate()),

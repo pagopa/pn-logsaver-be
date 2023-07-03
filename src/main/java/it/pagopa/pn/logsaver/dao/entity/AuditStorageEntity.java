@@ -1,5 +1,6 @@
 package it.pagopa.pn.logsaver.dao.entity;
 
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
@@ -20,9 +21,7 @@ public class AuditStorageEntity extends AuditStorageBase {
 
   private String contentType;
 
-  private String fileName;
-
-  private String storageKey;
+  private Map<String, String> storageKey;
 
   private String result;
 
@@ -31,9 +30,8 @@ public class AuditStorageEntity extends AuditStorageBase {
 
   @Builder
   public AuditStorageEntity(Retention retention, ExportType exportType, String logDate,
-      String fileName, String storageKey, String result) {
+      Map<String, String> storageKey, String result) {
     super(handlePKey(retention, exportType), logDate);
-    this.fileName = fileName;
     this.storageKey = storageKey;
     this.result = result;
     this.retentionType = retention.name();

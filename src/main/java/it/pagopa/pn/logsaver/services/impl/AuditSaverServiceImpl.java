@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
@@ -21,12 +20,12 @@ import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
 import it.pagopa.pn.logsaver.model.DailySaverResult.DailySaverResultBuilder;
-import it.pagopa.pn.logsaver.model.enums.ExportType;
-import it.pagopa.pn.logsaver.model.enums.LogFileType;
-import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.model.DailySaverResultList;
 import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.StorageExecution;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.services.AuditSaverService;
 import it.pagopa.pn.logsaver.services.LogFileProcessorService;
 import it.pagopa.pn.logsaver.services.LogFileReaderService;
@@ -53,16 +52,20 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
     List<DailySaverResult> resList = new ArrayList<>();
     LocalDate yesterday = DateUtils.yesterday();
+    LocalDate today = yesterday.plusDays(1);
+
+    // non tratta yesterday diversamente dai giorni precedenti: se yesterday è stato precedentemente
+    // eseguito correttamente, non lo rifà
 
     log.info("Start LogSaver from latest execution to Yesterday {}. Check for last execution...",
-        yesterday.toString());
+        yesterday);
 
     // Leggo ultima esecuzione consecutiva
     LocalDate lastContExecDate = storageService.getLatestContinuosExecutionDate();
     Map<LocalDate, StorageExecution> executionMap = new HashMap<>();
     // se yesterday-lastContExecDate > 1 sono presenti esecuzioni non processate correttamente o
     // date senza esecuzione
-    if (Duration.between(lastContExecDate.atStartOfDay(), yesterday.atStartOfDay()).toDays() > 1) {
+    if (Duration.between(lastContExecDate.atStartOfDay(), today.atStartOfDay()).toDays() >= 1) {
       // Recupero date da elaborare:
       // Leggo tutte le esecuzioni registrate da lastContExecDate a yesterday
       //
@@ -71,11 +74,11 @@ public class AuditSaverServiceImpl implements AuditSaverService {
           lastContExecDate);
 
       AuditSaverLogicSupport.groupByDate(
-          storageService.getStorageExecutionBetween(lastContExecDate, yesterday), executionMap);
+          storageService.getStorageExecutionBetween(lastContExecDate, today), executionMap);
 
-      List<DailyContextCfg> workList = DateUtils.getDatesRange(lastContExecDate, yesterday).stream() //
+      List<DailyContextCfg> workList = DateUtils.getDatesRange(lastContExecDate, today).stream() //
           .map(dateToCheck -> recoveryDailyContext(dateToCheck, executionMap))
-          .filter(Objects::nonNull).collect(Collectors.toList());
+          .filter(Objects::nonNull).toList();
 
       log.info("There are {} previous days to be processed", workList.size());
       workList.stream().map(this::dailySaver).collect(toCollection(() -> resList));
@@ -88,13 +91,14 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       if (Objects.nonNull(ctx)) {
         resList.add(dailySaver(ctx));
       } else {
-        log.info("Log date {} has already been successfully executed", yesterday.toString());
+        log.info("Log date {} has already been successfully executed", yesterday);
       }
-    } else {
+    } /*else {
       resList.add(dailySaver(DailyContextCfg.builder().logDate(yesterday)
           .retentionExportTypeMap(retentionExportTypeMap).logFileTypes(logFileType)
           .tmpBasePath(cfg.getTmpBasePath()).build()));
-    }
+      // after the changes, this caused a double processing for yesterday
+    }*/
 
     return new DailySaverResultList(resList);
   }
@@ -107,7 +111,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
     List<LocalDate> dateExecutionListFiltered = dateExecutionList.stream()
         .filter(date -> date.isAfter(lastContExecDate) && date.isBefore(LocalDate.now()))
-        .collect(Collectors.toList());
+        .toList();
     Optional<LocalDate> maxDate =
         dateExecutionListFiltered.stream().max(Comparator.comparing(d -> d));
 
@@ -118,11 +122,11 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
       List<DailyContextCfg> workList = dateExecutionListFiltered.stream() //
           .map(dateToCheck -> recoveryDailyContext(dateToCheck, executionMap))
-          .filter(Objects::nonNull).collect(Collectors.toList());
+          .filter(Objects::nonNull).toList();
 
-      log.info("There are {} previous days to be processed", workList.size());
+      log.info("There are {} days to be processed", workList.size());
       workList.stream().map(this::dailySaver).collect(toCollection(() -> resList));
-      log.info("Processing previous days finished");
+      log.info("Processing days finished");
     }
 
     return new DailySaverResultList(resList);
@@ -171,7 +175,8 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
   private DailySaverResult dailySaver(DailyContextCfg dailyCtx) {
 
-    DailySaverResultBuilder resBuilder = DailySaverResult.builder().logDate(dailyCtx.logDate());
+    DailySaverResultBuilder<?, ?> resBuilder =
+        DailySaverResult.builder().logDate(dailyCtx.logDate());
     try {
 
       dailyCtx.initContext();
@@ -186,8 +191,9 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       return resBuilder.auditStorageList(auditStorageList).build();
 
     } catch (Exception e) {
-      log.error("Error processing audit for day " + dailyCtx.logDate().toString(), e);
-      return resBuilder.error(e).build();
+      log.error("Error processing audit for day " + dailyCtx.logDate(), e);
+      resBuilder.error(e);
+      return resBuilder.build();
     } finally {
       dailyCtx.destroy();
     }

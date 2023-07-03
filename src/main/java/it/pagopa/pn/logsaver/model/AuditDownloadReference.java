@@ -2,6 +2,8 @@ package it.pagopa.pn.logsaver.model;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,10 +16,14 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Accessors(fluent = true)
 @SuperBuilder(toBuilder = true)
-@EqualsAndHashCode(callSuper = true)
-public class AuditDownloadReference extends AuditStorage {
+@EqualsAndHashCode()
+public class AuditDownloadReference implements ErrorAware {
+
+  private LocalDate logDate;
 
   private String fileName;
+
+  private String uploadKey;
 
   private String downloadUrl;
 
@@ -28,5 +34,9 @@ public class AuditDownloadReference extends AuditStorage {
   private InputStream content;
 
   private String destinationFolder;
+
+  private Throwable error;
+
+  private AuditStorageStatus status;
 
 }

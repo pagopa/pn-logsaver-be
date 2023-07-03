@@ -1,7 +1,6 @@
 package it.pagopa.pn.logsaver;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -25,6 +24,7 @@ class LogSaverApplicationIntegrationTest {
     TestConfig.setUp();
     String data = DateUtils.yesterday().minusDays(1).toString();
     LogSaverApplication.main(new String[] {"datelist-saver", "--spring.profiles.active=test",
+        "--log-saver.export-max-file-size=5KB",
         "--spring.config.location=classpath:application-test.properties", "--date.list=" + data});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
         .until(() -> output.getAll().contains("Log Saver Application ends"));
@@ -96,8 +96,8 @@ class LogSaverApplicationIntegrationTest {
   void downloadCommand_whenApplicationTeminated_thenReturnExitCode_1(CapturedOutput output)
       throws Exception {
     String data = DateUtils.yesterday().minusDays(1).toString();
-    LogSaverApplication
-        .main(new String[] {"download", "--date=" + data, "--spring.profiles.active=test",
+    LogSaverApplication.main(
+        new String[] {"download", "--date=" + data, "--spring.profiles.active=test,test-download",
             "--spring.config.location=classpath:application-test.properties"});
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
         .until(() -> output.getAll().contains("Log Saver Application ends"));
@@ -108,16 +108,16 @@ class LogSaverApplicationIntegrationTest {
 
   @Test
   void downloadDateRangeCommand_whenApplicationTeminated_thenThrowsException(CapturedOutput output)
-          throws Exception {
-      String from = DateUtils.yesterday().minusDays(1).toString();
-      String to = DateUtils.yesterday().minusDays(2).toString();
-      LogSaverApplication
-              .main(new String[] {Commands.DATERANGE_DOWNLOAD_AUDIT_S, "--date=" + from, "--spring.profiles.active=test",
-                      "--spring.config.location=classpath:application-test.properties","--date.from=" + from,
-                      "--date.to=" + to,});
+      throws Exception {
+    String from = DateUtils.yesterday().minusDays(1).toString();
+    String to = DateUtils.yesterday().minusDays(2).toString();
+    LogSaverApplication.main(new String[] {Commands.DATERANGE_DOWNLOAD_AUDIT_S, "--date=" + from,
+        "--spring.profiles.active=test",
+        "--spring.config.location=classpath:application-test.properties", "--date.from=" + from,
+        "--date.to=" + to,});
 
     Awaitility.await().atMost(120, TimeUnit.SECONDS)
-            .until(() -> output.getAll().contains("Failure executing log saver"));
+        .until(() -> output.getAll().contains("Failure executing log saver"));
 
     assertThat(output).contains("dateFrom argument must be less than or equal to dateTo argument.");
   }

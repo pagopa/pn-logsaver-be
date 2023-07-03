@@ -5,7 +5,6 @@ import javax.annotation.PostConstruct;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import com.google.common.collect.HashBasedTable;
-import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import lombok.Getter;
@@ -36,7 +35,7 @@ public class PnSafeStorageConfigs {
         .put(Retention.valueFromCode(entry.getKey()), expType, entry.getValue()));
   }
 
-  public String getStorageDocumentType(AuditStorage audit) {
-    return docTypeTable.get(audit.retention(), audit.exportType());
+  public String getStorageDocumentType(ExportType exportType, Retention retention) {
+    return docTypeTable.get(retention, exportType);
   }
 }

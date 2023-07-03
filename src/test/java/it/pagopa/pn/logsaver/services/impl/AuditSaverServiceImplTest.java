@@ -208,7 +208,7 @@ class AuditSaverServiceImplTest {
 
     // List<DailyContextCfg> ctxList = ctxCaptor.getAllValues();
 
-    assertEquals(1, res.getResults().size());
+    assertEquals(2, res.getResults().size()); // also yesterday
 
     assertTrue(res.getResults().get(0).hasErrors());
 

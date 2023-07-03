@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
@@ -29,7 +30,10 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.unit.DataSize;
+import org.springframework.util.unit.DataUnit;
 import it.pagopa.pn.logsaver.TestCostant;
+import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference;
@@ -39,6 +43,9 @@ import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.services.LogFileProcessorService;
 import it.pagopa.pn.logsaver.services.LogFileReaderService;
+import it.pagopa.pn.logsaver.services.functions.ExportAudit;
+import it.pagopa.pn.logsaver.services.impl.functions.ExportAuditPdf;
+import it.pagopa.pn.logsaver.services.impl.functions.ExportAuditZip;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
 
@@ -51,12 +58,17 @@ class LogFileProcessorServiceImplTest {
   private LogFileProcessorService service;
 
   @Mock
+  private LogSaverCfg cfg;
+
+  @Mock
   private InputStream content;
 
 
   @BeforeEach
   void setUp() {
-    this.service = new LogFileProcessorServiceImpl(s3Service);
+    Map<String, ExportAudit> exportFactory = Map.of(ExportType.PDF_S, new ExportAuditPdf(cfg),
+        ExportType.ZIP_S, new ExportAuditZip(cfg));
+    this.service = new LogFileProcessorServiceImpl(s3Service, exportFactory);
   }
 
   @AfterEach
@@ -64,7 +76,7 @@ class LogFileProcessorServiceImplTest {
 
   @Test
   void process() throws InterruptedException, ExecutionException {
-
+    when(cfg.getMaxSize()).thenReturn(DataSize.of(1, DataUnit.MEGABYTES));
     BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> noOpFilter =
         (in, cfg) -> childrenList().stream();
     ReflectionTestUtils.setField(LogFileType.LOGS, "filter", noOpFilter);

@@ -327,3 +327,5 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/archives
 .scannerwork/
+
+.vscode

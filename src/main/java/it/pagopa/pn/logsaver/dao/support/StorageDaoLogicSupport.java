@@ -15,7 +15,7 @@ import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
-import it.pagopa.pn.logsaver.model.AuditStorage.AuditStorageStatus;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
