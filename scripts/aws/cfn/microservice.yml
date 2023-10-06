@@ -488,8 +488,8 @@ Resources:
       MetricName: "Invocations"
       Namespace: "AWS/Events"
       ComparisonOperator: GreaterThanOrEqualToThreshold
-      EvaluationPeriods: 1
-      Period: 86400
+      EvaluationPeriods: 144 # 12 hours
+      Period: 300 # 5 minutes
       Statistic: Sum
       Threshold: 1
 
