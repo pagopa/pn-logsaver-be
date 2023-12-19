@@ -77,13 +77,13 @@ class StorageServiceImplTest {
 
 
     verify(storageDao, times(1)).getExecutionBetween(any(), any());
-    verify(storageDao, times(6)).getAudits(any(), any(), any());
-    verify(safeStorageClient, times(auditFiles.size() * 2 * 6)).downloadFileInfo(any());
+    verify(storageDao, times(8)).getAudits(any(), any(), any());
+    verify(safeStorageClient, times(auditFiles.size() * 2 * 8)).downloadFileInfo(any());
 
     assertNotNull(auditStorageRes);
     assertEquals(1, auditStorageRes.size());
     DailyAuditDownloadable dailyRes = auditStorageRes.get(0);
-    assertEquals(auditFiles.size() * 2 * 6, dailyRes.audits().size());
+    assertEquals(auditFiles.size() * 2 * 8, dailyRes.audits().size());
 
     dailyRes.audits().forEach(aud -> {
       assertEquals("http://downloadurl", aud.downloadUrl());
