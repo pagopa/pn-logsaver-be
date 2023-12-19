@@ -74,6 +74,9 @@ public class LogsFilterSupport {
         } else if (retentionToExport.contains(Retention.AUDIT5Y)
             && strList.contains(Retention.AUDIT5Y.name())) {
           return Retention.AUDIT5Y;
+        } else if (retentionToExport.contains(Retention.AUDIT2Y)
+            && strList.contains(Retention.AUDIT2Y.name())) {
+          return Retention.AUDIT2Y;
         }
       }
     } catch (Exception e) {
