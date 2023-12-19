@@ -11,7 +11,9 @@ public enum Retention {
 
   AUDIT10Y("10y", "'audit-log-10y-'yyyy-MM-dd'_part%d'", "10 anni"), AUDIT5Y("5y",
       "'audit-log-5y-'yyyy-MM-dd'_part%d'",
-      "5 anni"), DEVELOPER("120d", "'developers-log-'yyyy-MM-dd'_part%d'", "120 giorni");
+      "5 anni"), AUDIT2Y("2y",
+      "'audit-log-2y-'yyyy-MM-dd'_part%d'",
+      "2 anni"), DEVELOPER("120d", "'developers-log-'yyyy-MM-dd'_part%d'", "120 giorni");
 
   private String code;
 
