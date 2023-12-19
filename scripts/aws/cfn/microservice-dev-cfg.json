@@ -7,8 +7,9 @@
     "SafeStorageDocTypesPdf120d": "PN_LEGAL_FACTS",
     "SafeStorageDocTypesZip10y": "PN_LOGS_ARCHIVE_AUDIT10Y",
     "SafeStorageDocTypesZip5y": "PN_LOGS_ARCHIVE_AUDIT5Y",
+    "SafeStorageDocTypesZip2y": "PN_LOGS_ARCHIVE_AUDIT2Y",
     "SafeStorageDocTypesZip120d": "PN_LOGS_ARCHIVE_TEMP",
-    "RetentionExportTypes": "AUDIT10Y$ZIP,AUDIT5Y$ZIP",
+    "RetentionExportTypes": "AUDIT10Y$ZIP,AUDIT5Y$ZIP,AUDIT2Y$ZIP",
     "BatchJobMaxAttempts": "1",
     "MaxvCpus": "2",
     "LogSaverExportMaxFileSize": "2MB"
