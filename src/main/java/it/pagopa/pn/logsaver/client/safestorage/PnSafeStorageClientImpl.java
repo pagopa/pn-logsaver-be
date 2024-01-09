@@ -2,6 +2,7 @@ package it.pagopa.pn.logsaver.client.safestorage;
 
 
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.UnaryOperator;
 import org.springframework.core.io.FileSystemResource;
@@ -54,6 +55,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
   public AuditStorage uploadFiles(AuditStorage audit) {
 
     try {
+
       audit.filePath().stream()
           .forEach(fileUpload -> audit.uploadKey().put(fileUpload.getFileName().toString(),
               uploadFile(fileUpload, audit.exportType(), audit.retention())));
@@ -86,8 +88,12 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
     } catch (Exception e) {
       log.error("Exception on upload file {}", filePath.toString());
       throw e;
+    } finally {
+      // delete uploaded ZIP file
+      if (Files.exists(filePath)) {
+        FilesUtils.remove(filePath);
+      }
     }
-
   }
 
 
@@ -135,7 +141,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
             res.getStatusCode().toString()));
       }
     } catch (Exception ee) {
-      log.error("Exception on uploadContent file {}", resource, toString());
+      log.error("Exception on uploadContent file {}", resource.toString());
       throw new ExternalException("Exception uploading file", ee);
     }
   }

@@ -33,9 +33,13 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
     ZipEntry ze = new ZipEntry(folderIn.relativize(filePath.toPath()).toString());
     log.info(currentPathFile + "-" + ze.getName());
     currentFileOut.putNextEntry(ze);
-    try (FileInputStream fis = new FileInputStream(filePath);) {
+    try (FileInputStream fis = new FileInputStream(filePath)) {
       IOUtils.copy(fis, currentFileOut);
       currentFileOut.closeEntry();
+    }
+    // delete file added to the ZIP
+    if (filePath.exists()) {
+      FilesUtils.remove(filePath.toPath());
     }
   }
 
