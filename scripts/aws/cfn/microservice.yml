@@ -52,6 +52,10 @@ Parameters:
     Type: String
     Description: 'Safe storage doc type for 5 years retention Zip'
 
+  SafeStorageDocTypesZip2y:
+    Type: String
+    Description: 'Safe storage doc type for 2 years retention Zip'
+
   SafeStorageDocTypesZip120d:
     Type: String
     Description: 'Safe storage doc type for 120 days retention Zip'
@@ -223,6 +227,8 @@ Resources:
             Value: !Ref SafeStorageDocTypesZip10y
           - Name: PN_SAFESTORAGEDOCTYPESZIP_5Y
             Value: !Ref SafeStorageDocTypesZip5y
+          - Name: PN_SAFESTORAGEDOCTYPESZIP_2Y
+            Value: !Ref SafeStorageDocTypesZip2y
           - Name: PN_SAFESTORAGEDOCTYPESZIP_120D
             Value: !Ref SafeStorageDocTypesZip120d
           - Name: AWS_REGIONCODE
@@ -288,6 +294,8 @@ Resources:
             Value: !Ref SafeStorageDocTypesZip10y
           - Name: PN_SAFESTORAGEDOCTYPESZIP_5Y
             Value: !Ref SafeStorageDocTypesZip5y
+          - Name: PN_SAFESTORAGEDOCTYPESZIP_2Y
+            Value: !Ref SafeStorageDocTypesZip2y
           - Name: PN_SAFESTORAGEDOCTYPESZIP_120D
             Value: !Ref SafeStorageDocTypesZip120d
           - Name: AWS_REGIONCODE
