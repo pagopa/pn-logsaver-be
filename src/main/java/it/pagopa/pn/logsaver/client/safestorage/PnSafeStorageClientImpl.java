@@ -66,7 +66,6 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
       log.error("Exception on upload files for retention {}", audit.retention());
       return audit.error(e);
     }
-
   }
 
   private String uploadFile(Path filePath, ExportType exportType, Retention retention) {

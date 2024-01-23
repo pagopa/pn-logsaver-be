@@ -1,10 +1,14 @@
 package it.pagopa.pn.logsaver.services.impl;
 
+import it.pagopa.pn.logsaver.services.FileCompleteListener;
+import it.pagopa.pn.logsaver.services.StorageService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,6 +40,8 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
   private final LogFileReaderService s3Service;
   @NonNull
   private final Map<String, ExportAudit> exportFactory;
+  @NonNull
+  private final StorageServiceImpl storageService;
 
   @Override
   public List<AuditFile> process(Stream<LogFileReference> fileStream, DailyContextCfg dailyCtx) {
@@ -44,16 +50,38 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     List<LogFileReference> fileList = fileStream.collect(Collectors.toList());
     log.info("Total files {}", fileList.size());
     log.info("Start processing file");
-    LogSaverUtils.toParallelStream(fileList).forEach(item -> downloadFilterWrite(item, dailyCtx));
+    Map<String,AuditFile> groupedAudit = new HashMap<>();
 
-    log.info("Start creating files");
-    List<AuditFile> groupedAudit = createAuditFile(dailyCtx);
+    LogSaverUtils.toStream(fileList).forEach(item -> {
+      downloadFilterWrite(item, dailyCtx)
+          .forEach(auditFile -> groupedAudit.compute(
+              auditFile.getKey(),
+              (key, val) -> {
+                AuditFile ret = null;
+                if (val == null) {
+                  ret = auditFile;
+                } else {
+                  auditFile.filePath().forEach(path -> {
+                    if (!val.filePath().contains(path)) {
+                      val.filePath().add(path);
+                    }
+                  });
+                  ret = val;
+                }
+                return ret;
+              }));
+      dailyCtx.retentionTmpFolder().values().forEach(tmpFolder -> {
+        FilesUtils.remove(Path.of(String.valueOf(tmpFolder), item.getFileName()));
+      });
+
+    });
+
     log.info("Files created {}", groupedAudit.size());
-    return groupedAudit;
+    return groupedAudit.values().stream().toList();
 
   }
 
-  private void downloadFilterWrite(LogFileReference itemLog, DailyContextCfg dailyCtx) {
+  private List<AuditFile> downloadFilterWrite(LogFileReference itemLog, DailyContextCfg dailyCtx) {
     LogSaverUtils.initMDC(dailyCtx);
     log.debug("Dowload file {}", itemLog.getS3Key());
     // Download file dal bucket
@@ -64,6 +92,12 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
           // Scrivo in cartella temporanea
           .forEach(audit -> writeLog(audit, dailyCtx));
 
+      //IVAN:Qui avviamo lo zip
+      List<AuditFile> auditFiles = new ArrayList<>();
+      dailyCtx.retentionTmpFolder().entrySet().forEach( entry ->
+        auditFiles.addAll(this.createAuditFileForRetention(entry.getKey(),entry.getValue(), dailyCtx).toList())
+      );
+      return auditFiles;
     } catch (IOException e) {
       log.warn("Unexpected error closing input stream");
       throw new UncheckedIOException("writeLog IOException", e);
@@ -105,7 +139,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
           String fileNamePattern = handleAuditFileNamePattern(retention, exportType, dailyCxt);
 
           List<Path> exportParts = exportFactory.get(exportType.getName()).export(inputFolder,
-              dailyCxt.tmpDailyPath(), fileNamePattern, retention, dailyCxt.logDate());
+              dailyCxt.tmpDailyPath(), fileNamePattern, retention, dailyCxt.logDate(), storageService);
 
           return AuditFile.builder().filePath(exportParts).logDate(dailyCxt.logDate())
               .exportType(exportType).retention(retention).build();

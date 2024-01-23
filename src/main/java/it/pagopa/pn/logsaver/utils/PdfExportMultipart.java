@@ -1,5 +1,6 @@
 package it.pagopa.pn.logsaver.utils;
 
+import it.pagopa.pn.logsaver.services.FileCompleteListener;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -42,8 +43,8 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
 
   public PdfExportMultipart(@NonNull Path folderIn, @NonNull DataSize maxSize,
       @NonNull Path folderOut, @NonNull String patternFileOut, @NonNull Retention retention,
-      @NonNull LocalDate logDate) {
-    super(folderIn, maxSize, folderOut, patternFileOut);
+      @NonNull LocalDate logDate, FileCompleteListener fileCompleteListener) {
+    super(folderIn, maxSize, folderOut, patternFileOut, fileCompleteListener);
     this.retention = retention;
     this.logDate = logDate;
   }
@@ -71,7 +72,7 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
 
     this.currentFileOut = new Document();
     writer = PdfWriter.getInstance(this.currentFileOut,
-        Files.newOutputStream(fileOut, StandardOpenOption.APPEND, StandardOpenOption.CREATE));
+        Files.newOutputStream(fileOut, StandardOpenOption.CREATE, StandardOpenOption.APPEND));
     this.currentFileOut.addTitle(TITLE);
     this.currentFileOut.addSubject(String.format(SUBJECT, retention.getText(), logDate.toString()));
     this.currentFileOut.addCreator(CREATOR);
@@ -85,22 +86,19 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
 
   @Override
   protected void addLogFile(File filePath) throws IOException {
+    this.nextEntry = handleXmlContent(filePath.toPath(), retention, logDate);
     this.fileSize += nextEntry.length() + filePath.getName().length() + METADATA_EMPTY;
     currentFileOut.addHeader(filePath.getName(), nextEntry);
     writer.flush();
   }
 
   @Override
-  protected long fileSize(Path pathFile, File nextFile) throws IOException {
-    this.nextEntry = handleXmlContent(nextFile.toPath(), retention, logDate);
-    return fileSize + nextEntry.length() + nextFile.getName().length() + METADATA_EMPTY;
-  }
-
-  @Override
   protected void closeCurrentFile() throws IOException {
     log.info(currentPathFile.getFileName().toString() + " END Size " + fileSize);
+    log.error("----------------------------------------------");
+    log.error(" closing {}", currentPathFile.getFileName().toString());
+    log.error("----------------------------------------------");
+
     currentFileOut.close();
   }
-
-
 }

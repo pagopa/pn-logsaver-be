@@ -1,5 +1,6 @@
 package it.pagopa.pn.logsaver.services.impl.functions;
 
+import it.pagopa.pn.logsaver.services.FileCompleteListener;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
@@ -20,12 +21,17 @@ public class ExportAuditZip implements ExportAudit {
 
   @NonNull
   private final LogSaverCfg cfg;
+  private ZipExportMultipart zipExportMultipart;
 
   @Override
   public List<Path> export(Path folder, Path folderOut, String patternFileName, Retention retention,
-      LocalDate logDate) {
+      LocalDate logDate, FileCompleteListener fileCompleteListener) {
     log.info("Creating zip for folder {}", folder.toString());
-    return new ZipExportMultipart(folder, cfg.getMaxSize(), folderOut, patternFileName).export();
+    return new ZipExportMultipart(folder, cfg.getMaxSize(), folderOut, patternFileName, fileCompleteListener).export();
+  }
+
+  public void close(){
+    zipExportMultipart.close();
   }
 
 }
