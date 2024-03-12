@@ -147,6 +147,15 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     } else {
       // Non ho esecuzioni per la data.
       // Recupero le configurazioni dall'esecuzione precedente
+//      LocalDate dateToSearch = LocalDate.from(logDate);
+//      for (int i=0; i < execList.size(); i++){
+//        dateToSearch = dateToSearch.minusDays(1);
+//        if (execList.containsKey(dateToSearch) && !execList.get(dateToSearch).getDetails().isEmpty()){
+//          return handleDailyContext(logDate, dateToSearch, execList, false);
+//        }
+//      }
+//
+//      return null;
       LocalDate dateToSearch = LocalDate.from(logDate);
       do {
         dateToSearch = dateToSearch.minusDays(1);

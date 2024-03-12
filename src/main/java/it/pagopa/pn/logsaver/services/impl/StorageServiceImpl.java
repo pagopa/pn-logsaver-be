@@ -1,5 +1,8 @@
 package it.pagopa.pn.logsaver.services.impl;
 
+import it.pagopa.pn.logsaver.services.FileCompleteListener;
+import java.io.File;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -96,4 +99,9 @@ public class StorageServiceImpl implements StorageService {
 
   }
 
+  @Override
+  public void notify(Path path) {
+    log.info("File ready for upload {} !"+path.getFileName().toString());
+
+  }
 }

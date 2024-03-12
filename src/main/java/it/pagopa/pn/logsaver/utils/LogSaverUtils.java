@@ -47,6 +47,9 @@ public class LogSaverUtils {
     return itemList.stream().parallel();
   }
 
+  public static Stream<LogFileReference> toStream(List<LogFileReference> itemList) {
+    return itemList.stream();
+  }
 
 
 }

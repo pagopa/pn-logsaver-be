@@ -34,4 +34,7 @@ public class AuditFile {
     return Objects.nonNull(filePath) ? filePath.getFileName().toString() : null;
   }
 
+  public String getKey(){
+    return retention.getCode().concat(exportType.getName());
+  }
 }

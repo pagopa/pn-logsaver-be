@@ -47,9 +47,9 @@ public class LogProcessFunction implements BiFunction<LogFileReference, DailyCon
           });
 
     } catch (Exception e) {
-      log.error("Log filtering error. The content of the file is not valid json-stream: {}",
+      log.error("Log filtering error. The content of the file is not valid gzip-stream: {}",
           e.getMessage());
-      throw new LogFilterException("Filter error. The content of the file is not valid json-stream",
+      throw new LogFilterException("Filter error. The content of the file is not valid gzip-stream",
           e);
     }
   }

@@ -1,8 +1,6 @@
 package it.pagopa.pn.logsaver.client.safestorage;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -124,7 +122,8 @@ class PnSafeStorageClientImplTest {
     assertNotNull(res);
     assertTrue(res.uploadKey().values().contains("KEY"));
 
-    Files.delete(file.toPath());
+    // check the file was deleted
+    assertFalse(Files.exists(file.toPath()));
   }
 
 
@@ -162,7 +161,8 @@ class PnSafeStorageClientImplTest {
     assertNotNull(res);
     assertNotNull(res.error());
 
-    Files.delete(file.toPath());
+    // check the file was deleted
+    assertFalse(Files.exists(file.toPath()));
   }
 
 
@@ -192,6 +192,8 @@ class PnSafeStorageClientImplTest {
 
     AuditStorage res = client.uploadFiles(req);
 
+    System.out.println("HERE!!!!!!!!");
+
     assertEquals("application/pdf", httpEntityPre.getValue().getBody().getContentType());
     assertEquals("PN_LOGS_PDF_AUDIT10Y", httpEntityPre.getValue().getBody().getDocumentType());
     assertEquals("SAVED", httpEntityPre.getValue().getBody().getStatus());
@@ -209,7 +211,8 @@ class PnSafeStorageClientImplTest {
     assertNotNull(res);
     assertNotNull(res.error());
 
-    Files.delete(file.toPath());
+    // check the file was deleted
+    assertFalse(Files.exists(file.toPath()));
   }
 
 
@@ -255,7 +258,8 @@ class PnSafeStorageClientImplTest {
     assertNotNull(res);
     assertNotNull(res.error());
 
-    Files.delete(file.toPath());
+    // check the file was deleted
+    assertFalse(Files.exists(file.toPath()));
   }
 
 

@@ -1,5 +1,7 @@
 package it.pagopa.pn.logsaver.services.impl.functions;
 
+import it.pagopa.pn.logsaver.services.FileCompleteListener;
+import it.pagopa.pn.logsaver.utils.ZipExportMultipart;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
@@ -23,11 +25,20 @@ public class ExportAuditPdf implements ExportAudit {
 
   @Override
   public List<Path> export(Path folder, Path folderOut, String patternFileName, Retention retention,
-      LocalDate logDate) {
+      LocalDate logDate, FileCompleteListener fileCompleteListener) {
     log.info("Creating pdf files for folder {}", folder.toString());
 
-    return new PdfExportMultipart(folder, cfg.getMaxSize(), folderOut, patternFileName, retention,
-        logDate).export();
+    PdfExportMultipart pdfExportMultipart = new PdfExportMultipart(folder, cfg.getMaxSize(), folderOut, patternFileName, retention,
+        logDate, fileCompleteListener);
+    pdfExportMultipart.init();
+    List<Path>  list = pdfExportMultipart.export();
+    pdfExportMultipart.close();
+    return list;
+
+  }
+
+  @Override
+  public void close() {
 
   }
 
