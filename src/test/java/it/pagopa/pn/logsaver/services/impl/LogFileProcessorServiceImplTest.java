@@ -9,6 +9,8 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import it.pagopa.pn.logsaver.services.StorageService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -28,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.unit.DataSize;
@@ -55,6 +58,9 @@ class LogFileProcessorServiceImplTest {
   @Mock
   private LogFileReaderService s3Service;
 
+  @Mock
+  private StorageService storageService;
+
   private LogFileProcessorService service;
 
   @Mock
@@ -68,7 +74,7 @@ class LogFileProcessorServiceImplTest {
   void setUp() {
     Map<String, ExportAudit> exportFactory = Map.of(ExportType.PDF_S, new ExportAuditPdf(cfg),
         ExportType.ZIP_S, new ExportAuditZip(cfg));
-    this.service = new LogFileProcessorServiceImpl(s3Service, exportFactory);
+    this.service = new LogFileProcessorServiceImpl(s3Service, exportFactory, storageService);
   }
 
   @AfterEach
@@ -129,6 +135,8 @@ class LogFileProcessorServiceImplTest {
 
   @Test
   void process_IOExceptionWhenCloseS3Stream() throws IOException {
+    when(cfg.getMaxSize()).thenReturn(DataSize.of(1, DataUnit.MEGABYTES));
+
     BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> noOpFilter =
         (in, cfg) -> childrenList().stream();
     ReflectionTestUtils.setField(LogFileType.LOGS, "filter", noOpFilter);
