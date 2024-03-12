@@ -33,11 +33,6 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipFile> {
   @Override
   protected void addLogFile(File filePath) throws IOException {
     this.currentFileOut.addFile(filePath);
-    //NO perché poi il pdf non lo trova!
-//    // delete file added to the ZIP
-//    if (filePath.exists()) {
-//      FilesUtils.remove(filePath.toPath());
-//    }
   }
 
   @Override

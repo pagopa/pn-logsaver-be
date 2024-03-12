@@ -10,7 +10,7 @@ import it.pagopa.pn.logsaver.model.DailyAuditDownloadable;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.StorageExecution;
 
-public interface StorageService {
+public interface StorageService extends FileCompleteListener{
 
   List<AuditStorage> store(List<AuditFile> files, DailyContextCfg cfg);
 

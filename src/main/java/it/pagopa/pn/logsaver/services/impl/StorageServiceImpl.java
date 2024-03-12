@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class StorageServiceImpl implements StorageService, FileCompleteListener {
+public class StorageServiceImpl implements StorageService {
 
   private final PnSafeStorageClient safeStorageClient;
 
@@ -101,7 +101,7 @@ public class StorageServiceImpl implements StorageService, FileCompleteListener 
 
   @Override
   public void notify(Path path) {
-    log.info("File ready for upload {} !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"+path.getFileName().toString());
+    log.info("File ready for upload {} !"+path.getFileName().toString());
 
   }
 }

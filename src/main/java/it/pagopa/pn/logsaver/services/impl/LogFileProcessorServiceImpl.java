@@ -1,6 +1,5 @@
 package it.pagopa.pn.logsaver.services.impl;
 
-import it.pagopa.pn.logsaver.services.FileCompleteListener;
 import it.pagopa.pn.logsaver.services.StorageService;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +40,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
   @NonNull
   private final Map<String, ExportAudit> exportFactory;
   @NonNull
-  private final StorageServiceImpl storageService;
+  private final StorageService storageService;
 
   @Override
   public List<AuditFile> process(Stream<LogFileReference> fileStream, DailyContextCfg dailyCtx) {
@@ -52,7 +51,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     log.info("Start processing file");
     Map<String,AuditFile> groupedAudit = new HashMap<>();
 
-    LogSaverUtils.toStream(fileList).forEach(item -> {
+    fileList.forEach(item -> {
       downloadFilterWrite(item, dailyCtx)
           .forEach(auditFile -> groupedAudit.compute(
               auditFile.getKey(),
@@ -92,7 +91,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
           // Scrivo in cartella temporanea
           .forEach(audit -> writeLog(audit, dailyCtx));
 
-      //IVAN:Qui avviamo lo zip
+      //Qui avviamo lo zip
       List<AuditFile> auditFiles = new ArrayList<>();
       dailyCtx.retentionTmpFolder().entrySet().forEach( entry ->
         auditFiles.addAll(this.createAuditFileForRetention(entry.getKey(),entry.getValue(), dailyCtx).toList())
