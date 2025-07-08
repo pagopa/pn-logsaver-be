@@ -249,7 +249,7 @@ class StorageDaoDynamoImplTest {
         AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
             .result(AuditStorageStatus.SENT.name()).logDate(TestCostant.LOGDATE.toString())
             .retention(Retention.DEVELOPER).build());
-    storageDao.updateExecution(auditFiles, TestCostant.LOGDATE, Set.of(LogFileType.values()));
+    storageDao.updateExecution(auditFiles, TestCostant.LOGDATE, Set.of(LogFileType.values()), true);
 
     TransactWriteItemsEnhancedRequest transac = transacRequest.getValue();
 

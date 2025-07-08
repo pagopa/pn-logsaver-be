@@ -14,6 +14,9 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import it.pagopa.pn.logsaver.dao.StorageDao;
+import it.pagopa.pn.logsaver.services.StorageService;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +41,10 @@ class LogFileReaderServiceImplTest {
   private S3BucketClient clientS3;
   @Mock
   private LogSaverCfg cfg;
+  @Mock
+  private StorageDao storageDao;
+  @Mock
+  private StorageService storageService;
 
   private LogFileReaderService service;
 
@@ -51,7 +58,7 @@ class LogFileReaderServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    this.service = new LogFileReaderServiceImpl(clientS3, cfg);
+    this.service = new LogFileReaderServiceImpl(clientS3, cfg, storageDao, storageService);
   }
 
   void mockCfgBase() {

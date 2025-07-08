@@ -1,10 +1,14 @@
 package it.pagopa.pn.logsaver.services.impl;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+
+import it.pagopa.pn.logsaver.exceptions.InternalException;
+import it.pagopa.pn.logsaver.model.enums.Retention;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.safestorage.PnSafeStorageClient;
 import it.pagopa.pn.logsaver.dao.AuditStorageMapper;
@@ -21,6 +25,7 @@ import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.services.StorageService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 @Slf4j
 @Service
@@ -76,13 +81,18 @@ public class StorageServiceImpl implements StorageService {
 
   @Override
   public List<AuditStorage> store(List<AuditFile> files, DailyContextCfg ctx) {
+    return store(files, ctx, true);
+  }
+
+  @Override
+  public List<AuditStorage> store(List<AuditFile> files, DailyContextCfg ctx, boolean continuousExecutionUpdate) {
 
     List<AuditStorage> auditStored = files.stream().map(this::send).collect(Collectors.toList());
 
     List<AuditStorageEntity> auditStoredEntity =
-        auditStored.stream().map(AuditStorageMapper::toEntity).collect(Collectors.toList());
+            auditStored.stream().map(AuditStorageMapper::toEntity).collect(Collectors.toList());
     log.info("Update log-saver execution");
-    storageDao.updateExecution(auditStoredEntity, ctx.logDate(), ctx.logFileTypes());
+    storageDao.updateExecution(auditStoredEntity, ctx.logDate(), ctx.logFileTypes(), continuousExecutionUpdate);
 
     return auditStored;
   }
@@ -96,4 +106,29 @@ public class StorageServiceImpl implements StorageService {
 
   }
 
+  /**
+   * Per ogni retentionType estrae da SS tutti i record con uno specifico result
+   *
+   * @param result il risultato da cercare
+   * @return Lista di AuditStorageEntity con il risultato specificato
+   */
+  public List<AuditStorageEntity> findAuditStorageByResult(String result) {
+
+    List<AuditStorageEntity> auditStorageEntityList = new ArrayList<>();
+    try {
+      //Ciclo sulla partition -> retentionType
+      for (Retention retentionType : Retention.values()) {
+        log.info("Storage Service - retentionType {} ", retentionType.name());
+
+        List<AuditStorageEntity> entityList = (storageDao.getAuditsByResult(retentionType.name(), result)).collect(Collectors.toList());
+        for (AuditStorageEntity entity : entityList)
+          auditStorageEntityList.add(entity);
+      }
+    } catch (DynamoDbException e) {
+      log.error("Unable to get item from DynamoDB: {}", e.getMessage(), e);
+      throw new InternalException("GetItem failed: LogSaver DynamoDB Exception");
+
+    }
+    return auditStorageEntityList;
+  }
 }

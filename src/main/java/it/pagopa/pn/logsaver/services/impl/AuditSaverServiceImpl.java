@@ -3,15 +3,10 @@ package it.pagopa.pn.logsaver.services.impl;
 import static java.util.stream.Collectors.toCollection;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
+
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.config.LogSaverCfg;
@@ -198,4 +193,44 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       dailyCtx.destroy();
     }
   }
+
+  @Override
+  public void dailySaverFixer() {
+    try {
+      log.info("Start execution daily saver fixer for day on result CREATED");
+      Stream<LogFileReference> files = readerService.findLogFilesByResult(AuditStorageStatus.CREATED.name());
+//      Stream<LogFileReference> files = readerService.findLogFilesByResult(AuditStorageStatus.CREATED.name());
+
+      List<AuditStorage> auditStorageList = new ArrayList<>();
+      files.forEach(file -> {
+
+        Map<LocalDate, StorageExecution> executionMap = new HashMap<>();
+        AuditSaverLogicSupport.groupByDate(
+                storageService.getStorageExecutionBetween(file.getLogDate(), file.getLogDate()),
+                executionMap
+        );
+
+        DailyContextCfg ctx = handleDailyContext(file.getLogDate(), file.getLogDate(), executionMap, true);
+
+        log.debug("Process file {}", file.getFileName());
+        List<AuditFile> auditFiles = service.process(Stream.of(file), ctx);
+        List<AuditStorage> store = storageService.store(auditFiles, ctx, false);
+        auditStorageList.addAll(store);
+
+        if (ctx != null) {
+          log.info("End execution for file {} in date {}", file.getFileName(), ctx.logDate());
+          ctx.destroy();
+        }
+      });
+
+      DailySaverResult.builder().auditStorageList(auditStorageList).build();
+
+    } catch (Exception e) {
+        log.error("Error processing audit for day on result CREATED", e);
+      DailySaverResult.builder().error(e).build();
+    }
+
+    log.info("End execution daily saver fixer for day on result CREATED");
+  }
+
 }

@@ -116,13 +116,13 @@ class StorageServiceImplTest {
       AuditStorage audit = inTarg.getArgument(0, AuditStorage.class);
       return audit.uploadKey(TestCostant.uploadKey);
     });
-    doNothing().when(storageDao).updateExecution(any(), any(), any());
+    doNothing().when(storageDao).updateExecution(any(), any(), any(), any());
 
 
     List<AuditStorage> auditStorageRes = service.store(auditFiles, TestCostant.CTX);
 
     verify(safeStorageClient, times(auditFiles.size())).uploadFiles(any());
-    verify(storageDao, times(1)).updateExecution(any(), any(), any());
+    verify(storageDao, times(1)).updateExecution(any(), any(), any(), any());
     assertNotNull(auditStorageRes);
     assertEquals(3, auditStorageRes.size());
     auditStorageRes.forEach(aud -> {

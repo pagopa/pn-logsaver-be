@@ -4,8 +4,13 @@ import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import it.pagopa.pn.logsaver.dao.StorageDao;
+import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
+import it.pagopa.pn.logsaver.services.StorageService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.s3.S3BucketClient;
@@ -28,9 +33,12 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
 
   private final S3BucketClient clientS3;
   private final LogSaverCfg cfg;
+  private final StorageDao storageDao;
+  private final StorageService storageService;
 
 
-  private Stream<String> findSubfolders(LogFileType type, LocalDate logDate) {
+
+    private Stream<String> findSubfolders(LogFileType type, LocalDate logDate) {
     log.info("Start search subfolders for log file {}.", type.name());
 
     List<String> subFolderListCfg =
@@ -42,8 +50,8 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
     return subFolderListCfg.stream();
   }
 
-  /** 
-   * Metodo per la ricerca di subFolders su S3. Recupera il pathPrefix del path S3 ed il subFolderPrefix del 
+  /**
+   * Metodo per la ricerca di subFolders su S3. Recupera il pathPrefix del path S3 ed il subFolderPrefix del
    * folder oggetto della ricerca dal file di configurazione.
    * @param LogFileType type: tipo di log (CDC o LOGS)
    * @param LocalDate logDate: data del log
@@ -76,11 +84,46 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
             .flatMap(subFolder -> handleLogFileReference(subFolder, type, dailyCtx.logDate())));
   }
 
+  /**
+   * Recupera da DynamoDB tutti i file in stato result e li mappa in uno Stream<LogFileReference>
+   * @param result String
+   * @return Stream<LogFileReference>
+   */
+  public Stream<LogFileReference> findLogFilesByResult(String result) {
+    List<AuditStorageEntity> createdEntities = storageService.findAuditStorageByResult(result);
+
+    return createdEntities.stream()
+            .map(this::toLogFileReferenceFromEntity)
+            .filter(Objects::nonNull);
+  }
+
+  /**
+   * Metodo per la conversione di un AuditStorageEntity in LogFileReference
+   * @param entity AuditStorageEntity
+   * @return LogFileReference
+   */
+  private LogFileReference toLogFileReferenceFromEntity(AuditStorageEntity entity) {
+    String typeFolder = entity.getExportType();
+    String logDate = entity.getLogDate();
+    String fileName = entity.getStorageKey().get("fileName"); // Assumo che il nome del file sia memorizzato nella mappa storageKey
+
+    if (typeFolder == null || logDate == null || fileName == null) {
+      log.warn("Skipping entity with null fields: {}", entity);
+      return null;
+    }
+
+    String s3Key = String.format("logs/%s/%s/%s", typeFolder, logDate, fileName);
+    return LogFileReference.builder()
+            .s3Key(s3Key)
+            .type(LogFileType.valueOf(typeFolder))
+            .logDate(LocalDate.parse(logDate))
+            .build();
+  }
+
   @Override
   public InputStream getContent(String key) {
     return clientS3.getObjectContent(key);
   }
-
 
   private Stream<LogFileReference> handleLogFileReference(String subFolder, LogFileType type,
       LocalDate logDate) {

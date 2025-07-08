@@ -32,12 +32,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.model.TransactPutItemEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.model.TransactUpdateItemEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.*;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
@@ -148,8 +143,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   @Override
-  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate,
-      Set<LogFileType> types) {
+  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Boolean continuousExecutionUpdate) {
 
     // Se si ha la necesssità di aaumentare il numero di righe per transazione, monitorare eventuali
     // limiti
@@ -172,7 +166,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
     // Tutti i file sono stati inviati
     // se la differenza tra la logDate e la data ultima esecuzione continua è 1
     if (!StorageDaoLogicSupport.hasErrors(newExecution) && Duration
-        .between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1) {
+        .between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1 && continuousExecutionUpdate) {
 
       // Determino la data esecuzione continua
       List<ExecutionEntity> execList = this.executionFrom(logDate);
@@ -238,5 +232,49 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
   }
 
+  /**
+   * Trova tutti i record con uno specifico risultato
+   * @param result il risultato da cercare
+   * @return Lista di AuditStorageEntity con il risultato specificato
+   */
+  //TODO: aggiungere il controllo sulla partition
+  public List<AuditStorageEntity> findByResult(String result) {
+    Expression expression = Expression.builder()
+            .expression("#result = :result")
+            .expressionNames(Map.of("#result", "result"))
+            .expressionValues(Map.of(":result", AttributeValue.builder().s(result).build()))
+            .build();
+
+    ScanEnhancedRequest scanRequest = ScanEnhancedRequest.builder()
+            .filterExpression(expression)
+            .build();
+
+    return auditStorageTable.scan(scanRequest)
+            .items()
+            .stream()
+            .collect(Collectors.toList());
+  }
+
+  @Override
+  public Stream<AuditStorageEntity> getAuditsByResult(String key, String result) {
+
+    QueryConditional partitionKeyCondition = QueryConditional
+            .keyEqualTo(Key.builder().partitionValue(key).build());
+
+    Expression expression = Expression.builder()
+            .expression("#result = :result")
+            .expressionNames(Map.of("#result", "result"))
+            .expressionValues(Map.of(":result", AttributeValue.builder().s(result).build()))
+            .build();
+
+    QueryEnhancedRequest qeRequest = QueryEnhancedRequest
+            .builder()
+            .queryConditional(partitionKeyCondition)
+            .filterExpression(expression)
+            //.scanIndexForward(true)
+            .build();
+
+    return auditStorageTable.query(qeRequest).items().stream();
+  }
 
 }

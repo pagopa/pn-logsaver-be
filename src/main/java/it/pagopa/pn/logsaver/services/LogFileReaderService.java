@@ -13,4 +13,5 @@ public interface LogFileReaderService {
 
   InputStream getContent(String key);
 
+  Stream<LogFileReference> findLogFilesByResult(String result);
 }
