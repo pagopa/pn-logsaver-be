@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -105,7 +106,13 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
   private LogFileReference toLogFileReferenceFromEntity(AuditStorageEntity entity) {
     String typeFolder = entity.getExportType();
     String logDate = entity.getLogDate();
-    String fileName = entity.getStorageKey().get("fileName"); // Assumo che il nome del file sia memorizzato nella mappa storageKey
+    String fileName = null; // Assumo che il nome del file sia memorizzato nella mappa storageKey
+    Map<String, String> storageKeyValueMap = entity.getStorageKey();
+    if (storageKeyValueMap != null && !storageKeyValueMap.isEmpty()) {
+      //per ottenere l'unico valore in una mappa con una sola entry:
+      fileName = storageKeyValueMap.values().iterator().next();
+      log.info("Nome del file: {}", fileName);
+    }
 
     if (typeFolder == null || logDate == null || fileName == null) {
       log.warn("Skipping entity with null fields: {}", entity);
@@ -113,6 +120,8 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
     }
 
     String s3Key = String.format("logs/%s/%s/%s", typeFolder, logDate, fileName);
+    log.info("Nome s3Key : {}", s3Key);
+
     return LogFileReference.builder()
             .s3Key(s3Key)
             .type(LogFileType.valueOf(typeFolder))
