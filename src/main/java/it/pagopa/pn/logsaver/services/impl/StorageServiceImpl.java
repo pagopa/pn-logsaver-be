@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import it.pagopa.pn.logsaver.exceptions.InternalException;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
@@ -122,14 +123,16 @@ public class StorageServiceImpl implements StorageService {
         for (ExportType exportType : ExportType.values()) {
           log.info("StorageService - retentionType {} - exportType {} ", retentionType.name(), exportType.name());
 
-          List<AuditStorageEntity> entityList = (storageDao.getAuditsByResult(retentionType.name() + AuditStorageMapper.KEY_SEPARATOR + exportType.name(), result)).collect(Collectors.toList());
-          for (AuditStorageEntity entity : entityList)
-            auditStorageEntityList.add(entity);
+          Stream<AuditStorageEntity> auditsByResult = storageDao.getAuditsByResult(retentionType.name() + AuditStorageMapper.KEY_SEPARATOR + exportType.name(), result);
+          if (auditsByResult != null) {
+            log.info("StorageService - auditsByResult SIZE: " + auditsByResult.count());
+            auditStorageEntityList.addAll(auditsByResult.toList());
+          }
         }
       }
-      if (auditStorageEntityList != null){
-        log.info("StorageService - auditStorageEntityList SIZE: " + auditStorageEntityList.size());
-      }
+
+      log.info("StorageService - auditStorageEntityList SIZE: " + auditStorageEntityList.size());
+
     } catch (DynamoDbException e) {
       log.error("Unable to get item from DynamoDB: {}", e.getMessage(), e);
       throw new InternalException("GetItem failed: LogSaver DynamoDB Exception");
