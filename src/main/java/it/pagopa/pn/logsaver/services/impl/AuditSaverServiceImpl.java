@@ -199,7 +199,6 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     try {
       log.info("Start execution daily saver fixer for day on result CREATED");
       Stream<LogFileReference> files = readerService.findLogFilesByResult(AuditStorageStatus.CREATED.name());
-//      Stream<LogFileReference> files = readerService.findLogFilesByResult(AuditStorageStatus.CREATED.name());
 
       List<AuditStorage> auditStorageList = new ArrayList<>();
       files.forEach(file -> {
