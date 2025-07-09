@@ -119,10 +119,8 @@ public class StorageServiceImpl implements StorageService {
     try {
       //Ciclo sulla partition -> retentionType
       for (Retention retentionType : Retention.values()) {
-        log.info("StorageService - retentionType {} ", retentionType.name());
-
         for (ExportType exportType : ExportType.values()) {
-          log.info("StorageService - exportType {} ", exportType.name());
+          log.info("StorageService - retentionType {} - exportType {} ", retentionType.name(), exportType.name());
 
           List<AuditStorageEntity> entityList = (storageDao.getAuditsByResult(retentionType.name() + AuditStorageMapper.KEY_SEPARATOR + exportType.name(), result)).collect(Collectors.toList());
           for (AuditStorageEntity entity : entityList)
