@@ -123,10 +123,14 @@ public class StorageServiceImpl implements StorageService {
         for (ExportType exportType : ExportType.values()) {
           log.info("StorageService - retentionType {} - exportType {} ", retentionType.name(), exportType.name());
 
-          Stream<AuditStorageEntity> auditsByResult = storageDao.getAuditsByResult(retentionType.name() + AuditStorageMapper.KEY_SEPARATOR + exportType.name(), result);
-          if (auditsByResult != null) {
-            log.info("StorageService - auditsByResult SIZE: " + auditsByResult.count());
-            auditStorageEntityList.addAll(auditsByResult.toList());
+          Stream<AuditStorageEntity> auditsByResultStream = storageDao.getAuditsByResult(retentionType.name() + AuditStorageMapper.KEY_SEPARATOR + exportType.name(), result);
+          if (auditsByResultStream != null) {
+            List<AuditStorageEntity> currentAudits = auditsByResultStream.collect(Collectors.toList());
+
+            log.info("StorageService - currentAudits SIZE: " + currentAudits.size());
+            auditStorageEntityList.addAll(currentAudits);
+          }else {
+            log.debug("StorageService - auditsByResultStream is null for retentionType {} - exportType {}", retentionType.name(), exportType.name());
           }
         }
       }
