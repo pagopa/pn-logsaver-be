@@ -8,6 +8,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import it.pagopa.pn.logsaver.exceptions.InternalException;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.client.safestorage.PnSafeStorageClient;
@@ -118,11 +119,18 @@ public class StorageServiceImpl implements StorageService {
     try {
       //Ciclo sulla partition -> retentionType
       for (Retention retentionType : Retention.values()) {
-        log.info("Storage Service - retentionType {} ", retentionType.name());
+        log.info("StorageService - retentionType {} ", retentionType.name());
 
-        List<AuditStorageEntity> entityList = (storageDao.getAuditsByResult(retentionType.name(), result)).collect(Collectors.toList());
-        for (AuditStorageEntity entity : entityList)
-          auditStorageEntityList.add(entity);
+        for (ExportType exportType : ExportType.values()) {
+          log.info("StorageService - exportType {} ", exportType.name());
+
+          List<AuditStorageEntity> entityList = (storageDao.getAuditsByResult(retentionType.name() + AuditStorageMapper.KEY_SEPARATOR + exportType.name(), result)).collect(Collectors.toList());
+          for (AuditStorageEntity entity : entityList)
+            auditStorageEntityList.add(entity);
+        }
+      }
+      if (auditStorageEntityList != null){
+        log.info("StorageService - auditStorageEntityList SIZE: " + auditStorageEntityList.size());
       }
     } catch (DynamoDbException e) {
       log.error("Unable to get item from DynamoDB: {}", e.getMessage(), e);
