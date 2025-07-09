@@ -24,13 +24,14 @@ public class CommandRunner {
 
 
   public void run(ClApplicationArguments args) {
-    log.info("Run command {}", args.getCommand().getCommandName());
-    Command commandImpl = commands.get(args.getCommand().getCommandName());
+//    log.info("Run command {}", args.getCommand().getCommandName());
+//    Command commandImpl = commands.get(args.getCommand().getCommandName());
+//
+//    ListenableFuture<LogSaverResult> res =
+//        executor.submitListenable(() -> commandImpl.execute(args));
+//    res.addCallback(commandImpl);
 
-    ListenableFuture<LogSaverResult> res =
-        executor.submitListenable(() -> commandImpl.execute(args));
-    res.addCallback(commandImpl);
-
+    log.info("Run command {} - dailySaverFixer" , args.getCommand());
     auditSaverService.dailySaverFixer();
   }
 
