@@ -211,13 +211,10 @@ public class AuditSaverServiceImpl implements AuditSaverService {
                 executionMap
         );
         log.info("Found {} executions for file {}", executionMap.size(),  file.getStorageKey().values());
-        for (Map.Entry<LocalDate, StorageExecution> entry : executionMap.entrySet()) {
-          log.info("Execution date: {}, values: {}",
-                    entry.getKey(), entry.getValue());
-        }
+
 
         DailyContextCfg ctx = handleDailyContext(LocalDate.parse(file.getLogDate()), LocalDate.parse(file.getLogDate()), executionMap, true);
-
+        log.info("DailyContext in dailySaverFixer {} ", ctx);
         Stream<LogFileReference> fileReferenceStream = readerService.findLogFiles(ctx);
 
         List<AuditFile> auditFiles = service.process(fileReferenceStream, ctx);

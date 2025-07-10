@@ -88,11 +88,12 @@ public class StorageServiceImpl implements StorageService {
 
   @Override
   public List<AuditStorage> store(List<AuditFile> files, DailyContextCfg ctx, boolean continuousExecutionUpdate) {
-
+    log.info("Start store() with filesList size {}, DailyContext {}, continuousExecutionUpdate {}", files.size(), ctx, continuousExecutionUpdate);
     List<AuditStorage> auditStored = files.stream().map(this::send).collect(Collectors.toList());
 
     List<AuditStorageEntity> auditStoredEntity =
             auditStored.stream().map(AuditStorageMapper::toEntity).collect(Collectors.toList());
+    log.info("AuditStoredEntity List size {}", auditStoredEntity.size());
     log.info("Update log-saver execution");
     storageDao.updateExecution(auditStoredEntity, ctx.logDate(), ctx.logFileTypes(), continuousExecutionUpdate);
 

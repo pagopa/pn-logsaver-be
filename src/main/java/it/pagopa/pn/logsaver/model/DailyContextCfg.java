@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import lombok.ToString;
 import org.slf4j.MDC;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
@@ -25,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @Accessors(fluent = true)
 @Builder
 @Slf4j
+@ToString
 public class DailyContextCfg {
 
   @NonNull
