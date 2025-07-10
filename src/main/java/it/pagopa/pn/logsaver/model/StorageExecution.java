@@ -7,11 +7,7 @@ import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 
 @Setter
@@ -19,6 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Builder
+@ToString
 public class StorageExecution {
 
   private LocalDate logDate;
@@ -31,6 +28,7 @@ public class StorageExecution {
   @Setter
   @Getter
   @AllArgsConstructor
+  @ToString
   public static final class ExecutionDetails {
     private Retention retention;
     private AuditStorageStatus status;

@@ -124,7 +124,7 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
 
     return LogFileReference.builder()
             .s3Key(s3Key)
-            .type(LogFileType.valueOf(typeFolder))
+//            .type(LogFileType.valueOf(typeFolder))
             .logDate(LocalDate.parse(logDate))
             .build();
   }

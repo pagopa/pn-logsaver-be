@@ -208,6 +208,12 @@ public class AuditSaverServiceImpl implements AuditSaverService {
                 storageService.getStorageExecutionBetween(file.getLogDate(), file.getLogDate()),
                 executionMap
         );
+        log.info("Found {} executions for file {}", executionMap.size(), file.getFileName());
+        for (Map.Entry<LocalDate, StorageExecution> entry : executionMap.entrySet()) {
+            log.info("Execution date: {}, Log file types: {}, Retention LogDate: {}, values: {}",
+                    entry.getKey(), entry.getValue().getLogFileTypes(), entry.getValue().getLogDate(), entry.getValue());
+        }
+
 
         DailyContextCfg ctx = handleDailyContext(file.getLogDate(), file.getLogDate(), executionMap, true);
 
