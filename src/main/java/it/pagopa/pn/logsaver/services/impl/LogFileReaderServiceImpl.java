@@ -90,44 +90,11 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
    * @param result String
    * @return Stream<LogFileReference>
    */
-  public Stream<LogFileReference> findLogFilesByResult(String result) {
-    List<AuditStorageEntity> createdEntities = storageService.findAuditStorageByResult(result);
-
-    return createdEntities.stream()
-            .map(this::toLogFileReferenceFromEntity)
-            .filter(Objects::nonNull);
+  public List<AuditStorageEntity> findLogFilesByResult(String result) {
+    log.info("Invoking findLogFilesByResult() for result: {} ", result);
+      return storageService.findAuditStorageByResult(result);
   }
 
-  /**
-   * Metodo per la conversione di un AuditStorageEntity in LogFileReference
-   * @param entity AuditStorageEntity
-   * @return LogFileReference
-   */
-  private LogFileReference toLogFileReferenceFromEntity(AuditStorageEntity entity) {
-    String typeFolder = entity.getExportType();
-    String logDate = entity.getLogDate();
-    String fileName = null; // Assumo che il nome del file sia memorizzato nella mappa storageKey
-    Map<String, String> storageKeyValueMap = entity.getStorageKey();
-    if (storageKeyValueMap != null && !storageKeyValueMap.isEmpty()) {
-      //per ottenere l'unico valore in una mappa con una sola entry:
-      fileName = storageKeyValueMap.values().iterator().next();
-      log.info("Nome del file: {}", fileName);
-    }
-
-    if (typeFolder == null || logDate == null || fileName == null) {
-      log.warn("Skipping entity with null fields: {}", entity);
-      return null;
-    }
-
-    String s3Key = String.format("logs/%s/%s/%s", typeFolder, logDate, fileName);
-    log.info("Nome s3Key : {}", s3Key);
-
-    return LogFileReference.builder()
-            .s3Key(s3Key)
-//            .type(LogFileType.valueOf(typeFolder))
-            .logDate(LocalDate.parse(logDate))
-            .build();
-  }
 
   @Override
   public InputStream getContent(String key) {

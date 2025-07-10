@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Stream;
 
+import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
@@ -198,32 +199,33 @@ public class AuditSaverServiceImpl implements AuditSaverService {
   public void dailySaverFixer() {
     try {
       log.info("Start execution daily saver fixer for day on result CREATED");
-      Stream<LogFileReference> files = readerService.findLogFilesByResult(AuditStorageStatus.CREATED.name());
+      List<AuditStorageEntity> files = readerService.findLogFilesByResult(AuditStorageStatus.CREATED.name());
 
       List<AuditStorage> auditStorageList = new ArrayList<>();
       files.forEach(file -> {
 
+        log.info("Found date {} for file: {}", LocalDate.parse(file.getLogDate()), file.getStorageKey().values());
         Map<LocalDate, StorageExecution> executionMap = new HashMap<>();
         AuditSaverLogicSupport.groupByDate(
-                storageService.getStorageExecutionBetween(file.getLogDate(), file.getLogDate()),
+                storageService.getStorageExecutionBetween(LocalDate.parse(file.getLogDate()), LocalDate.parse(file.getLogDate())),
                 executionMap
         );
-        log.info("Found {} executions for file {}", executionMap.size(), file.getFileName());
+        log.info("Found {} executions for file {}", executionMap.size(),  file.getStorageKey().values());
         for (Map.Entry<LocalDate, StorageExecution> entry : executionMap.entrySet()) {
-            log.info("Execution date: {}, Log file types: {}, Retention LogDate: {}, values: {}",
-                    entry.getKey(), entry.getValue().getLogFileTypes(), entry.getValue().getLogDate(), entry.getValue());
+          log.info("Execution date: {}, values: {}",
+                    entry.getKey(), entry.getValue());
         }
 
+        DailyContextCfg ctx = handleDailyContext(LocalDate.parse(file.getLogDate()), LocalDate.parse(file.getLogDate()), executionMap, true);
 
-        DailyContextCfg ctx = handleDailyContext(file.getLogDate(), file.getLogDate(), executionMap, true);
+        Stream<LogFileReference> fileReferenceStream = readerService.findLogFiles(ctx);
 
-        log.debug("Process file {}", file.getFileName());
-        List<AuditFile> auditFiles = service.process(Stream.of(file), ctx);
+        List<AuditFile> auditFiles = service.process(fileReferenceStream, ctx);
         List<AuditStorage> store = storageService.store(auditFiles, ctx, false);
         auditStorageList.addAll(store);
 
         if (ctx != null) {
-          log.info("End execution for file {} in date {}", file.getFileName(), ctx.logDate());
+          log.info("End execution for file {} in date {}", file.getStorageKey().values(), ctx.logDate());
           ctx.destroy();
         }
       });
