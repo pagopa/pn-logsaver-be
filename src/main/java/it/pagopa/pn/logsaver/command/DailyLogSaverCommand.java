@@ -22,9 +22,14 @@ public class DailyLogSaverCommand extends BaseCommand {
 
   @Override
   public DailySaverResultList execute(ClApplicationArguments args) {
-    return logSaver.dailySaverFromLatestExecutionToYesterday(args.getLogFileTypes(),
-        args.getRetentionExportTypesMap());
+    DailySaverResultList result = logSaver.dailySaverFromLatestExecutionToYesterday(
+            args.getLogFileTypes(),
+            args.getRetentionExportTypesMap()
+    );
+    logSaver.dailySaverFixer();
+    return result;
   }
+
 
 
 }
