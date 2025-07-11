@@ -160,10 +160,20 @@ public class AuditSaverServiceImpl implements AuditSaverService {
   private DailyContextCfg handleDailyContext(LocalDate logDate, LocalDate recoveryDate,
       Map<LocalDate, StorageExecution> execList, boolean filterNotSent) {
 
-    StorageExecution storExec = execList.get(recoveryDate);
+    log.info("handleDailyContext - logDate {}, recoveryDate {}, filterNotSent {}", logDate, recoveryDate, filterNotSent);
 
+    //log all execList for debugging purposes
+    log.info("handleDailyContext - execList SIZE {} ", execList.size());
+    for (Map.Entry<LocalDate, StorageExecution> entry : execList.entrySet()) {
+        log.info("handleDailyContext - execList entry: date {}, storageExecution {}", entry.getKey(), entry.getValue());
+    }
+
+    StorageExecution storExec = execList.get(recoveryDate);
     Map<Retention, Set<ExportType>> recoveryMap = AuditSaverLogicSupport
         .handleRetentionExportTypeFromStorageExecution(storExec, filterNotSent);
+
+    recoveryMap.forEach((key, value) -> log.info("Retention {} has ExportType {} for logDate {}", key.name(),
+            value.stream().map(ExportType::name).toList(), logDate));
 
     log.info("handleDailyContext - recoveryMap SIZE {} ", recoveryMap.size());
     return recoveryMap.isEmpty() ? null
@@ -216,21 +226,20 @@ public class AuditSaverServiceImpl implements AuditSaverService {
         );
         log.info("Found {} executions for file {}", executionMap.size(),  file.getStorageKey().values());
 
-
         DailyContextCfg ctx = handleDailyContext(LocalDate.parse(file.getLogDate()), LocalDate.parse(file.getLogDate()), executionMap, true);
-        ctx.initContext();
-       // ctx.retentions().stream().forEach(retention -> ctx.retentionTmpFolder().computeIfAbsent(retention,
-        //        ret -> Paths.get(String.valueOf(ctx.tmpDailyPath()), ret.getCode())));
-        log.info("DailyContext in dailySaverFixer {} ", ctx);
-        Stream<LogFileReference> fileReferenceStream = readerService.findLogFiles(ctx);
-
-        List<AuditFile> auditFiles = service.process(fileReferenceStream, ctx);
-        List<AuditStorage> store = storageService.store(auditFiles, ctx, false);
-        auditStorageList.addAll(store);
-
         if (ctx != null) {
+          ctx.initContext();
+          log.info("DailyContext in dailySaverFixer {} ", ctx);
+          Stream<LogFileReference> fileReferenceStream = readerService.findLogFiles(ctx);
+
+          List<AuditFile> auditFiles = service.process(fileReferenceStream, ctx);
+          List<AuditStorage> store = storageService.store(auditFiles, ctx, false);
+          auditStorageList.addAll(store);
+
           log.info("End execution for file {} in date {}", file.getStorageKey().values(), ctx.logDate());
           ctx.destroy();
+        } else {
+            log.info("DailyContextCfg NULL: No context found for file {} in date {}", file.getStorageKey().values(), file.getLogDate());
         }
       });
 
