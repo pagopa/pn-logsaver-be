@@ -1,6 +1,9 @@
 package it.pagopa.pn.logsaver.services.impl;
 
 import static java.util.stream.Collectors.toCollection;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
@@ -8,6 +11,7 @@ import java.util.stream.Stream;
 
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
+import it.pagopa.pn.logsaver.utils.FilesUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.config.LogSaverCfg;
@@ -214,6 +218,8 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
 
         DailyContextCfg ctx = handleDailyContext(LocalDate.parse(file.getLogDate()), LocalDate.parse(file.getLogDate()), executionMap, true);
+        ctx.retentions().stream().forEach(retention -> ctx.retentionTmpFolder().computeIfAbsent(retention,
+                ret -> Paths.get(ctx.tmpDailyPath().toString(), ret.getCode())));
         log.info("DailyContext in dailySaverFixer {} ", ctx);
         Stream<LogFileReference> fileReferenceStream = readerService.findLogFiles(ctx);
 
