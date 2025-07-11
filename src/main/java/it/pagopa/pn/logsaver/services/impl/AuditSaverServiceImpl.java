@@ -165,10 +165,10 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     Map<Retention, Set<ExportType>> recoveryMap = AuditSaverLogicSupport
         .handleRetentionExportTypeFromStorageExecution(storExec, filterNotSent);
 
+    log.info("handleDailyContext - recoveryMap SIZE {} ", recoveryMap.size());
     return recoveryMap.isEmpty() ? null
         : DailyContextCfg.builder().logDate(logDate).tmpBasePath(cfg.getTmpBasePath())
             .logFileTypes(storExec.getLogFileTypes()).retentionExportTypeMap(recoveryMap).build();
-
   }
 
 
@@ -218,8 +218,9 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
 
         DailyContextCfg ctx = handleDailyContext(LocalDate.parse(file.getLogDate()), LocalDate.parse(file.getLogDate()), executionMap, true);
-        ctx.retentions().stream().forEach(retention -> ctx.retentionTmpFolder().computeIfAbsent(retention,
-                ret -> Paths.get(ctx.tmpDailyPath().toString(), ret.getCode())));
+        ctx.initContext();
+       // ctx.retentions().stream().forEach(retention -> ctx.retentionTmpFolder().computeIfAbsent(retention,
+        //        ret -> Paths.get(String.valueOf(ctx.tmpDailyPath()), ret.getCode())));
         log.info("DailyContext in dailySaverFixer {} ", ctx);
         Stream<LogFileReference> fileReferenceStream = readerService.findLogFiles(ctx);
 
