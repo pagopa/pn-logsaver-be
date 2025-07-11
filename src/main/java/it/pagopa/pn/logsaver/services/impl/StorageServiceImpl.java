@@ -130,6 +130,7 @@ public class StorageServiceImpl implements StorageService {
 
             log.info("StorageService - currentAudits SIZE: " + currentAudits.size());
             auditStorageEntityList.addAll(currentAudits);
+            log.info("StorageService - final auditStorageEntityList SIZE: "+auditStorageEntityList.size());
           }else {
             log.debug("StorageService - auditsByResultStream is null for retentionType {} - exportType {}", retentionType.name(), exportType.name());
           }
