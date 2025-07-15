@@ -12,6 +12,7 @@
     "RetentionExportTypes": "AUDIT10Y$ZIP,AUDIT5Y$ZIP,AUDIT2Y$ZIP",
     "BatchJobMaxAttempts": "1",
     "MaxvCpus": "2",
-    "LogSaverExportMaxFileSize": "2MB"
+    "LogSaverExportMaxFileSize": "2MB",
+    "AuditStorageOffsetDuration": "1h"
   }
 }

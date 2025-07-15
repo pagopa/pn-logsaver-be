@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.UnaryOperator;
+
+import it.pagopa.pn.logsaver.services.TTLService;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,13 +46,15 @@ class StorageServiceImplTest {
   private PnSafeStorageClient safeStorageClient;
   @Mock
   private StorageDao storageDao;
+  @Mock
+  private TTLService ttlService;
 
   private StorageService service;
 
 
   @BeforeEach
   void setUp() {
-    this.service = new StorageServiceImpl(safeStorageClient, storageDao);
+    this.service = new StorageServiceImpl(safeStorageClient, storageDao, ttlService);
   }
 
 

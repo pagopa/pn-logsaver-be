@@ -142,6 +142,11 @@ Parameters:
     Type: String
     Description: Manual batch log group name
 
+  AuditStorageOffsetDuration:
+    Type: String
+    Description: "[AuditStorage] Offset used for deleting logs on RetentionType code"
+    Default: '1h'
+
 Resources:
 
   ## Compute Environment

@@ -40,6 +40,9 @@ Resources:
     DeletionPolicy: Retain     
     Properties:
       TableName: !Sub '${ProjectName}-AuditStorage'
+      TimeToLiveSpecification:
+        AttributeName: 'expiration'
+        Enabled: true
       AttributeDefinitions:
         - AttributeName: "type"
           AttributeType: "S"
