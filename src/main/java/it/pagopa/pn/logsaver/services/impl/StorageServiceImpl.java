@@ -105,6 +105,7 @@ public class StorageServiceImpl implements StorageService {
               Optional<BigDecimal> bigDecimal = ttlService.calculateExpiration(ret);
               if (bigDecimal.isPresent()) {
                 entity.setExpiration(bigDecimal.get());
+                log.info("Set expiration for retention {} to {}", ret.name(), bigDecimal.get());
               }
             }
     );
