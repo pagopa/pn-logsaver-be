@@ -99,16 +99,14 @@ public class StorageServiceImpl implements StorageService {
 
     List<AuditStorageEntity> auditStoredEntity =
             auditStored.stream().map(AuditStorageMapper::toEntity).collect(Collectors.toList());
-    auditStoredEntity.forEach(
-            entity -> {
-              Retention ret = Retention.valueOf(entity.getRetention());
-              Optional<BigDecimal> bigDecimal = ttlService.calculateExpiration(ret);
-              if (bigDecimal.isPresent()) {
-                entity.setExpiration(bigDecimal.get());
-                log.info("Set expiration for retention {} to {}", ret.name(), bigDecimal.get());
-              }
-            }
-    );
+
+    auditStoredEntity.forEach(entity -> {
+      Retention ret = Retention.valueOf(entity.getRetention());
+      ttlService.calculateExpiration(ret).ifPresent(expiration -> {
+        entity.setExpiration(expiration);
+        log.info("Set expiration for retention {} to {}", ret.name(), expiration);
+      });
+    });
 
     log.info("AuditStoredEntity List size {}", auditStoredEntity.size());
     log.info("Update log-saver execution");

@@ -4,7 +4,6 @@ import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,7 +15,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class TTLService {
-    private final ConversionService conversionService;
     private final LogSaverCfg cfg;
 
     public Optional<BigDecimal> calculateExpiration(Retention retention) {
@@ -24,7 +22,7 @@ public class TTLService {
             return Optional.empty();
         }
 
-        Duration retentionDuration = conversionService.convert(retention.getCode(), Duration.class);
+        Duration retentionDuration = retention.getDuration();
         Duration offsetDuration = ((cfg.getAuditStorageOffsetDuration() == null ) ? Duration.ofSeconds(-1) : cfg.getAuditStorageOffsetDuration());
 
         assert retentionDuration != null;
