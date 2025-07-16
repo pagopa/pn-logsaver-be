@@ -84,7 +84,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       workList.stream().map(this::dailySaver).collect(toCollection(() -> resList));
       log.info("Processing previous days finished");
     }else{
-      log.info("There are NOT days to be processed.");
+      log.info("There are NOT days to be processed. Last continuos date: {}", lastContExecDate);
     }
 
 
