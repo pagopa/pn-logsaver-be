@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 @UtilityClass
 public class StorageDaoLogicSupport {
 
-  private static BigDecimal getExpirationByAuditList(List<AuditStorageEntity> auditList) {
+  private static BigDecimal getExpirationByAuditList(List<AuditStorageEntity> auditList, Duration offsetDuration) {
     AtomicReference<Duration> maxDuration = new AtomicReference<>(Duration.ZERO);
     auditList.forEach(audit -> {
       Duration duration = Retention.valueOf(audit.getRetention()).getDuration();
@@ -35,15 +35,15 @@ public class StorageDaoLogicSupport {
     });
 
     return BigDecimal.valueOf(OffsetDateTime.now()
-            .plus(maxDuration.get())
+            .plus(maxDuration.get()).plus(offsetDuration)
             .toInstant()
             .getEpochSecond());
   }
 
 
-  public static ExecutionEntity from(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types) {
+  public static ExecutionEntity from(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Duration offsetDuration) {
     return ExecutionEntity.builder()
-      .expiration(getExpirationByAuditList(auditList))
+      .expiration(getExpirationByAuditList(auditList, offsetDuration))
       .logDate(DateUtils.format(logDate))
       .retentionResult(AuditStorageMapper.toResultExecution(auditList))
       .logFileTypes(LogFileType.valuesAsString(types)).build();

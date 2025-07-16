@@ -23,7 +23,7 @@ public class TTLService {
         }
 
         Duration retentionDuration = retention.getDuration();
-        Duration offsetDuration = ((cfg.getAuditStorageOffsetDuration() == null ) ? Duration.ofSeconds(-1) : cfg.getAuditStorageOffsetDuration());
+        Duration offsetDuration = getOffsetDuration();
 
         assert retentionDuration != null;
         if (!offsetDuration.isNegative()) {
@@ -38,5 +38,9 @@ public class TTLService {
             log.info("Offset duration is negative or not set, returning empty TTL for retention: {}", retention);
             return Optional.empty();
         }
+    }
+
+    public Duration getOffsetDuration() {
+        return (cfg.getAuditStorageOffsetDuration() == null) ? Duration.ofSeconds(-1) : cfg.getAuditStorageOffsetDuration();
     }
 }

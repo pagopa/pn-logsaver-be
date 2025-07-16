@@ -76,7 +76,7 @@ public class StorageDaoInMemoryImpl implements StorageDao {
   public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Boolean continuousExecutionUpdate) {
     LocalDate lastContinuosExecutionReg = getLatestContinuosExecution();
 
-    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types);
+    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types, null);
 
     if (    !StorageDaoLogicSupport.hasErrors(newExecution) &&
             Duration.between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1 &&

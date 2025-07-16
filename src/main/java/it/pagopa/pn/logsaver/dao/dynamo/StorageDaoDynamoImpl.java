@@ -10,6 +10,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
+
+import it.pagopa.pn.logsaver.services.TTLService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.config.ClApplicationArguments;
@@ -51,6 +53,8 @@ public class StorageDaoDynamoImpl implements StorageDao {
   private DynamoDbTable<AuditStorageEntity> auditStorageTable;
   private DynamoDbTable<ExecutionEntity> executionTable;
   private DynamoDbTable<ContinuosExecutionEntity> continuosExecutionTable;
+
+  private final TTLService ttlService;
 
   @PostConstruct
   void init() {
@@ -148,8 +152,11 @@ public class StorageDaoDynamoImpl implements StorageDao {
     // Se si ha la necesssità di aaumentare il numero di righe per transazione, monitorare eventuali
     // limiti
 
+    Duration offsetDuration = ttlService.getOffsetDuration();
     // Riga dettaglio esecuzione
-    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types);
+    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types, offsetDuration);
+    log.info("New execution for date {} - Offset: {} - entity: {}", logDate, offsetDuration, newExecution);
+
     ExecutionEntity oldExecution = getExecution(logDate);
     if (Objects.nonNull(oldExecution)) {
       newExecution.setRetentionResult(StorageDaoLogicSupport.mergeRetentionResult(
