@@ -1,16 +1,12 @@
 package it.pagopa.pn.logsaver.services.impl;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
@@ -93,8 +89,8 @@ public class StorageServiceImpl implements StorageService {
   }
 
   @Override
-  public List<AuditStorage> store(List<AuditFile> files, DailyContextCfg ctx, boolean continuousExecutionUpdate) {
-    log.info("Start store() with filesList size {}, DailyContext {}, continuousExecutionUpdate {}", files.size(), ctx, continuousExecutionUpdate);
+  public List<AuditStorage> store(List<AuditFile> files, DailyContextCfg ctx, boolean dailySaverSource) {
+    log.info("Start store() with filesList size {}, DailyContext {}, dailySaverSource {}", files.size(), ctx, dailySaverSource);
     List<AuditStorage> auditStored = files.stream().map(this::send).collect(Collectors.toList());
 
     List<AuditStorageEntity> auditStoredEntity =
@@ -102,7 +98,7 @@ public class StorageServiceImpl implements StorageService {
 
     auditStoredEntity.forEach(entity -> {
       Retention ret = Retention.valueOf(entity.getRetention());
-      ttlService.calculateExpiration(ret).ifPresent(expiration -> {
+      ttlService.calculateExpiration(ret, dailySaverSource, entity.getLogDate()).ifPresent(expiration -> {
         entity.setExpiration(expiration);
         log.info("Set expiration for retention {} to {}", ret.name(), expiration);
       });
@@ -110,7 +106,7 @@ public class StorageServiceImpl implements StorageService {
 
     log.info("AuditStoredEntity List size {}", auditStoredEntity.size());
     log.info("Update log-saver execution");
-    storageDao.updateExecution(auditStoredEntity, ctx.logDate(), ctx.logFileTypes(), continuousExecutionUpdate);
+    storageDao.updateExecution(auditStoredEntity, ctx.logDate(), ctx.logFileTypes(), dailySaverSource);
 
     return auditStored;
   }

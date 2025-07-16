@@ -9,13 +9,13 @@ import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
+import it.pagopa.pn.logsaver.services.TTLService;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.experimental.UtilityClass;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 @UtilityClass
 public class StorageDaoLogicSupport {
 
-  private static BigDecimal getExpirationByAuditList(List<AuditStorageEntity> auditList, Duration offsetDuration) {
+  private static BigDecimal getExpirationByAuditList(List<AuditStorageEntity> auditList, Duration offsetDuration, boolean dailySaverSource, LocalDate logDate) {
     AtomicReference<Duration> maxDuration = new AtomicReference<>(Duration.ZERO);
     auditList.forEach(audit -> {
       Duration duration = Retention.valueOf(audit.getRetention()).getDuration();
@@ -34,16 +34,16 @@ public class StorageDaoLogicSupport {
       }
     });
 
-    return BigDecimal.valueOf(OffsetDateTime.now()
+    return BigDecimal.valueOf(TTLService.getDurationBase( dailySaverSource, logDate)
             .plus(maxDuration.get()).plus(offsetDuration)
             .toInstant()
             .getEpochSecond());
   }
 
 
-  public static ExecutionEntity from(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Duration offsetDuration) {
+  public static ExecutionEntity from(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Duration offsetDuration, boolean dailySaverSource) {
     return ExecutionEntity.builder()
-      .expiration(getExpirationByAuditList(auditList, offsetDuration))
+      .expiration(getExpirationByAuditList(auditList, offsetDuration, dailySaverSource, logDate))
       .logDate(DateUtils.format(logDate))
       .retentionResult(AuditStorageMapper.toResultExecution(auditList))
       .logFileTypes(LogFileType.valuesAsString(types)).build();

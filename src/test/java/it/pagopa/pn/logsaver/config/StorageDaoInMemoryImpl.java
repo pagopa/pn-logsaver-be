@@ -73,14 +73,14 @@ public class StorageDaoInMemoryImpl implements StorageDao {
   }
 
   @Override
-  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Boolean continuousExecutionUpdate) {
+  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Boolean dailySaverSource) {
     LocalDate lastContinuosExecutionReg = getLatestContinuosExecution();
 
-    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types, null);
+    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types, null, dailySaverSource);
 
     if (    !StorageDaoLogicSupport.hasErrors(newExecution) &&
             Duration.between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1 &&
-            continuousExecutionUpdate) {
+            dailySaverSource) {
 
       // Determino la data esecuzione continua
       List<ExecutionEntity> execList = this.getExecutionBetween(logDate, logDate);

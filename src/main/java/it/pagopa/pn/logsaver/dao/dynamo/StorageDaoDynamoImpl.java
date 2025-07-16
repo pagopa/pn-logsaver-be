@@ -147,14 +147,14 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
   @Override
-  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Boolean continuousExecutionUpdate) {
+  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Boolean dailySaverSource) {
 
     // Se si ha la necesssità di aaumentare il numero di righe per transazione, monitorare eventuali
     // limiti
 
     Duration offsetDuration = ttlService.getOffsetDuration();
     // Riga dettaglio esecuzione
-    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types, offsetDuration);
+    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types, offsetDuration, dailySaverSource);
     log.info("New execution for date {} - Offset: {} - entity: {}", logDate, offsetDuration, newExecution);
 
     ExecutionEntity oldExecution = getExecution(logDate);
@@ -173,7 +173,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
     // Tutti i file sono stati inviati
     // se la differenza tra la logDate e la data ultima esecuzione continua è 1
     if (!StorageDaoLogicSupport.hasErrors(newExecution) && Duration
-        .between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1 && continuousExecutionUpdate) {
+        .between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1 && dailySaverSource) {
 
       // Determino la data esecuzione continua
       List<ExecutionEntity> execList = this.executionFrom(logDate);

@@ -30,7 +30,7 @@ class TTLServiceTest {
         when(cfg.getAuditStorageOffsetDuration()).thenReturn(Duration.ofDays(120));
         Retention retention = Retention.AUDIT10Y;
 
-        Optional<BigDecimal> resultOpt = ttlService.calculateExpiration(retention);
+        Optional<BigDecimal> resultOpt = ttlService.calculateExpiration(retention, true, null);
 
         assertTrue(resultOpt.isPresent());
         long nowEpoch = OffsetDateTime.now().toEpochSecond();
@@ -44,7 +44,7 @@ class TTLServiceTest {
     void testCalculateExpiration_withNullOffset_shouldReturnEmpty() {
         when(cfg.getAuditStorageOffsetDuration()).thenReturn(null);  // offset assente
         Retention retention = Retention.AUDIT10Y;
-        Optional<BigDecimal> result = ttlService.calculateExpiration(retention);
+        Optional<BigDecimal> result = ttlService.calculateExpiration(retention, true, null);
         assertFalse(result.isPresent(), "Expected empty result when offset is null");
     }
 }

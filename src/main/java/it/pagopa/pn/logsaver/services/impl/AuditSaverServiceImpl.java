@@ -2,8 +2,6 @@ package it.pagopa.pn.logsaver.services.impl;
 
 import static java.util.stream.Collectors.toCollection;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
@@ -11,7 +9,6 @@ import java.util.stream.Stream;
 
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
-import it.pagopa.pn.logsaver.utils.FilesUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.config.LogSaverCfg;
