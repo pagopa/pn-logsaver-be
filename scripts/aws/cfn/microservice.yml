@@ -244,6 +244,8 @@ Resources:
             Value: !Ref LogSaverDynamoTableName
           - Name: LOGSAVER_EXPORTMAXFILESIZE
             Value: !Ref LogSaverExportMaxFileSize
+          - Name: LOGSAVER_AUDITSTORAGE_OFFSETDURATION
+            Value: !Ref AuditStorageOffsetDuration
       PlatformCapabilities:
         - FARGATE
       Tags:
@@ -309,6 +311,8 @@ Resources:
             Value: !Ref LogsBucketName
           - Name: AWS_DYNAMODBTABLENAME
             Value: !Ref LogSaverDynamoTableName
+          - Name: LOGSAVER_AUDITSTORAGE_OFFSETDURATION
+            Value: !Ref AuditStorageOffsetDuration
       PlatformCapabilities:
         - FARGATE
       Tags:
