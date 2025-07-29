@@ -64,10 +64,10 @@ public class S3BucketClientImpl implements S3BucketClient {
   public Stream<String> findSubFoldersWithPrefix(String pathPrefix, String subFolderPrefix, String suffix) {
     log.debug("Call s3 bucket for list subfolders between  {} and {} ", pathPrefix, suffix);
     ListObjectsV2Response response = clientS3.listObjectsV2(ListObjectsV2Request.builder()
-            .bucket(awsCfg.getS3BucketName()).prefix(safeConcatsPath(pathPrefix,subFolderPrefix)).delimiter("/").build());
+            .bucket(awsCfg.getS3BucketName()).prefix(pathPrefix.concat(subFolderPrefix)).delimiter("/").build());
     return response.commonPrefixes().stream()
             .map(item -> StringUtils.removeStart(item.prefix(), pathPrefix))
-            .map(item -> StringUtils.removeEnd(item, "/".concat(suffix)));
+            .map(item -> StringUtils.removeEnd(item, "/"));
   }
 
 
@@ -86,9 +86,5 @@ public class S3BucketClientImpl implements S3BucketClient {
   }
 
 
-  private String safeConcatsPath(String base, String suffix) {
-    String cleanBase = StringUtils.removeEnd(base, "/");
-    String cleanSuffix = StringUtils.removeStart(suffix, "/");
-    return cleanBase+"/"+cleanSuffix;
-  }
+
 }
