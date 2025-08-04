@@ -152,10 +152,9 @@ Parameters:
     Description: "Property che specifica l’elenco delle tabelle da analizzare dal batch log-saver 
             per eseguire una scansione su S3.
             Può assumere tre valori:
-              - la sola stringa “ALL”: significa che deve selezionare TUTTE le tabelle
-              - la sola stringa “NONE”: significa che non deve selezionare alcuna tabella
-              - <elenco di tabelle>: significa che deve selezionare delle tabelle specifiche
-            "
+              - la sola stringa 'ALL': significa che deve selezionare TUTTE le tabelle
+              - la sola stringa 'NONE': significa che non deve selezionare alcuna tabella
+              - <elenco di tabelle>: significa che deve selezionare delle tabelle specifiche"
     Default: 'NONE'
 
 Resources:
@@ -257,7 +256,7 @@ Resources:
             Value: !Ref LogSaverExportMaxFileSize
           - Name: LOGSAVER_AUDITSTORAGE_OFFSETDURATION
             Value: !Ref AuditStorageOffsetDuration
-          - Name: LOGSAVER_CDC_TABLESNAME_TOSCAN
+          - Name: LOGSAVER_CDC_TABLES
             Value: !Ref CdcTables
       PlatformCapabilities:
         - FARGATE
@@ -326,7 +325,7 @@ Resources:
             Value: !Ref LogSaverDynamoTableName
           - Name: LOGSAVER_AUDITSTORAGE_OFFSETDURATION
             Value: !Ref AuditStorageOffsetDuration
-          - Name: LOGSAVER_CDC_TABLESNAME_TOSCAN
+          - Name: LOGSAVER_CDC_TABLES
             Value: !Ref CdcTables
       PlatformCapabilities:
         - FARGATE
