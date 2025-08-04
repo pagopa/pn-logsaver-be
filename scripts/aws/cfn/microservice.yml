@@ -156,7 +156,7 @@ Parameters:
               - la sola stringa “NONE”: significa che non deve selezionare alcuna tabella
               - <elenco di tabelle>: significa che deve selezionare delle tabelle specifiche
             "
-    Default: ''
+    Default: 'NONE'
 
 Resources:
 
