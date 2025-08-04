@@ -64,6 +64,7 @@ class LogFileReaderServiceImplTest {
   void mockCfgBase() {
     when(cfg.getLogsRootPathTemplate()).thenReturn("'logs/ecs/%s/'yyyy/MM/dd");
     when(cfg.getCdcRootPathTemplate()).thenReturn("'cdc/%s/'yyyy/MM/dd");
+    when(cfg.getCdcTables()).thenReturn(List.of("NONE"));
   }
 
   void mockCfgBaseWithPrefix() {
