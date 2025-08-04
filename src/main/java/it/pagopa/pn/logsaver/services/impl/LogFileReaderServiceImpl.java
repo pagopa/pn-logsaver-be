@@ -45,12 +45,11 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
     log.info("Start search subfolders for log file {}.", type.name());
 
     List<String> subFolderListCfg =
-        LogFileType.CDC == type ? cfg.getCdcTables() : cfg.getLogsMicroservice();
+        LogFileType.CDC == type ? this.getCdcTables() : cfg.getLogsMicroservice();
 
     if ( LogFileType.LOGS == type ){
       return subFolderListCfg.stream();
     } else {
-      if (subFolderListCfg != null && !subFolderListCfg.isEmpty()) {
         if (subFolderListCfg.get(0).equals(S3_SUBFOLDER_TO_SCAN_NONE)) {
           log.info("CDC tables non configurate: nessuna scansione verrà eseguita.");
           return Stream.empty(); // Non fa nessuna scansione, torna uno stream vuoto
@@ -59,8 +58,6 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
         } else {
           return subFolderListCfg.stream();
         }
-      }else
-        return Stream.empty();
     }
   }
 
@@ -143,5 +140,9 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
     return String.format(logDate.format(DateTimeFormatter.ofPattern(dailyTmpPattern)), subFolder);
   }
 
+
+  public List<String> getCdcTables() {
+      return (cfg.getCdcTables() == null || cfg.getCdcTables().isEmpty()) ? List.of("NONE") : cfg.getCdcTables();
+  }
 
 }
