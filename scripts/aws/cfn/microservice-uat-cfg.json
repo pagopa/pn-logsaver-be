@@ -13,6 +13,6 @@
     "MaxvCpus": "2",
     "LogSaverExportMaxFileSize": "2MB",
     "AuditStorageOffsetDuration": "1h",
-    "CdcTablesNameToScan": "NONE"
+    "CdcTables": "NONE"
   }
 }

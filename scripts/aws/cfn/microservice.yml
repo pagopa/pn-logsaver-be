@@ -147,7 +147,7 @@ Parameters:
     Description: "[AuditStorage] Offset used for deleting logs on RetentionType code"
     Default: '1h'
 
-  CdcTablesNameToScan:
+  CdcTables:
     Type: String
     Description: "Property che specifica l’elenco delle tabelle da analizzare dal batch log-saver 
             per eseguire una scansione su S3.
@@ -258,7 +258,7 @@ Resources:
           - Name: LOGSAVER_AUDITSTORAGE_OFFSETDURATION
             Value: !Ref AuditStorageOffsetDuration
           - Name: LOGSAVER_CDC_TABLESNAME_TOSCAN
-            Value: !Ref CdcTablesNameToScan
+            Value: !Ref CdcTables
       PlatformCapabilities:
         - FARGATE
       Tags:
@@ -327,7 +327,7 @@ Resources:
           - Name: LOGSAVER_AUDITSTORAGE_OFFSETDURATION
             Value: !Ref AuditStorageOffsetDuration
           - Name: LOGSAVER_CDC_TABLESNAME_TOSCAN
-            Value: !Ref CdcTablesNameToScan
+            Value: !Ref CdcTables
       PlatformCapabilities:
         - FARGATE
       Tags:
