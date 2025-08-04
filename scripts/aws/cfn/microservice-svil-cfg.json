@@ -12,6 +12,7 @@
     "BatchJobMaxAttempts": "1",
     "MaxvCpus": "2",
     "LogSaverExportMaxFileSize": "2MB",
-    "AuditStorageOffsetDuration": "1h"
+    "AuditStorageOffsetDuration": "1h",
+    "CdcTablesNameToScan": ""
   }
 }

@@ -37,25 +37,38 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
   private final StorageDao storageDao;
   private final StorageService storageService;
 
+  private final static String S3_SUBFOLDER_TO_SCAN_NONE = "NONE";
+  private final static String S3_SUBFOLDER_TO_SCAN_ALL = "ALL";
 
 
-    private Stream<String> findSubfolders(LogFileType type, LocalDate logDate) {
+  private Stream<String> findSubfolders(LogFileType type, LocalDate logDate) {
     log.info("Start search subfolders for log file {}.", type.name());
 
     List<String> subFolderListCfg =
         LogFileType.CDC == type ? cfg.getCdcTables() : cfg.getLogsMicroservice();
 
-    if (subFolderListCfg.isEmpty()) {// Ricerca delle subFolders su S3
-      return findSubfoldersS3(type, logDate);
+    if ( LogFileType.LOGS == type ){
+      return subFolderListCfg.stream();
+    } else {
+      if (subFolderListCfg != null && !subFolderListCfg.isEmpty()) {
+        if (subFolderListCfg.get(0).equals(S3_SUBFOLDER_TO_SCAN_NONE)) {
+          log.info("CDC tables non configurate: nessuna scansione verrà eseguita.");
+          return Stream.empty(); // Non fa nessuna scansione, torna uno stream vuoto
+        } else if (subFolderListCfg.get(0).equals(S3_SUBFOLDER_TO_SCAN_ALL)) { // Ricerca delle subFolders su S3
+          return findSubfoldersS3(type, logDate);
+        } else {
+          return subFolderListCfg.stream();
+        }
+      }else
+        return Stream.empty();
     }
-    return subFolderListCfg.stream();
   }
 
   /**
    * Metodo per la ricerca di subFolders su S3. Recupera il pathPrefix del path S3 ed il subFolderPrefix del
    * folder oggetto della ricerca dal file di configurazione.
-   * @param LogFileType type: tipo di log (CDC o LOGS)
-   * @param LocalDate logDate: data del log
+   * @param type LogFileType: tipo di log (CDC o LOGS)
+   * @param logDate LocalDate: data del log
    * @return Stream<String>: stream di subFolders
    */
   private Stream<String> findSubfoldersS3(LogFileType type, LocalDate logDate) {
@@ -64,11 +77,22 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
         .replace("'", "").concat("/");
     List<String> subFolderList = clientS3
         .findSubFolders(subFolderFilter, DateUtils.getYear(logDate)).collect(Collectors.toList());*/
+
+    //'cdcTos3/%s/'yyyy/MM/dd
 	  String pathPrefix = StringUtils.substringBefore(
 		        LogFileType.CDC == type ? cfg.getCdcRootPathTemplate() : cfg.getLogsRootPathTemplate(), "/")
 		        .replace("'", "").concat("/");
-	  String subFolderPrefix = LogFileType.CDC == type ? cfg.getCdcTablesPrefix() : "";
-	  List<String> subFolderList = clientS3
+
+      //TABLE_NAME_
+      String subFolderPrefix = LogFileType.CDC == type ? cfg.getCdcTablesPrefix() : "";
+
+    if(LogFileType.CDC == type ) {
+      pathPrefix = pathPrefix.substring(0, pathPrefix.indexOf("/")+1);
+      subFolderPrefix = "";
+    }
+    log.info("pathPrefix :: {} " , pathPrefix);
+
+    List<String> subFolderList = clientS3
             .findSubFoldersWithPrefix(pathPrefix, subFolderPrefix, DateUtils.getYear(logDate)).collect(Collectors.toList());
 	  if (subFolderList.isEmpty()) {
 		  return Stream.of("");
@@ -104,6 +128,8 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
   private Stream<LogFileReference> handleLogFileReference(String subFolder, LogFileType type,
       LocalDate logDate) {
 
+    if(LogFileType.CDC == type && subFolder.isEmpty())
+      return Stream.empty();
     String prefix = handleDailyPrefix(subFolder, type, logDate);
     log.info("Search {} log files for subfolder {}", type.name(), prefix);
     Stream<S3Object> objList = clientS3.findObjects(prefix);
