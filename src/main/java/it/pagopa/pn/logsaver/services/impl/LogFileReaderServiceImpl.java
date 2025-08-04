@@ -48,6 +48,9 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
         LogFileType.CDC == type ? this.getCdcTables() : cfg.getLogsMicroservice();
 
     if ( LogFileType.LOGS == type ){
+      if (subFolderListCfg.isEmpty()) {// Ricerca delle subFolders su S3
+        return findSubfoldersS3(type, logDate);
+      }
       return subFolderListCfg.stream();
     } else {
         if (subFolderListCfg.get(0).equals(S3_SUBFOLDER_TO_SCAN_NONE)) {
@@ -75,20 +78,20 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
     List<String> subFolderList = clientS3
         .findSubFolders(subFolderFilter, DateUtils.getYear(logDate)).collect(Collectors.toList());*/
 
-    //'cdcTos3/%s/'yyyy/MM/dd
+    // getCdcRootPathTemplate : 'cdcTos3/%s/'yyyy/MM/dd  --> pathPrefix : cdcTos3/
+    //                        : 'logsTos3/'yyyy/MM/dd    --> pathPrefix : logsTos3/
 	  String pathPrefix = StringUtils.substringBefore(
 		        LogFileType.CDC == type ? cfg.getCdcRootPathTemplate() : cfg.getLogsRootPathTemplate(), "/")
 		        .replace("'", "").concat("/");
 
-      //TABLE_NAME_
+      // getCdcTablesPrefix : TABLE_NAME_
       String subFolderPrefix = LogFileType.CDC == type ? cfg.getCdcTablesPrefix() : "";
 
-    if(LogFileType.CDC == type ) {
-      pathPrefix = pathPrefix.substring(0, pathPrefix.indexOf("/")+1);
+  /*  if(LogFileType.CDC == type ) {
+      //pathPrefix = pathPrefix.substring(0, pathPrefix.indexOf("/")+1);
       subFolderPrefix = "";
     }
-    log.info("pathPrefix :: {} " , pathPrefix);
-
+  */
     List<String> subFolderList = clientS3
             .findSubFoldersWithPrefix(pathPrefix, subFolderPrefix, DateUtils.getYear(logDate)).collect(Collectors.toList());
 	  if (subFolderList.isEmpty()) {
