@@ -19,7 +19,7 @@ public class LogSaverCfg {
   @Value("${log-saver.logs-root-path-template}")
   private String logsRootPathTemplate;
 
-  @Value("${log-saver.logs-microservice}#{T(java.util.Collections).emptyList()}")
+  @Value("${log-saver.logs-microservice:#{T(java.util.Collections).emptyList()}")
   private List<String> logsMicroservice;
 
   @Value("${log-saver.cdc-root-path-template}")
