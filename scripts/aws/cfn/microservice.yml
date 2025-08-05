@@ -149,7 +149,7 @@ Parameters:
 
   CdcTables:
     Type: String
-    Default: 'NONE'
+    Default: 'ALL'
     Description: 'List of tables to be analyzed from the batch log-saver to perform a scan on S3'
            ##  Può assumere tre valori:
            ##    - la sola stringa 'ALL': significa che deve selezionare TUTTE le tabelle

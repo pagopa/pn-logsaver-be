@@ -25,7 +25,7 @@ public class LogSaverCfg {
   @Value("${log-saver.cdc-root-path-template}")
   private String cdcRootPathTemplate;
 
-  @Value("${log-saver.cdc-tables:#{T(java.util.List).of('NONE')}}")
+  @Value("${log-saver.cdc-tables:#{T(java.util.List).of('ALL')}}")
   private List<String> cdcTables;
 
   @Value("${log-saver.export-max-file-size:5MB}")
