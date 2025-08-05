@@ -87,13 +87,13 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
       // getCdcTablesPrefix : TABLE_NAME_
       String subFolderPrefix = LogFileType.CDC == type ? cfg.getCdcTablesPrefix() : "";
 
-  /*  if(LogFileType.CDC == type ) {
+    if(LogFileType.CDC == type ) {
       //pathPrefix = pathPrefix.substring(0, pathPrefix.indexOf("/")+1);
       subFolderPrefix = "";
     }
-  */
+
     List<String> subFolderList = clientS3
-            .findSubFoldersWithPrefix(pathPrefix, subFolderPrefix, DateUtils.getYear(logDate)).collect(Collectors.toList());
+            .findSubFoldersWithPrefix(pathPrefix, subFolderPrefix).collect(Collectors.toList());
 	  if (subFolderList.isEmpty()) {
 		  return Stream.of("");
 	  }

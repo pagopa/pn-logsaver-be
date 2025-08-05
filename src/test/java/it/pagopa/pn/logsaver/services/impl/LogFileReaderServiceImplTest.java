@@ -1,8 +1,7 @@
 package it.pagopa.pn.logsaver.services.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -11,13 +10,18 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.services.StorageService;
+import it.pagopa.pn.logsaver.utils.DateUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.assertj.core.api.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -73,6 +77,78 @@ class LogFileReaderServiceImplTest {
     when(cfg.getCdcTablesPrefix()).thenReturn("");
   }
 
+  @Test
+  void getCdcTablesConfiguration(){
+    System.out.println("PARAMETER CdcTables: " + cfg.getCdcTables());
+    when(cfg.getCdcTables()).thenReturn(List.of(TestCostant.S3_SUBFOLDER_TO_SCAN_ALL) );
+    System.out.println("PARAMETER CdcTables: " + cfg.getCdcTables());
+    assertNotNull(cfg.getCdcTables());
+
+    when(cfg.getCdcTablesPrefix()).thenReturn("TABLE_NAME_");
+
+    Stream<String> stream = this.findSubfolders(LogFileType.CDC, LocalDate.of(2023, 8, 4));
+    System.out.println("stream : " + stream.toList());
+    Assertions.assertEquals(cfg.getCdcTablesPrefix(), "TABLE_NAME_");
+  }
+
+  private Stream<String> findSubfolders(LogFileType type, LocalDate logDate) {
+    System.out.println("Start search subfolders for log file " + type.name());
+
+    List<String> subFolderListCfg =
+            LogFileType.CDC == type ? this.getCdcTables() : cfg.getLogsMicroservice();
+
+    if ( LogFileType.LOGS == type ){
+      if (subFolderListCfg.isEmpty()) {// Ricerca delle subFolders su S3
+        return findSubfoldersS3(type, logDate);
+      }
+      return subFolderListCfg.stream();
+    } else {
+      if (subFolderListCfg.get(0).equals("NONE")) {
+        System.out.println("CDC tables non configurate: nessuna scansione verrà eseguita.");
+        return Stream.empty(); // Non fa nessuna scansione, torna uno stream vuoto
+      } else if (subFolderListCfg.get(0).equals("ALL")) { // Ricerca delle subFolders su S3
+        System.out.println("Ricerca di tutte le subFolders su S3");
+        return findSubfoldersS3(type, logDate);
+      } else {
+        return subFolderListCfg.stream();
+      }
+    }
+  }
+
+  private List<String> getCdcTables() {
+    return (cfg.getCdcTables() == null || cfg.getCdcTables().isEmpty()) ? List.of("NONE") : cfg.getCdcTables();
+  }
+
+  private Stream<String> findSubfoldersS3(LogFileType type, LocalDate logDate) {
+    // getCdcRootPathTemplate : 'cdcTos3/%s/'yyyy/MM/dd  --> pathPrefix : cdcTos3/
+    //                        : 'logsTos3/'yyyy/MM/dd    --> pathPrefix : logsTos3/
+    String pathPrefix = StringUtils.substringBefore(
+                    LogFileType.CDC == type ? "'cdcTos3/%s/'yyyy/MM/dd" : "'logsTos3/'yyyy/MM/dd", "/")
+            .replace("'", "").concat("/");
+System.out.println("pathPrefix: " + pathPrefix);
+    // getCdcTablesPrefix : TABLE_NAME_
+     String subFolderPrefix = LogFileType.CDC == type ? cfg.getCdcTablesPrefix() : "";
+    if(LogFileType.CDC == type ) {
+      //pathPrefix = pathPrefix.substring(0, pathPrefix.indexOf("/")+1);
+      subFolderPrefix = "";
+    }
+
+    System.out.println("subFolderPrefix: " + subFolderPrefix);
+    System.out.println("DateUtils.getYear(logDate)): " + DateUtils.getYear(logDate));
+    System.out.println("pathPrefix.concat(subFolderPrefix) : {} " + pathPrefix.concat(subFolderPrefix));
+
+
+    List<String> subFolderList = clientS3.findSubFoldersWithPrefix(pathPrefix, subFolderPrefix).collect(Collectors.toList());
+    System.out.println("subFolderList: " + subFolderList);
+    if (subFolderList.isEmpty()) {
+      return Stream.of("");
+    }
+    return subFolderList.stream();
+
+    //return Stream.of("");
+  }
+
+
 /*
   @Test
   void findItems_WithTableAndMicroserviceByCfg() {
@@ -80,7 +156,7 @@ class LogFileReaderServiceImplTest {
     List<S3Object> mockResList = List.of(S3Object.builder().key(TestCostant.S3_KEY).build());
     int expFindObjectInvocation = expectedPrefix.size() * mockResList.size();
 
-      when(cfg.getCdcTables()).thenReturn(List.of(TestCostant.S3_SUBFOLDER_TO_SCAN_ALL) ); //TABLES);
+      when(cfg.getCdcTables()).thenReturn(List.of(TestCostant.S3_SUBFOLDER_TO_SCAN_NONE) ); //TABLES);
     when(cfg.getLogsMicroservice()).thenReturn(TestCostant.MICROSERVICES);
     when(clientS3.findObjects(anyString()))
         .thenAnswer((InvocationOnMock invocation) -> mockResList.stream());
@@ -112,7 +188,7 @@ class LogFileReaderServiceImplTest {
     List<S3Object> mockResList = List.of(S3Object.builder().key(TestCostant.S3_KEY).build());
     int expFindObjectInvocation = expectedPrefix.size() * mockResList.size();
 
-    when(cfg.getCdcTables()).thenReturn(List.of());
+    when(cfg.getCdcTables()).thenReturn(List.of("NONE"));
     when(cfg.getLogsMicroservice()).thenReturn(List.of());
     when(clientS3.findObjects(anyString()))
         .thenAnswer((InvocationOnMock invocation) -> mockResList.stream());
