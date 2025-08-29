@@ -108,12 +108,19 @@ class S3BucketClientImplTest {
 
 
     List<String> resList = client.findSubFoldersWithPrefix("cdcTos3/", "TABLE_NAME_","2023").collect(Collectors.toList());
+    //List<String> resList1 = client.findSubFoldersWithPrefix("cdcTos3/", "").collect(Collectors.toList());
 
     verify(clientS3, times(1)).listObjectsV2(any(ListObjectsV2Request.class));
     assertEquals(3, resList.size());
+    System.out.println("stream : " + resList.get(0).toString());
+    System.out.println("stream : " + resList.get(1).toString());
+    System.out.println("stream : " + resList.get(2).toString());
     assertTrue(resList.contains("TABLE_NAME_pn-AuditStorage"));
     assertTrue(resList.contains("TABLE_NAME_pn-Mandate"));
     assertTrue(resList.contains("TABLE_NAME_pn-UserAttributes"));
+    //assertTrue(resList.contains("TABLE_NAME_pn-AuditStorage/2023"));
+    //assertTrue(resList.contains("TABLE_NAME_pn-Mandate/2023"));
+    //assertTrue(resList.contains("TABLE_NAME_pn-UserAttributes/2023"));
 
   }
 

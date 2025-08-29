@@ -35,6 +35,9 @@ public final class TestCostant {
   public static final List<String> TABLES =
       List.of("pnMandateCdc", "pnNotificationCdc", "pnTimelineCdc", "pnUserAttributesCdc");
 
+  public static final String S3_SUBFOLDER_TO_SCAN_ALL = "ALL";
+  public static final String S3_SUBFOLDER_TO_SCAN_NONE = "NONE";
+
   public static final List<String> EXPECTED_PREFIX = List.of("logs/ecs/pnDelivery/2022/07/11",
       "logs/ecs/pnDeliveryPush/2022/07/11", "logs/ecs/pnExternalRegistry/2022/07/11",
       "logs/ecs/pnMandate/2022/07/11", "logs/ecs/pnUserAttributes/2022/07/11",

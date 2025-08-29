@@ -11,6 +11,8 @@
     "RetentionExportTypes": "AUDIT10Y$PDF_SIGNED,AUDIT5Y$PDF_SIGNED",
     "BatchJobMaxAttempts": "1",
     "MaxvCpus": "2",
-    "LogSaverExportMaxFileSize": "2MB"
+    "LogSaverExportMaxFileSize": "2MB",
+    "AuditStorageOffsetDuration": "1h",
+    "CdcTables": "ALL"
   }
 }

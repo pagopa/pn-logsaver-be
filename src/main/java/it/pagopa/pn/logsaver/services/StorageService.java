@@ -3,6 +3,8 @@ package it.pagopa.pn.logsaver.services;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.function.UnaryOperator;
+
+import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.AuditDownloadReference;
@@ -13,6 +15,8 @@ import it.pagopa.pn.logsaver.model.StorageExecution;
 public interface StorageService {
 
   List<AuditStorage> store(List<AuditFile> files, DailyContextCfg cfg);
+
+  List<AuditStorage> store(List<AuditFile> files, DailyContextCfg cfg, boolean continuousExecutionUpdate);
 
   StorageExecution getLatestStorageExecution();
 
@@ -25,4 +29,6 @@ public interface StorageService {
   AuditDownloadReference dowloadAuditFile(AuditDownloadReference audit,
       UnaryOperator<AuditDownloadReference> downloadFunction);
 
+
+  List<AuditStorageEntity> findAuditStorageByResult(String result);
 }

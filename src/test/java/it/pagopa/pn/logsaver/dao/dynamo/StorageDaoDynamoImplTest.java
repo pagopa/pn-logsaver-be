@@ -16,6 +16,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import it.pagopa.pn.logsaver.services.TTLService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -69,6 +71,8 @@ class StorageDaoDynamoImplTest {
   private AwsConfigs awsCfg;
   @Mock
   private ClApplicationArguments args;
+  @Mock
+  private TTLService ttlService;
 
   @Captor
   private ArgumentCaptor<TransactWriteItemsEnhancedRequest> transacRequest;
@@ -94,7 +98,7 @@ class StorageDaoDynamoImplTest {
       }
     });
 
-    storageDao = new StorageDaoDynamoImpl(awsCfg, args, enhancedClient);
+    storageDao = new StorageDaoDynamoImpl(awsCfg, args, enhancedClient, ttlService);
     Method init = ReflectionUtils.findMethod(StorageDaoDynamoImpl.class, "init");
     ReflectionUtils.makeAccessible(init);
     ReflectionUtils.invokeMethod(init, storageDao);
@@ -249,7 +253,7 @@ class StorageDaoDynamoImplTest {
         AuditStorageEntity.builder().exportType(ExportType.PDF_SIGNED)
             .result(AuditStorageStatus.SENT.name()).logDate(TestCostant.LOGDATE.toString())
             .retention(Retention.DEVELOPER).build());
-    storageDao.updateExecution(auditFiles, TestCostant.LOGDATE, Set.of(LogFileType.values()));
+    storageDao.updateExecution(auditFiles, TestCostant.LOGDATE, Set.of(LogFileType.values()), true);
 
     TransactWriteItemsEnhancedRequest transac = transacRequest.getValue();
 

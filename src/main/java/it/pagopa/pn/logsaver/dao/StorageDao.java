@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
+import lombok.NonNull;
 
 
 public interface StorageDao {
@@ -18,8 +19,11 @@ public interface StorageDao {
 
   LocalDate getLatestContinuosExecution();
 
-  void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate,
-      Set<LogFileType> types);
+  void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Boolean continuousExecutionUpdate);
 
   Stream<AuditStorageEntity> getAudits(String key, LocalDate dateFrom, LocalDate dateTo);
+
+  List<AuditStorageEntity> findByResult(String result);
+
+  Stream<AuditStorageEntity> getAuditsByResult(String key, String result);
 }

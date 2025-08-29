@@ -73,23 +73,23 @@ public class StorageDaoInMemoryImpl implements StorageDao {
   }
 
   @Override
-  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate,
-      Set<LogFileType> types) {
+  public void updateExecution(List<AuditStorageEntity> auditList, LocalDate logDate, Set<LogFileType> types, Boolean dailySaverSource) {
     LocalDate lastContinuosExecutionReg = getLatestContinuosExecution();
 
-    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types);
+    ExecutionEntity newExecution = StorageDaoLogicSupport.from(auditList, logDate, types, null, dailySaverSource);
 
-    if (!StorageDaoLogicSupport.hasErrors(newExecution) && Duration
-        .between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1) {
+    if (    !StorageDaoLogicSupport.hasErrors(newExecution) &&
+            Duration.between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1 &&
+            dailySaverSource) {
+
       // Determino la data esecuzione continua
       List<ExecutionEntity> execList = this.getExecutionBetween(logDate, logDate);
       LocalDate lastContinuosExecutionDate =
           StorageDaoLogicSupport.computeLastContinuosExecutionDate(logDate, execList);
 
       this.continuosExecution = lastContinuosExecutionDate;
-
-
     }
+
     if (execution.containsKey(logDate)) {
       newExecution.getRetentionResult().forEach((key, value) -> execution.get(logDate)
           .getRetentionResult().merge(key, value, (v1, v2) -> v2));
@@ -98,8 +98,6 @@ public class StorageDaoInMemoryImpl implements StorageDao {
     }
 
   }
-
-
 
   @Override
   public Stream<AuditStorageEntity> getAudits(String key, LocalDate dateFrom, LocalDate dateTo) {
@@ -111,6 +109,14 @@ public class StorageDaoInMemoryImpl implements StorageDao {
     return list.stream();
   }
 
+  @Override
+  public List<AuditStorageEntity> findByResult(String result) {
+    return List.of();
+  }
 
+  @Override
+  public Stream<AuditStorageEntity> getAuditsByResult(String key, String result) {
 
+    return null;
+  }
 }

@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.UnaryOperator;
+
+import it.pagopa.pn.logsaver.services.TTLService;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,13 +46,15 @@ class StorageServiceImplTest {
   private PnSafeStorageClient safeStorageClient;
   @Mock
   private StorageDao storageDao;
+  @Mock
+  private TTLService ttlService;
 
   private StorageService service;
 
 
   @BeforeEach
   void setUp() {
-    this.service = new StorageServiceImpl(safeStorageClient, storageDao);
+    this.service = new StorageServiceImpl(safeStorageClient, storageDao, ttlService);
   }
 
 
@@ -116,13 +120,13 @@ class StorageServiceImplTest {
       AuditStorage audit = inTarg.getArgument(0, AuditStorage.class);
       return audit.uploadKey(TestCostant.uploadKey);
     });
-    doNothing().when(storageDao).updateExecution(any(), any(), any());
+    doNothing().when(storageDao).updateExecution(any(), any(), any(), any());
 
 
     List<AuditStorage> auditStorageRes = service.store(auditFiles, TestCostant.CTX);
 
     verify(safeStorageClient, times(auditFiles.size())).uploadFiles(any());
-    verify(storageDao, times(1)).updateExecution(any(), any(), any());
+    verify(storageDao, times(1)).updateExecution(any(), any(), any(), any());
     assertNotNull(auditStorageRes);
     assertEquals(3, auditStorageRes.size());
     auditStorageRes.forEach(aud -> {

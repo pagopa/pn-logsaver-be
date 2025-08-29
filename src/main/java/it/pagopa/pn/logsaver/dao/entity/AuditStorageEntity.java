@@ -1,5 +1,6 @@
 package it.pagopa.pn.logsaver.dao.entity;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
@@ -27,17 +28,19 @@ public class AuditStorageEntity extends AuditStorageBase {
 
   private String insertDateTime;
 
+  private BigDecimal expiration;
+
 
   @Builder
   public AuditStorageEntity(Retention retention, ExportType exportType, String logDate,
-      Map<String, String> storageKey, String result) {
+      Map<String, String> storageKey, String result, BigDecimal expiration) {
     super(handlePKey(retention, exportType), logDate);
     this.storageKey = storageKey;
     this.result = result;
     this.retentionType = retention.name();
     this.contentType = exportType.name();
     this.insertDateTime = DateUtils.isoDateTime();
-
+    this.expiration = expiration;
   }
 
   private static String handlePKey(Retention retention, ExportType expType) {

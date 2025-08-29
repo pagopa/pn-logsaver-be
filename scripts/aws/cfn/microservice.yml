@@ -142,6 +142,21 @@ Parameters:
     Type: String
     Description: Manual batch log group name
 
+  AuditStorageOffsetDuration:
+    Type: String
+    Description: "[AuditStorage] Offset used for deleting logs on RetentionType code"
+    Default: '1h'
+
+  CdcTables:
+    Type: String
+    Default: 'ALL'
+    Description: 'List of tables to be analyzed from the batch log-saver to perform a scan on S3'
+           ##  Può assumere tre valori:
+           ##    - la sola stringa 'ALL': significa che deve selezionare TUTTE le tabelle
+           ##    - la sola stringa 'NONE': significa che non deve selezionare alcuna tabella
+           ##    - <elenco di tabelle>: significa che deve selezionare delle tabelle specifiche
+           ##  "
+
 Resources:
 
   ## Compute Environment
@@ -239,6 +254,10 @@ Resources:
             Value: !Ref LogSaverDynamoTableName
           - Name: LOGSAVER_EXPORTMAXFILESIZE
             Value: !Ref LogSaverExportMaxFileSize
+          - Name: LOGSAVER_AUDITSTORAGE_OFFSETDURATION
+            Value: !Ref AuditStorageOffsetDuration
+          - Name: LOGSAVER_CDC_TABLES
+            Value: !Ref CdcTables
       PlatformCapabilities:
         - FARGATE
       Tags:
@@ -304,6 +323,10 @@ Resources:
             Value: !Ref LogsBucketName
           - Name: AWS_DYNAMODBTABLENAME
             Value: !Ref LogSaverDynamoTableName
+          - Name: LOGSAVER_AUDITSTORAGE_OFFSETDURATION
+            Value: !Ref AuditStorageOffsetDuration
+          - Name: LOGSAVER_CDC_TABLES
+            Value: !Ref CdcTables
       PlatformCapabilities:
         - FARGATE
       Tags:

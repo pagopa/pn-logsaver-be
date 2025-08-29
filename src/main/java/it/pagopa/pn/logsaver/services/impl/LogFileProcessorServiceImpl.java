@@ -89,6 +89,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
   }
 
   private List<AuditFile> createAuditFile(DailyContextCfg dailyCxt) {
+    log.info("Start createAuditFile() with dailyCxt {}", dailyCxt);
     return dailyCxt.retentionTmpFolder().entrySet()// Per ogni Retention
         .stream()// Creo uno o più file
         .flatMap(
@@ -98,6 +99,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
 
   private Stream<AuditFile> createAuditFileForRetention(Retention retention, Path inputFolder,
       DailyContextCfg dailyCxt) {
+    log.info("Start createAuditFileForRetention with retention {}, inputFolder {}, dailyCxt {}", retention.name(),inputFolder.getFileName(), dailyCxt);
 
     return dailyCxt.getExportTypesByRetention(retention)// Ricavo le tipologie di export
         .stream().map(exportType -> { // Per ogni tipologia di export
@@ -114,8 +116,11 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
 
   private String handleAuditFileNamePattern(Retention retention, ExportType exportType,
       DailyContextCfg dailyCxt) {
-    return dailyCxt.logDate().format(DateTimeFormatter.ofPattern(retention.getFileNamePattern()))
-        .concat(exportType.getExtension());
+    log.info("Start handleAuditFileNamePattern");
+    String resultString = dailyCxt.logDate().format(DateTimeFormatter.ofPattern(retention.getFileNamePattern()))
+            .concat(exportType.getExtension());
+    log.info("End handleAuditFileNamePattern with resultString {}", resultString);
+    return resultString;
   }
 
 }

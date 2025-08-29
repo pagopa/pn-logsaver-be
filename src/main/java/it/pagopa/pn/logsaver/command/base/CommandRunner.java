@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver.command.base;
 
 import java.util.Map;
+import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -23,9 +24,9 @@ public class CommandRunner {
   public void run(ClApplicationArguments args) {
     log.info("Run command {}", args.getCommand().getCommandName());
     Command commandImpl = commands.get(args.getCommand().getCommandName());
-
+    Validate.notNull(commandImpl, "Error in command name", args.getCommand().getCommandName());
     ListenableFuture<LogSaverResult> res =
-        executor.submitListenable(() -> commandImpl.execute(args));
+            executor.submitListenable(() -> commandImpl.execute(args));
     res.addCallback(commandImpl);
   }
 

@@ -17,4 +17,6 @@ public interface S3BucketClient {
   
   Stream<String> findSubFoldersWithPrefix(String pathPrefix, String subFolderPrefix, String suffix);
 
+  Stream<String> findSubFoldersWithPrefix(String pathPrefix, String subFolderPrefix);
+
 }

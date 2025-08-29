@@ -70,6 +70,15 @@ public class S3BucketClientImpl implements S3BucketClient {
             .map(item -> StringUtils.removeEnd(item, "/".concat(suffix)));
   }
 
+  public Stream<String> findSubFoldersWithPrefix(String pathPrefix, String subFolderPrefix) {
+    log.debug("Call s3 bucket for list subfolders {} ", pathPrefix);
+    ListObjectsV2Response response = clientS3.listObjectsV2(ListObjectsV2Request.builder()
+            .bucket(awsCfg.getS3BucketName()).prefix(pathPrefix.concat(subFolderPrefix)).delimiter("/").build());
+    return response.commonPrefixes().stream()
+            .map(item -> StringUtils.removeStart(item.prefix(), pathPrefix))
+            .map(item -> StringUtils.removeEnd(item, "/"));
+  }
+
 
   @Override
   public InputStream getObjectContent(String key) {
@@ -84,7 +93,7 @@ public class S3BucketClientImpl implements S3BucketClient {
     clientS3.putObject(PutObjectRequest.builder().bucket(awsCfg.getS3BucketName()).key(key)
         .contentMD5(checksum).build(), RequestBody.fromInputStream(file, size));
   }
-  
 
-  
+
+
 }

@@ -13,6 +13,8 @@ public interface AuditSaverService {
 
   DailySaverResultList dailyListSaver(List<LocalDate> dateExecutionList);
 
+  void dailySaverFixer();
+
   DailySaverResultList dailySaverFromLatestExecutionToYesterday(Set<LogFileType> logFileTypes,
       Map<Retention, Set<ExportType>> retentionExportTypeMap);
 
