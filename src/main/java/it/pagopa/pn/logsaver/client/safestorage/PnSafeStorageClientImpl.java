@@ -84,7 +84,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
       return res.getKey();
 
     } catch (Exception e) {
-      log.error("Exception on upload file {}", filePath.toString());
+      log.error("Exception on upload file {}", filePath.toString(),e);
       throw e;
     }
 
