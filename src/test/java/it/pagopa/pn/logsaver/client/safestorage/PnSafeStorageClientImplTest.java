@@ -2,11 +2,15 @@ package it.pagopa.pn.logsaver.client.safestorage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -33,6 +37,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.DefaultUriBuilderFactory;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.api.FileUploadApi;
 import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationRequest;
@@ -54,6 +59,7 @@ class PnSafeStorageClientImplTest {
   private FileUploadApi fileUploadApi;
 
   private PnSafeStorageConfigs cfg;
+
   @Mock
   private RestTemplate restTemplate;
 
@@ -78,28 +84,28 @@ class PnSafeStorageClientImplTest {
     Method init = ReflectionUtils.findMethod(PnSafeStorageConfigs.class, "initConf");
     ReflectionUtils.makeAccessible(init);
     ReflectionUtils.invokeMethod(init, cfg);
-
+    lenient().when(restTemplate.getUriTemplateHandler())
+            .thenReturn(new DefaultUriBuilderFactory());
     this.client = new PnSafeStorageClientImpl(restTemplate, cfg);
   }
 
   @Test
   void uploadFile() throws IOException {
     File file = new File("/tmp/test.pdf");
-
     FileUtils.writeStringToFile(file, "test", Charset.defaultCharset());
 
     FileCreationResponse respCF = new FileCreationResponse();
     respCF.setKey("KEY");
     respCF.setSecret("SECRET");
     respCF.setUploadMethod(UploadMethodEnum.PUT);
-    respCF.setUploadUrl("URL");
-
-    when(restTemplate.exchange(any(URI.class), any(HttpMethod.class), httpEntity.capture(),
-        any(Class.class))).thenReturn(ResponseEntity.ok(""));
+    respCF.setUploadUrl("http://s3-bucket/upload");
 
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
-        .thenReturn(ResponseEntity.ok(respCF));
+            .thenReturn(ResponseEntity.ok(respCF));
 
+    when(restTemplate.exchange(any(URI.class), any(HttpMethod.class),
+            httpEntity.capture(), any(Class.class)))
+            .thenReturn(ResponseEntity.ok(""));
 
     AuditStorage req =
         AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
@@ -122,6 +128,7 @@ class PnSafeStorageClientImplTest {
         any(ParameterizedTypeReference.class));
 
     assertNotNull(res);
+    assertNull(res.error());
     assertTrue(res.uploadKey().values().contains("KEY"));
 
     Files.delete(file.toPath());
@@ -133,12 +140,6 @@ class PnSafeStorageClientImplTest {
     File file = new File("/tmp/test.pdf");
 
     FileUtils.writeStringToFile(file, "test", Charset.defaultCharset());
-
-    FileCreationResponse respCF = new FileCreationResponse();
-    respCF.setKey("KEY");
-    respCF.setSecret("SECRET");
-    respCF.setUploadMethod(UploadMethodEnum.PUT);
-    respCF.setUploadUrl("URL");
 
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
         .thenReturn(ResponseEntity.internalServerError().body(""));
@@ -153,11 +154,11 @@ class PnSafeStorageClientImplTest {
     assertEquals("PN_LOGS_PDF_AUDIT10Y", httpEntityPre.getValue().getBody().getDocumentType());
     assertEquals("SAVED", httpEntityPre.getValue().getBody().getStatus());
 
-    String hash = httpEntityPre.getValue().getHeaders().get("x-checksum-value").get(0);
+    verify(restTemplate, times(1)).exchange(
+            any(RequestEntity.class), any(ParameterizedTypeReference.class));
 
-
-    verify(restTemplate, times(1)).exchange(any(RequestEntity.class),
-        any(ParameterizedTypeReference.class));
+    verify(restTemplate, never()).exchange(
+            any(URI.class), any(HttpMethod.class), any(HttpEntity.class), any(Class.class));
 
     assertNotNull(res);
     assertNotNull(res.error());
@@ -177,14 +178,14 @@ class PnSafeStorageClientImplTest {
     respCF.setKey("KEY");
     respCF.setSecret("SECRET");
     respCF.setUploadMethod(UploadMethodEnum.POST);
-    respCF.setUploadUrl("URL");
-
-    when(restTemplate.exchange(any(URI.class), any(HttpMethod.class), httpEntity.capture(),
-        any(Class.class))).thenReturn(ResponseEntity.internalServerError().body(""));
+    respCF.setUploadUrl("http://s3-bucket/upload");
 
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
-        .thenReturn(ResponseEntity.ok(respCF));
+            .thenReturn(ResponseEntity.ok(respCF));
 
+    when(restTemplate.exchange(any(URI.class), any(HttpMethod.class),
+            httpEntity.capture(), any(Class.class)))
+            .thenReturn(ResponseEntity.internalServerError().body(""));
 
     AuditStorage req =
         AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
@@ -197,7 +198,6 @@ class PnSafeStorageClientImplTest {
     assertEquals("SAVED", httpEntityPre.getValue().getBody().getStatus());
 
     String hash = httpEntityPre.getValue().getHeaders().get("x-checksum-value").get(0);
-
     assertEquals(hash, httpEntity.getValue().getHeaders().get("x-amz-checksum-sha256").get(0));
     assertEquals("SECRET", httpEntity.getValue().getHeaders().get("x-amz-meta-secret").get(0));
 
@@ -223,14 +223,14 @@ class PnSafeStorageClientImplTest {
     respCF.setKey("KEY");
     respCF.setSecret("SECRET");
     respCF.setUploadMethod(UploadMethodEnum.POST);
-    respCF.setUploadUrl("URL");
-
-    when(restTemplate.exchange(any(URI.class), any(HttpMethod.class), httpEntity.capture(),
-        any(Class.class))).thenThrow(RuntimeException.class);
+    respCF.setUploadUrl("http://s3-bucket/upload");
 
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
-        .thenReturn(ResponseEntity.ok(respCF));
+            .thenReturn(ResponseEntity.ok(respCF));
 
+    when(restTemplate.exchange(any(URI.class), any(HttpMethod.class),
+            httpEntity.capture(), any(Class.class)))
+            .thenThrow(new RuntimeException("Connection timeout"));
 
     AuditStorage req =
         AuditStorage.builder().exportType(ExportType.PDF_SIGNED).filePath(List.of(file.toPath()))
@@ -261,17 +261,8 @@ class PnSafeStorageClientImplTest {
 
 
   @Test
-  void downloadFileInfo() throws IOException {
-
-    FileDownloadResponse respCF = new FileDownloadResponse();
-    respCF.setKey("updKey");
-    respCF.setContentType("application/pdf");
-    respCF.setDocumentStatus("SAVED");
-    respCF.setDocumentType("PN_LOGS_PDF_AUDIT10Y");
-    FileDownloadInfo info = new FileDownloadInfo();
-    info.setUrl("http://");
-    respCF.setDownload(info);
-
+  void downloadFileInfo() {
+    FileDownloadResponse respCF = buildFileDownloadResponse("http://download-url/file.pdf");
 
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
         .thenReturn(ResponseEntity.ok(respCF));
@@ -286,22 +277,12 @@ class PnSafeStorageClientImplTest {
         any(ParameterizedTypeReference.class));
 
     assertNotNull(res);
-    assertEquals("http://", res.downloadUrl());
+    assertNull(res.error());
+    assertEquals("http://download-url/file.pdf", res.downloadUrl());
   }
 
   @Test
-  void downloadFileInfo_InternalServerError() throws IOException {
-
-    FileDownloadResponse respCF = new FileDownloadResponse();
-    respCF.setKey("updKey");
-    respCF.setContentType("application/pdf");
-    respCF.setDocumentStatus("SAVED");
-    respCF.setDocumentType("PN_LOGS_PDF_AUDIT10Y");
-    FileDownloadInfo info = new FileDownloadInfo();
-    info.setUrl("http://");
-    respCF.setDownload(info);
-
-
+  void downloadFileInfo_NotFound() {
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
         .thenReturn(ResponseEntity.notFound().build());
 
@@ -311,20 +292,46 @@ class PnSafeStorageClientImplTest {
 
     AuditDownloadReference res = client.downloadFileInfo(req);
 
-    verify(restTemplate, times(1)).exchange(any(RequestEntity.class),
-        any(ParameterizedTypeReference.class));
+    verify(restTemplate, times(1)).exchange(
+            any(RequestEntity.class), any(ParameterizedTypeReference.class));
 
     assertNotNull(res);
+    assertNotNull(res.error());
     assertEquals(RestClientException.class, res.error().getClass());
   }
 
 
   @Test
-  void downloadFile() throws IOException {
-    AuditDownloadReference mock = AuditDownloadReference.builder().logDate(TestCostant.LOGDATE)
-        .status(AuditStorageStatus.SENT).uploadKey("updKey").build();
+  void downloadFile() {
+    AuditDownloadReference expected = AuditDownloadReference.builder()
+            .logDate(TestCostant.LOGDATE)
+            .status(AuditStorageStatus.SENT)
+            .uploadKey("updKey")
+            .build();
+
     when(restTemplate.execute(any(URI.class), any(HttpMethod.class), any(), any()))
-        .thenReturn(mock);
+            .thenReturn(expected);
+
+    AuditDownloadReference req = AuditDownloadReference.builder()
+            .logDate(TestCostant.LOGDATE)
+            .status(AuditStorageStatus.SENT)
+            .downloadUrl("https://test.it/file.pdf")
+            .uploadKey("updKey")
+            .build();
+
+    AuditDownloadReference res = client.downloadFile(req, UnaryOperator.identity());
+
+    verify(restTemplate, times(1))
+            .execute(any(URI.class), any(HttpMethod.class), any(), any());
+
+    assertNotNull(res);
+    assertNull(res.error());
+  }
+
+  @Test
+  void downloadFile_NetworkError() {
+    when(restTemplate.execute(any(URI.class), any(HttpMethod.class), any(), any()))
+            .thenThrow(new RestClientException("Connection refused"));
 
     AuditDownloadReference req = AuditDownloadReference.builder().logDate(TestCostant.LOGDATE)
         .status(AuditStorageStatus.SENT).downloadUrl("https://test.it/").uploadKey("updKey")
@@ -332,21 +339,44 @@ class PnSafeStorageClientImplTest {
 
     AuditDownloadReference res = client.downloadFile(req, UnaryOperator.identity());
 
-    verify(restTemplate, times(1)).execute(any(URI.class), any(HttpMethod.class), any(), any());
-    assertNotNull(res);
+    verify(restTemplate, times(1))
+            .execute(any(URI.class), any(HttpMethod.class), any(), any());
 
+    assertNotNull(res);
+    assertNotNull(res.error());
+    assertEquals(RestClientException.class, res.error().getClass());
   }
 
 
   @Test
-  void downloadFile_Error() throws IOException {
-
-    AuditDownloadReference req = AuditDownloadReference.builder().logDate(TestCostant.LOGDATE)
-        .status(AuditStorageStatus.SENT).uploadKey("updKey").build();
+  void downloadFile_NullUrlError() {
+    // Nessun mock su execute(): il metodo non viene mai raggiunto
+    AuditDownloadReference req = AuditDownloadReference.builder()
+            .logDate(TestCostant.LOGDATE)
+            .status(AuditStorageStatus.SENT)
+            .uploadKey("updKey")
+            // downloadUrl NON impostato → null → NullPointerException in URI.create()
+            .build();
 
     AuditDownloadReference res = client.downloadFile(req, UnaryOperator.identity());
 
+    verify(restTemplate, never())
+            .execute(any(URI.class), any(HttpMethod.class), any(), any());
+
     assertNotNull(res);
     assertNotNull(res.error());
+  }
+
+
+  private FileDownloadResponse buildFileDownloadResponse(String downloadUrl) {
+    FileDownloadResponse resp = new FileDownloadResponse();
+    resp.setKey("updKey");
+    resp.setContentType("application/pdf");
+    resp.setDocumentStatus("SAVED");
+    resp.setDocumentType("PN_LOGS_PDF_AUDIT10Y");
+    FileDownloadInfo info = new FileDownloadInfo();
+    info.setUrl(downloadUrl);
+    resp.setDownload(info);
+    return resp;
   }
 }

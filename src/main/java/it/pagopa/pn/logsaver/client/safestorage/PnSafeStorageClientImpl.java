@@ -6,11 +6,7 @@ import java.nio.file.Path;
 import java.util.function.UnaryOperator;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -168,14 +164,14 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
       return restTemplate.execute(URI.create(audit.downloadUrl()), HttpMethod.GET, null,
           clientHttpResponse -> {
-            HttpStatus respStatus = clientHttpResponse.getStatusCode();
-            if (respStatus == HttpStatus.OK) {
-              audit.content(clientHttpResponse.getBody());
-              return downloadFunction.apply(audit);
+            HttpStatusCode respStatus = clientHttpResponse.getStatusCode();
+            if (respStatus.is2xxSuccessful()) {
+                audit.content(clientHttpResponse.getBody());
+                return downloadFunction.apply(audit);
             } else {
-              throw new ExternalException(
-                  String.format("File not retrived. Url: %s, ResponseCode: %s", audit.downloadUrl(),
-                      respStatus.name()));
+                throw new ExternalException(
+                    String.format("File not retrived. Url: %s, ResponseCode: %s", audit.downloadUrl(),
+                        respStatus));
             }
           });
 

@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import it.pagopa.pn.logsaver.services.TTLService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

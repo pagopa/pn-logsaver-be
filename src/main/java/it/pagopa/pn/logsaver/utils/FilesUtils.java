@@ -12,10 +12,10 @@ import java.nio.file.StandardOpenOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Collection;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.springframework.util.Base64Utils;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
 import lombok.experimental.UtilityClass;
@@ -79,7 +79,7 @@ public class FilesUtils {
   }
 
   private static String bytesToBase64(byte[] hash) {
-    return Base64Utils.encodeToString(hash);
+    return Base64.getEncoder().encodeToString(hash);
   }
 
 
