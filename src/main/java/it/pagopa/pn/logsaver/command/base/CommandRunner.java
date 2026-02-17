@@ -21,11 +21,18 @@ public class CommandRunner {
   private final SimpleAsyncTaskExecutor executor;
 
   public void run(ClApplicationArguments args) {
-    log.info("Run command {}", args.getCommand().getCommandName());
-    Command commandImpl = commands.get(args.getCommand().getCommandName());
-    Validate.notNull(commandImpl, "Error in command name", args.getCommand().getCommandName());
-    CompletableFuture.supplyAsync(() -> commandImpl.execute(args), executor)
-        .thenAccept(commandImpl::onSuccess);
+      log.info("Run command {}", args.getCommand().getCommandName());
+      Command commandImpl = commands.get(args.getCommand().getCommandName());
+      Validate.notNull(commandImpl, "Error in command name: %s", args.getCommand().getCommandName());
+      CompletableFuture.supplyAsync(() -> commandImpl.execute(args), executor)
+          .whenComplete((result, throwable) -> {
+              if (throwable != null) {
+                  commandImpl.onFailure(throwable);
+                  log.error("Command execution failed", throwable);
+              } else {
+                  commandImpl.onSuccess(result);
+              }
+          });
   }
 
 }

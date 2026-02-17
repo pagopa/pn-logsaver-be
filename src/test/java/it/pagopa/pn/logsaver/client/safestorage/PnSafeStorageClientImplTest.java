@@ -1,25 +1,17 @@
 package it.pagopa.pn.logsaver.client.safestorage;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.util.List;
-import java.util.Map;
-import java.util.function.UnaryOperator;
+import it.pagopa.pn.logsaver.TestCostant;
+import it.pagopa.pn.logsaver.model.AuditDownloadReference;
+import it.pagopa.pn.logsaver.model.AuditStorage;
+import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
+import it.pagopa.pn.logsaver.model.enums.ExportType;
+import it.pagopa.pn.logsaver.model.enums.Retention;
+import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.api.FileUploadApi;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.dto.FileCreationRequest;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.dto.FileCreationResponse;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.dto.FileDownloadInfo;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.dto.FileDownloadResponse;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,19 +30,20 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
-import it.pagopa.pn.logsaver.TestCostant;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.api.FileUploadApi;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationRequest;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationResponse;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationResponse.UploadMethodEnum;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadInfo;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadResponse;
-import it.pagopa.pn.logsaver.model.AuditDownloadReference;
-import it.pagopa.pn.logsaver.model.AuditStorage;
-import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
-import it.pagopa.pn.logsaver.model.enums.ExportType;
-import it.pagopa.pn.logsaver.model.enums.Retention;
-import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
+import java.util.function.UnaryOperator;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PnSafeStorageClientImplTest {
@@ -91,13 +84,13 @@ class PnSafeStorageClientImplTest {
 
   @Test
   void uploadFile() throws IOException {
-    File file = new File("/tmp/test.pdf");
+    File file = Files.createTempFile("test", ".pdf").toFile();
     FileUtils.writeStringToFile(file, "test", Charset.defaultCharset());
 
     FileCreationResponse respCF = new FileCreationResponse();
     respCF.setKey("KEY");
     respCF.setSecret("SECRET");
-    respCF.setUploadMethod(UploadMethodEnum.PUT);
+    respCF.setUploadMethod(FileCreationResponse.UploadMethodEnum.PUT);
     respCF.setUploadUrl("http://s3-bucket/upload");
 
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
@@ -177,7 +170,7 @@ class PnSafeStorageClientImplTest {
     FileCreationResponse respCF = new FileCreationResponse();
     respCF.setKey("KEY");
     respCF.setSecret("SECRET");
-    respCF.setUploadMethod(UploadMethodEnum.POST);
+    respCF.setUploadMethod(FileCreationResponse.UploadMethodEnum.POST);
     respCF.setUploadUrl("http://s3-bucket/upload");
 
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
@@ -222,7 +215,7 @@ class PnSafeStorageClientImplTest {
     FileCreationResponse respCF = new FileCreationResponse();
     respCF.setKey("KEY");
     respCF.setSecret("SECRET");
-    respCF.setUploadMethod(UploadMethodEnum.POST);
+    respCF.setUploadMethod(FileCreationResponse.UploadMethodEnum.POST);
     respCF.setUploadUrl("http://s3-bucket/upload");
 
     when(restTemplate.exchange(httpEntityPre.capture(), any(ParameterizedTypeReference.class)))
