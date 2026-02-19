@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
@@ -44,7 +45,27 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     List<LogFileReference> fileList = fileStream.collect(Collectors.toList());
     log.info("Total files {}", fileList.size());
     log.info("Start processing file");
-    LogSaverUtils.toParallelStream(fileList).forEach(item -> downloadFilterWrite(item, dailyCtx));
+
+    // contatori per i thread
+    AtomicInteger processedCount = new AtomicInteger(0);
+    AtomicInteger errorCount = new AtomicInteger(0);
+
+    LogSaverUtils.toParallelStream(fileList).forEach(item ->
+            {
+              try {
+                downloadFilterWrite(item, dailyCtx);
+                processedCount.incrementAndGet();
+              } catch (Exception e) {
+                errorCount.incrementAndGet();
+                log.error("ERRORE: Salto il file {} a causa di: {}", item.getS3Key(), e.getMessage());
+              }
+            }
+    );
+    log.info("Processing completato. Successi: {}, Errori: {}", processedCount.get(), errorCount.get());
+    if (processedCount.get() + errorCount.get() < fileList.size()) {
+      log.warn("ATTENZIONE: Alcuni file sono andati perduti nel parallelStream! ({} file non pervenuti)",
+              fileList.size() - (processedCount.get() + errorCount.get()));
+    }
 
     log.info("Start creating files");
     List<AuditFile> groupedAudit = createAuditFile(dailyCtx);
