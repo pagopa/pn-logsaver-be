@@ -50,7 +50,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     AtomicInteger processedCount = new AtomicInteger(0);
     AtomicInteger errorCount = new AtomicInteger(0);
 
-    LogSaverUtils.toParallelStream(fileList).forEach(item ->
+    LogSaverUtils.toParallelStream(fileList).forEach(item -> //downloadFilterWrite(item, dailyCtx)
             {
               try {
                 downloadFilterWrite(item, dailyCtx);
@@ -58,6 +58,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
               } catch (Exception e) {
                 errorCount.incrementAndGet();
                 log.error("ERRORE: Salto il file {} a causa di: {}", item.getS3Key(), e.getMessage());
+                throw e;
               }
             }
     );
