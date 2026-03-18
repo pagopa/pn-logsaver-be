@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>it.pagopa.pn</groupId>
 		<artifactId>pn-parent</artifactId>
-		<version>2.1.4-SPRINGBOOT3</version>
+		<version>2.1.2-SPRINGBOOT3</version>
 		<relativePath/>
 	</parent>
 	<artifactId>pn-logsaver-be</artifactId>
@@ -179,6 +179,13 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<image>
+						<env>
+							<BP_JVM_TYPE>JDK</BP_JVM_TYPE>
+						</env>
+					</image>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.openapitools</groupId>
@@ -199,6 +206,7 @@
                             <generateModelTests>false</generateModelTests>
                             <configOptions>
 								<useJakartaEe>true</useJakartaEe>
+								<useSpringBoot3>true</useSpringBoot3>
 								<modelPackage>${project.groupId}.pn-logsaver.microservice.client.safestorage.v1.dto</modelPackage>
 								<apiPackage>${project.groupId}.pn-logsaver.microservice.client.safestorage.v1.api</apiPackage>
                                 <dateLibrary>java8</dateLibrary>
