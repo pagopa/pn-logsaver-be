@@ -35,7 +35,7 @@ public class S3BucketClientImpl implements S3BucketClient {
   @Override
   public Stream<S3Object> findObjects(String prefix) {
     log.debug("Call s3 bucket for list object with prefix {}", prefix);
-    log.info("UAT - findObjects: prefix={}", prefix);
+
     return paginatedList(
         token -> {
           ListObjectsV2Request.Builder builder = ListObjectsV2Request.builder()
@@ -83,8 +83,8 @@ public class S3BucketClientImpl implements S3BucketClient {
   }
 
   public Stream<String> findSubFoldersWithPrefix(String pathPrefix, String subFolderPrefix) {
-    log.debug("Call s3 bucket for list subfolders {} ", pathPrefix);
-    log.info("UAT - findSubFoldersWithPrefix: pathPrefix={}, subFolderPrefix={}", pathPrefix, subFolderPrefix);
+    log.debug("Call s3 bucket for list pathPrefix={}, subFolderPrefix={}", pathPrefix, subFolderPrefix);
+
     return paginatedList(
         token -> {
           ListObjectsV2Request.Builder builder = ListObjectsV2Request.builder()
@@ -114,11 +114,10 @@ public class S3BucketClientImpl implements S3BucketClient {
       continuationToken = Boolean.TRUE.equals(response.isTruncated())
           ? response.nextContinuationToken() : null;
       if (continuationToken != null) {
-        log.info("UAT - S3 response truncated at page {}, items so far: {}, fetching next page", page, allItems.size());
         page++;
       }
     } while (continuationToken != null);
-    log.info("UAT - S3 listing completed: {} page(s), {} total items", page, allItems.size());
+
     return allItems.stream();
   }
 

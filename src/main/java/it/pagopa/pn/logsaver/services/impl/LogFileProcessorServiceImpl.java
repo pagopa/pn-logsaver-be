@@ -43,13 +43,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     // Riduzione consapevole. Sono stati fatti dei test in locale e la riduzione migliora
     // notevolmente in tempi di esecuzione.
     List<LogFileReference> fileList = fileStream.collect(Collectors.toList());
-    log.info("Total files {}", fileList.size());
-    log.info("UAT - process start date={} filesToProcess={}", dailyCtx.logDate(), fileList.size());
-    if (fileList.isEmpty()) {
-      log.warn("UAT - process date={} file list is empty, no files will be processed", dailyCtx.logDate());
-    }
-
-    log.info("Start processing file");
+    log.info("Start processing file - start date={} Total files {}", dailyCtx.logDate(), fileList.size());
 
     // contatori per i thread
     AtomicInteger processedCount = new AtomicInteger(0);
@@ -72,12 +66,10 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
       log.warn("ATTENZIONE: Alcuni file sono andati perduti nel parallelStream! ({} file non pervenuti)",
               fileList.size() - (processedCount.get() + errorCount.get()));
     }
-    log.info("UAT - process parallel processing completed date={}", dailyCtx.logDate());
 
     log.info("Start creating files");
     List<AuditFile> groupedAudit = createAuditFile(dailyCtx);
     log.info("Files created {}", groupedAudit.size());
-    log.info("UAT - process end date={} auditFilesCreated={}", dailyCtx.logDate(), groupedAudit.size());
 
     return groupedAudit;
 
@@ -85,8 +77,8 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
 
   private void downloadFilterWrite(LogFileReference itemLog, DailyContextCfg dailyCtx) {
     LogSaverUtils.initMDC(dailyCtx);
-    log.debug("Dowload file {}", itemLog.getS3Key());
-    log.debug("UAT - downloadFilterWrite start s3Key={} type={} date={}", itemLog.getS3Key(), itemLog.getType(), dailyCtx.logDate());
+    log.debug("downloadFilterWrite start s3Key={} type={} date={}", itemLog.getS3Key(), itemLog.getType(), dailyCtx.logDate());
+
     // Download file dal bucket
     try (InputStream content = s3Service.getContent(itemLog.getS3Key());) {
       itemLog.setContent(content);
@@ -97,7 +89,6 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
 
     } catch (IOException e) {
       log.warn("Unexpected error closing input stream");
-      log.error("UAT - downloadFilterWrite error on s3Key={} date={}", itemLog.getS3Key(), dailyCtx.logDate(), e);
       throw new UncheckedIOException("writeLog IOException", e);
     } finally {
       LogSaverUtils.clearMdcFromForkThread();
