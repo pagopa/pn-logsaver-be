@@ -190,16 +190,20 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
       dailyCtx.initContext();
       log.info("Start execution for day {}", dailyCtx.logDate());
+      log.info("UAT - dailySaver start date={} retentions={} exportTypes={}", dailyCtx.logDate(), dailyCtx.retentions(), dailyCtx.retentionExportTypeMap());
 
       Stream<LogFileReference> files = readerService.findLogFiles(dailyCtx);
 
       List<AuditFile> auditFiles = service.process(files, dailyCtx);
+
+      log.info("UAT - dailySaver date={} auditFilesProduced={}", dailyCtx.logDate(), auditFiles.size());
 
       List<AuditStorage> auditStorageList = storageService.store(auditFiles, dailyCtx);
 
       long sent = auditStorageList.stream().filter(a -> !a.hasError()).count();
       long errors = auditStorageList.size() - sent;
       log.info("End execution for day {}", dailyCtx.logDate());
+      log.info("UAT - dailySaver end date={} stored={} sent={} errors={}", dailyCtx.logDate(), auditStorageList.size(), sent, errors);
 
       if (errors > 0) {
         log.warn("UAT - dailySaver date={} {} file(s) not sent to SafeStorage", dailyCtx.logDate(), errors);
@@ -209,6 +213,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
 
     } catch (Exception e) {
       log.error("Error processing audit for day " + dailyCtx.logDate(), e);
+      log.error("UAT - dailySaver fatal error date={}", dailyCtx.logDate(), e);
       resBuilder.error(e);
       return resBuilder.build();
     } finally {
