@@ -49,7 +49,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     AtomicInteger processedCount = new AtomicInteger(0);
     AtomicInteger errorCount = new AtomicInteger(0);
 
-    LogSaverUtils.toParallelStream(fileList).forEach(item -> //downloadFilterWrite(item, dailyCtx)
+    LogSaverUtils.toParallelStream(fileList).forEach(item ->
             {
               try {
                 downloadFilterWrite(item, dailyCtx);

@@ -116,6 +116,8 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
     Map<LogFileType, Long> countByType = files.stream()
         .collect(Collectors.groupingBy(LogFileReference::getType, Collectors.counting()));
 
+    log.info("findLogFiles date={} files found per type: {}", dailyCtx.logDate(), countByType);
+
     if (files.isEmpty()) {
       log.warn("findLogFiles date={} no files found, check S3 path configuration and subfolder discovery", dailyCtx.logDate());
     }

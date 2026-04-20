@@ -115,6 +115,7 @@ public class S3BucketClientImpl implements S3BucketClient {
           ? response.nextContinuationToken() : null;
       if (continuationToken != null) {
         page++;
+        log.debug("paginatedList fetching page {}", ++page);
       }
     } while (continuationToken != null);
 
