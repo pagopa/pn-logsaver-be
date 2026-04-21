@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>it.pagopa.pn</groupId>
 		<artifactId>pn-parent</artifactId>
-		<version>2.1.3-SPRINGBOOT3</version>
+		<version>2.1.2-SPRINGBOOT3</version>
 		<relativePath/>
 	</parent>
 	<artifactId>pn-logsaver-be</artifactId>
@@ -19,11 +19,11 @@
   </scm>
 	<properties>
     	<jacoco.min.line.cover.ratio>0.01</jacoco.min.line.cover.ratio>
-    	<mockito.version>4.6.1</mockito.version>
+    	<!-- mockito.version>5.14.2</mockito.version -->
+		<maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
 	</properties>
-	<dependencies>
-	
 
+	<dependencies>
 		<dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-web</artifactId>
@@ -47,7 +47,6 @@
 		    <artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
-	    
 		<!-- https://mvnrepository.com/artifact/io.swagger/swagger-annotations -->
 		<dependency>
 			<groupId>io.swagger</groupId>
@@ -58,21 +57,33 @@
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>netty-nio-client</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	
 		<!-- https://mvnrepository.com/artifact/software.amazon.awssdk/dynamodb-enhanced -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>dynamodb-enhanced</artifactId>
-			<version>2.17.155</version>
+			<exclusions>
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>netty-nio-client</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
-		<!--  <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sts</artifactId>
-        </dependency> -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
+			<version>1.18.36</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -90,7 +101,7 @@
 		<dependency>
 		    <groupId>com.google.guava</groupId>
 		    <artifactId>guava</artifactId>
-		    <version>32.0.0-jre</version>
+		    <version>33.4.0-jre</version>
 		</dependency>
 				
 		<dependency>
@@ -136,7 +147,7 @@
 		<dependency>
 		    <groupId>com.google.jimfs</groupId>
 		    <artifactId>jimfs</artifactId>
-		    <version>1.1</version>
+		    <version>1.3.0</version>
 		     <scope>test</scope>   
 		</dependency>
 		<dependency>
@@ -157,6 +168,13 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<image>
+						<env>
+							<BP_JVM_TYPE>JDK</BP_JVM_TYPE>
+						</env>
+					</image>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.openapitools</groupId>
@@ -177,6 +195,7 @@
                             <generateModelTests>false</generateModelTests>
                             <configOptions>
 								<useJakartaEe>true</useJakartaEe>
+								<useSpringBoot3>true</useSpringBoot3>
 								<modelPackage>${project.groupId}.pn-logsaver.microservice.client.safestorage.v1.dto</modelPackage>
 								<apiPackage>${project.groupId}.pn-logsaver.microservice.client.safestorage.v1.api</apiPackage>
                                 <dateLibrary>java8</dateLibrary>
@@ -206,7 +225,7 @@
 			    <configuration>
 			        <runOrder>alphabetical</runOrder>
 			    </configuration>
-			</plugin>			 		 
+			</plugin>
 		</plugins>
 	</build>
 </project>
