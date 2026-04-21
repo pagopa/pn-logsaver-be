@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver.client.s3;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -11,10 +12,12 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import it.pagopa.pn.logsaver.TestCostant;
@@ -65,6 +68,49 @@ class S3BucketClientImplTest {
     assertEquals(1, resList.size());
     assertEquals(s3Key, resList.get(0).key());
 
+  }
+
+  @Test
+  void findObjects_shouldReturnAllObjects_whenResponseIsTruncated() {
+    List<S3Object> page1 = IntStream.range(0, 1000)
+        .mapToObj(i -> S3Object.builder().key("logs/prefix/obj-" + i).build())
+        .collect(Collectors.toList());
+
+    ListObjectsV2Response truncatedResponse = ListObjectsV2Response.builder()
+        .contents(page1)
+        .isTruncated(true)
+        .nextContinuationToken("tok-page-2")
+        .build();
+
+    S3Object page2Obj = S3Object.builder().key("logs/prefix/obj-1000").build();
+    ListObjectsV2Response secondResponse = ListObjectsV2Response.builder()
+        .contents(page2Obj)
+        .isTruncated(false)
+        .build();
+
+    when(clientS3.listObjectsV2(any(ListObjectsV2Request.class)))
+        .thenReturn(truncatedResponse)
+        .thenReturn(secondResponse);
+
+    ArgumentCaptor<ListObjectsV2Request> captor = ArgumentCaptor.forClass(ListObjectsV2Request.class);
+    List<S3Object> resList =
+        client.findObjects("logs/prefix/").collect(Collectors.toList());
+
+    verify(clientS3, times(2)).listObjectsV2(captor.capture());
+    assertEquals(1001, resList.size());
+    assertNull(captor.getAllValues().get(0).continuationToken());
+    assertEquals("tok-page-2", captor.getAllValues().get(1).continuationToken());
+  }
+
+  @Test
+  void findObjects_shouldReturnEmptyStream_whenNoObjectsFound() {
+    when(clientS3.listObjectsV2(any(ListObjectsV2Request.class)))
+        .thenReturn(ListObjectsV2Response.builder().isTruncated(false).build());
+
+    List<S3Object> resList = client.findObjects("logs/empty/").collect(Collectors.toList());
+
+    verify(clientS3, times(1)).listObjectsV2(any(ListObjectsV2Request.class));
+    assertEquals(0, resList.size());
   }
 
   @Test
@@ -122,6 +168,42 @@ class S3BucketClientImplTest {
     //assertTrue(resList.contains("TABLE_NAME_pn-Mandate/2023"));
     //assertTrue(resList.contains("TABLE_NAME_pn-UserAttributes/2023"));
 
+  }
+
+  @Test
+  void findSubFoldersWithPrefix_shouldReturnAllPages_whenResponseIsTruncated() {
+    List<CommonPrefix> page1 = List.of(
+        CommonPrefix.builder().prefix("cdcTos3/TABLE_NAME_pn-AuditStorage/").build(),
+        CommonPrefix.builder().prefix("cdcTos3/TABLE_NAME_pn-Mandate/").build()
+    );
+    ListObjectsV2Response firstResponse = ListObjectsV2Response.builder()
+        .commonPrefixes(page1)
+        .isTruncated(true)
+        .nextContinuationToken("tok-page-2")
+        .build();
+
+    List<CommonPrefix> page2 = List.of(
+        CommonPrefix.builder().prefix("cdcTos3/TABLE_NAME_pn-UserAttributes/").build()
+    );
+    ListObjectsV2Response secondResponse = ListObjectsV2Response.builder()
+        .commonPrefixes(page2)
+        .isTruncated(false)
+        .build();
+
+    when(clientS3.listObjectsV2(any(ListObjectsV2Request.class)))
+        .thenReturn(firstResponse)
+        .thenReturn(secondResponse);
+
+    ArgumentCaptor<ListObjectsV2Request> captor = ArgumentCaptor.forClass(ListObjectsV2Request.class);
+    List<String> resList = client.findSubFoldersWithPrefix("cdcTos3/", "").collect(Collectors.toList());
+
+    verify(clientS3, times(2)).listObjectsV2(captor.capture());
+    assertEquals(3, resList.size());
+    assertTrue(resList.contains("TABLE_NAME_pn-AuditStorage"));
+    assertTrue(resList.contains("TABLE_NAME_pn-Mandate"));
+    assertTrue(resList.contains("TABLE_NAME_pn-UserAttributes"));
+    assertNull(captor.getAllValues().get(0).continuationToken());
+    assertEquals("tok-page-2", captor.getAllValues().get(1).continuationToken());
   }
 
   @Test

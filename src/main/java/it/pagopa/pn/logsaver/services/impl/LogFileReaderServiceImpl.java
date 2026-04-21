@@ -51,6 +51,7 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
       if (subFolderListCfg.isEmpty()) {// Ricerca delle subFolders su S3
         return findSubfoldersS3(type, logDate);
       }
+
       return subFolderListCfg.stream();
     } else {
         if (subFolderListCfg.get(0).equals(S3_SUBFOLDER_TO_SCAN_NONE)) {
@@ -94,19 +95,34 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
 
     List<String> subFolderList = clientS3
             .findSubFoldersWithPrefix(pathPrefix, subFolderPrefix).collect(Collectors.toList());
-	  if (subFolderList.isEmpty()) {
-		  return Stream.of("");
-	  }
-	  return subFolderList.stream();
+
+    if (subFolderList.isEmpty()) {
+      return Stream.of("");
+    }
+    return subFolderList.stream();
   }
 
 
   @Override
   public Stream<LogFileReference> findLogFiles(DailyContextCfg dailyCtx) {
-    return Stream.of(LogFileType.values())
+    log.info("findLogFiles start date={} retentions={} logFileTypes={}", dailyCtx.logDate(), dailyCtx.retentions(), dailyCtx.logFileTypes());
+
+    List<LogFileReference> files = Stream.of(LogFileType.values())
         .filter(type -> type.containsRetentions(dailyCtx.retentions()))
         .flatMap(type -> findSubfolders(type, dailyCtx.logDate())
-            .flatMap(subFolder -> handleLogFileReference(subFolder, type, dailyCtx.logDate())));
+            .flatMap(subFolder -> handleLogFileReference(subFolder, type, dailyCtx.logDate())))
+        .collect(Collectors.toList());
+
+    Map<LogFileType, Long> countByType = files.stream()
+        .collect(Collectors.groupingBy(LogFileReference::getType, Collectors.counting()));
+
+    log.info("findLogFiles date={} files found per type: {}", dailyCtx.logDate(), countByType);
+
+    if (files.isEmpty()) {
+      log.warn("findLogFiles date={} no files found, check S3 path configuration and subfolder discovery", dailyCtx.logDate());
+    }
+
+    return files.stream();
   }
 
   /**
@@ -132,8 +148,14 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
       return Stream.empty();
     String prefix = handleDailyPrefix(subFolder, type, logDate);
     log.info("Search {} log files for subfolder {}", type.name(), prefix);
-    Stream<S3Object> objList = clientS3.findObjects(prefix);
-    return objList.map(
+
+    List<S3Object> objList = clientS3.findObjects(prefix).collect(Collectors.toList());
+
+    if (objList.isEmpty()) {
+      log.warn("handleLogFileReference type={} date={} prefix={} no objects found on S3", type.name(), logDate, prefix);
+    }
+
+    return objList.stream().map(
         obj -> LogFileReference.builder().s3Key(obj.key()).type(type).logDate(logDate).build());
   }
 

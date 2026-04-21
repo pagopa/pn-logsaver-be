@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
@@ -42,20 +43,42 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     // Riduzione consapevole. Sono stati fatti dei test in locale e la riduzione migliora
     // notevolmente in tempi di esecuzione.
     List<LogFileReference> fileList = fileStream.collect(Collectors.toList());
-    log.info("Total files {}", fileList.size());
-    log.info("Start processing file");
-    LogSaverUtils.toParallelStream(fileList).forEach(item -> downloadFilterWrite(item, dailyCtx));
+    log.info("Start processing file - start date={} Total files {}", dailyCtx.logDate(), fileList.size());
+
+    // contatori per i thread
+    AtomicInteger processedCount = new AtomicInteger(0);
+    AtomicInteger errorCount = new AtomicInteger(0);
+
+    LogSaverUtils.toParallelStream(fileList).forEach(item ->
+            {
+              try {
+                downloadFilterWrite(item, dailyCtx);
+                processedCount.incrementAndGet();
+              } catch (Exception e) {
+                errorCount.incrementAndGet();
+                log.error("ERRORE: Salto il file {} a causa di: {}", item.getS3Key(), e.getMessage());
+                throw e;
+              }
+            }
+    );
+    log.info("Processing completato. Successi: {}, Errori: {}", processedCount.get(), errorCount.get());
+    if (processedCount.get() + errorCount.get() < fileList.size()) {
+      log.warn("ATTENZIONE: Alcuni file sono andati perduti nel parallelStream! ({} file non pervenuti)",
+              fileList.size() - (processedCount.get() + errorCount.get()));
+    }
 
     log.info("Start creating files");
     List<AuditFile> groupedAudit = createAuditFile(dailyCtx);
     log.info("Files created {}", groupedAudit.size());
+
     return groupedAudit;
 
   }
 
   private void downloadFilterWrite(LogFileReference itemLog, DailyContextCfg dailyCtx) {
     LogSaverUtils.initMDC(dailyCtx);
-    log.debug("Dowload file {}", itemLog.getS3Key());
+    log.debug("downloadFilterWrite start s3Key={} type={} date={}", itemLog.getS3Key(), itemLog.getType(), dailyCtx.logDate());
+
     // Download file dal bucket
     try (InputStream content = s3Service.getContent(itemLog.getS3Key());) {
       itemLog.setContent(content);
