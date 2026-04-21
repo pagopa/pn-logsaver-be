@@ -189,14 +189,22 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     try {
 
       dailyCtx.initContext();
-      log.info("Start execution for day {}", dailyCtx.logDate());
+      log.info("dailySaver  Start execution for day {} retentions={} exportTypes={}", dailyCtx.logDate(), dailyCtx.retentions(), dailyCtx.retentionExportTypeMap());
 
       Stream<LogFileReference> files = readerService.findLogFiles(dailyCtx);
 
       List<AuditFile> auditFiles = service.process(files, dailyCtx);
 
       List<AuditStorage> auditStorageList = storageService.store(auditFiles, dailyCtx);
+
+      long sent = auditStorageList.stream().filter(a -> !a.hasError()).count();
+      long errors = auditStorageList.size() - sent;
       log.info("End execution for day {}", dailyCtx.logDate());
+
+      if (errors > 0) {
+        log.warn("dailySaver date={} {} file(s) not sent to SafeStorage", dailyCtx.logDate(), errors);
+      }
+
       return resBuilder.auditStorageList(auditStorageList).build();
 
     } catch (Exception e) {

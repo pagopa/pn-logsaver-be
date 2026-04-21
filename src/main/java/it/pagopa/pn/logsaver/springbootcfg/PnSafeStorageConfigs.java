@@ -1,7 +1,7 @@
 package it.pagopa.pn.logsaver.springbootcfg;
 
 import java.util.Map;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import com.google.common.collect.HashBasedTable;
