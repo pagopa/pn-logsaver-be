@@ -1,15 +1,15 @@
 package it.pagopa.pn.logsaver.command.base;
 
-import java.util.Map;
+import it.pagopa.pn.logsaver.config.ClApplicationArguments;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.stereotype.Component;
-import org.springframework.util.concurrent.ListenableFuture;
-import it.pagopa.pn.logsaver.config.ClApplicationArguments;
-import it.pagopa.pn.logsaver.model.LogSaverResult;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @AllArgsConstructor
@@ -20,15 +20,19 @@ public class CommandRunner {
   private final Map<String, Command> commands;
   private final SimpleAsyncTaskExecutor executor;
 
-
   public void run(ClApplicationArguments args) {
-    log.info("Run command {}", args.getCommand().getCommandName());
-    Command commandImpl = commands.get(args.getCommand().getCommandName());
-    Validate.notNull(commandImpl, "Error in command name", args.getCommand().getCommandName());
-    ListenableFuture<LogSaverResult> res =
-            executor.submitListenable(() -> commandImpl.execute(args));
-    res.addCallback(commandImpl);
+      log.info("Run command {}", args.getCommand().getCommandName());
+      Command commandImpl = commands.get(args.getCommand().getCommandName());
+      Validate.notNull(commandImpl, "Error in command name: %s", args.getCommand().getCommandName());
+      CompletableFuture.supplyAsync(() -> commandImpl.execute(args), executor)
+          .whenComplete((result, throwable) -> {
+              if (throwable != null) {
+                  Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+                  commandImpl.onFailure(cause);
+              } else {
+                  commandImpl.onSuccess(result);
+              }
+          });
   }
-
 
 }

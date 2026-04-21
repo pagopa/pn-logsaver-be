@@ -1,6 +1,10 @@
 package it.pagopa.pn.logsaver.client.s3;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -31,9 +35,17 @@ public class S3BucketClientImpl implements S3BucketClient {
   @Override
   public Stream<S3Object> findObjects(String prefix) {
     log.debug("Call s3 bucket for list object with prefix {}", prefix);
-    ListObjectsV2Response response = clientS3.listObjectsV2(
-        ListObjectsV2Request.builder().bucket(awsCfg.getS3BucketName()).prefix(prefix).build());
-    return response.contents().stream();
+
+    return paginatedList(
+        token -> {
+          ListObjectsV2Request.Builder builder = ListObjectsV2Request.builder()
+              .bucket(awsCfg.getS3BucketName()).prefix(prefix);
+          if (token != null) {
+            builder.continuationToken(token);
+          }
+          return builder.build();
+        },
+        ListObjectsV2Response::contents);
   }
 
 
@@ -71,12 +83,42 @@ public class S3BucketClientImpl implements S3BucketClient {
   }
 
   public Stream<String> findSubFoldersWithPrefix(String pathPrefix, String subFolderPrefix) {
-    log.debug("Call s3 bucket for list subfolders {} ", pathPrefix);
-    ListObjectsV2Response response = clientS3.listObjectsV2(ListObjectsV2Request.builder()
-            .bucket(awsCfg.getS3BucketName()).prefix(pathPrefix.concat(subFolderPrefix)).delimiter("/").build());
-    return response.commonPrefixes().stream()
+    log.debug("Call s3 bucket for list pathPrefix={}, subFolderPrefix={}", pathPrefix, subFolderPrefix);
+
+    return paginatedList(
+        token -> {
+          ListObjectsV2Request.Builder builder = ListObjectsV2Request.builder()
+              .bucket(awsCfg.getS3BucketName())
+              .prefix(pathPrefix.concat(subFolderPrefix))
+              .delimiter("/");
+          if (token != null) {
+            builder.continuationToken(token);
+          }
+          return builder.build();
+        },
+        response -> response.commonPrefixes().stream()
             .map(item -> StringUtils.removeStart(item.prefix(), pathPrefix))
-            .map(item -> StringUtils.removeEnd(item, "/"));
+            .map(item -> StringUtils.removeEnd(item, "/"))
+            .collect(Collectors.toList()));
+  }
+
+  private <T> Stream<T> paginatedList(
+      Function<String, ListObjectsV2Request> requestBuilder,
+      Function<ListObjectsV2Response, List<T>> extractor) {
+    List<T> allItems = new ArrayList<>();
+    String continuationToken = null;
+    int page = 1;
+    do {
+      ListObjectsV2Response response = clientS3.listObjectsV2(requestBuilder.apply(continuationToken));
+      allItems.addAll(extractor.apply(response));
+      continuationToken = Boolean.TRUE.equals(response.isTruncated())
+          ? response.nextContinuationToken() : null;
+      if (continuationToken != null) {
+        log.debug("paginatedList fetching page {}", ++page);
+      }
+    } while (continuationToken != null);
+
+    return allItems.stream();
   }
 
 

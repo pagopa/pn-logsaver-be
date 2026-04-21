@@ -16,7 +16,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
-import it.pagopa.pn.logsaver.utils.FilesUtils;
 
 
 class FilesUtilsTest {
@@ -65,8 +64,7 @@ class FilesUtilsTest {
 
   @Test
   void writeFile_WhenIOException_ThenThrowFileSystemException() {
-
-    try (MockedStatic<Files> mock = Mockito.mockStatic(Files.class);) {
+    try (MockedStatic<Files> mock = Mockito.mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
       mock.when(() -> Files.newOutputStream(any(), any())).thenThrow(IOException.class);
       Path path = Path.of("tmp/ddddasd/");
       InputStream in = IOUtils.toInputStream("test");
