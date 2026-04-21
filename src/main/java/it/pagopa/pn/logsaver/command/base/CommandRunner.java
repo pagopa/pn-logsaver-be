@@ -27,8 +27,8 @@ public class CommandRunner {
       CompletableFuture.supplyAsync(() -> commandImpl.execute(args), executor)
           .whenComplete((result, throwable) -> {
               if (throwable != null) {
-                  commandImpl.onFailure(throwable);
-                  log.error("Command execution failed", throwable);
+                  Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+                  commandImpl.onFailure(cause);
               } else {
                   commandImpl.onSuccess(result);
               }
