@@ -22,7 +22,7 @@ class ZipUtilsTest {
   @Test
   void createZip_WhenIOException_ThenThrowFileSystemException() {
 
-    try (MockedStatic<Files> mock = Mockito.mockStatic(Files.class);) {
+    try (MockedStatic<Files> mock = Mockito.mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
       mock.when(() -> Files.newOutputStream(any(), any())).thenThrow(IOException.class);
       Path pathI = Path.of("tmp/test");
       Path pathO = Path.of("tmp/test/test.zip");

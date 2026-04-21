@@ -1,34 +1,31 @@
 package it.pagopa.pn.logsaver.client.safestorage;
 
 
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.function.UnaryOperator;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 import it.pagopa.pn.logsaver.exceptions.ExternalException;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.ApiClient;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.api.FileDownloadApi;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.api.FileUploadApi;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationRequest;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileCreationResponse;
-import it.pagopa.pn.logsaver.generated.openapi.clients.safestorage.model.FileDownloadResponse;
 import it.pagopa.pn.logsaver.model.AuditDownloadReference;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.springbootcfg.PnSafeStorageConfigs;
 import it.pagopa.pn.logsaver.utils.FilesUtils;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.ApiClient;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.api.FileDownloadApi;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.api.FileUploadApi;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.dto.FileCreationRequest;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.dto.FileCreationResponse;
+import it.pagopa.pn.pn_logsaver.microservice.client.safestorage.v1.dto.FileDownloadResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
+import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.function.UnaryOperator;
 
 @Component
 @Slf4j
@@ -168,14 +165,14 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
       return restTemplate.execute(URI.create(audit.downloadUrl()), HttpMethod.GET, null,
           clientHttpResponse -> {
-            HttpStatus respStatus = clientHttpResponse.getStatusCode();
-            if (respStatus == HttpStatus.OK) {
-              audit.content(clientHttpResponse.getBody());
-              return downloadFunction.apply(audit);
+            HttpStatusCode respStatus = clientHttpResponse.getStatusCode();
+            if (respStatus.is2xxSuccessful()) {
+                audit.content(clientHttpResponse.getBody());
+                return downloadFunction.apply(audit);
             } else {
-              throw new ExternalException(
-                  String.format("File not retrived. Url: %s, ResponseCode: %s", audit.downloadUrl(),
-                      respStatus.name()));
+                throw new ExternalException(
+                    String.format("File not retrieved. Url: %s, ResponseCode: %s", audit.downloadUrl(),
+                        respStatus));
             }
           });
 
