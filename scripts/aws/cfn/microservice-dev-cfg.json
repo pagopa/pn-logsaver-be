@@ -14,6 +14,8 @@
     "MaxvCpus": "2",
     "LogSaverExportMaxFileSize": "2MB",
     "AuditStorageOffsetDuration": "1h",
-    "CdcTables": "ALL"
+    "CdcTables": "ALL",
+    "VCPU": "0.5",
+    "Memory": "4096"
   }
 }
