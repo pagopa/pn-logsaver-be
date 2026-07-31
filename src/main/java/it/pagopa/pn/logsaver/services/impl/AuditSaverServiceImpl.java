@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toCollection;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
@@ -12,7 +13,6 @@ import it.pagopa.pn.logsaver.model.enums.AuditStorageStatus;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.config.LogSaverCfg;
-import it.pagopa.pn.logsaver.model.AuditFile;
 import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.DailySaverResult;
@@ -29,6 +29,8 @@ import it.pagopa.pn.logsaver.services.LogFileReaderService;
 import it.pagopa.pn.logsaver.services.StorageService;
 import it.pagopa.pn.logsaver.services.support.AuditSaverLogicSupport;
 import it.pagopa.pn.logsaver.utils.DateUtils;
+import it.pagopa.pn.logsaver.utils.StreamingExportCoordinator;
+import it.pagopa.pn.logsaver.utils.StreamingExportCoordinator.UploadedPart;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -191,11 +193,15 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       dailyCtx.initContext();
       log.info("dailySaver  Start execution for day {} retentions={} exportTypes={}", dailyCtx.logDate(), dailyCtx.retentions(), dailyCtx.retentionExportTypeMap());
 
-      Stream<LogFileReference> files = readerService.findLogFiles(dailyCtx);
+      StreamingExportCoordinator coordinator =
+          new StreamingExportCoordinator(dailyCtx, cfg.getMaxSize(), storageService::uploadPart);
+      List<UploadedPart> uploadedParts;
+      try (Stream<LogFileReference> files = readerService.findLogFiles(dailyCtx)) {
+        uploadedParts = service.process(files, dailyCtx, coordinator);
+      }
 
-      List<AuditFile> auditFiles = service.process(files, dailyCtx);
-
-      List<AuditStorage> auditStorageList = storageService.store(auditFiles, dailyCtx);
+      List<AuditStorage> auditStorageList =
+          storageService.persist(toAuditStorage(uploadedParts, dailyCtx), dailyCtx, true);
 
       long sent = auditStorageList.stream().filter(a -> !a.hasError()).count();
       long errors = auditStorageList.size() - sent;
@@ -214,6 +220,31 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     } finally {
       dailyCtx.destroy();
     }
+  }
+
+  private record RetExp(Retention retention, ExportType exportType) {
+  }
+
+  private List<AuditStorage> toAuditStorage(List<UploadedPart> parts, DailyContextCfg ctx) {
+    Map<RetExp, List<UploadedPart>> grouped = parts.stream()
+        .collect(Collectors.groupingBy(part -> new RetExp(part.retention(), part.exportType())));
+
+    return grouped.entrySet().stream().map(entry -> {
+      Map<String, String> uploadKey = entry.getValue().stream()
+          .filter(part -> part.storageKey() != null)
+          .collect(Collectors.toMap(UploadedPart::partName, UploadedPart::storageKey));
+      Throwable error = entry.getValue().stream().map(UploadedPart::error)
+          .filter(Objects::nonNull).findFirst().orElse(null);
+      AuditStorage auditStorage = (AuditStorage) new AuditStorage()
+          .retention(entry.getKey().retention()).exportType(entry.getKey().exportType())
+          .logDate(ctx.logDate()).filePath(List.of());
+      auditStorage.uploadKey(uploadKey);
+      if (error != null) {
+        auditStorage.error(error);
+      }
+      auditStorage.status(error != null ? AuditStorageStatus.CREATED : AuditStorageStatus.SENT);
+      return auditStorage;
+    }).collect(Collectors.toList());
   }
 
   @Override
@@ -237,10 +268,13 @@ public class AuditSaverServiceImpl implements AuditSaverService {
         if (ctx != null) {
           ctx.initContext();
           log.info("DailyContext in dailySaverFixer {} ", ctx);
-          Stream<LogFileReference> fileReferenceStream = readerService.findLogFiles(ctx);
-
-          List<AuditFile> auditFiles = service.process(fileReferenceStream, ctx);
-          List<AuditStorage> store = storageService.store(auditFiles, ctx, false);
+          StreamingExportCoordinator coordinator =
+              new StreamingExportCoordinator(ctx, cfg.getMaxSize(), storageService::uploadPart);
+          List<UploadedPart> uploadedParts;
+          try (Stream<LogFileReference> fileReferenceStream = readerService.findLogFiles(ctx)) {
+            uploadedParts = service.process(fileReferenceStream, ctx, coordinator);
+          }
+          List<AuditStorage> store = storageService.persist(toAuditStorage(uploadedParts, ctx), ctx, false);
           auditStorageList.addAll(store);
 
           log.info("End execution for file {} in date {}", file.getStorageKey().values(), ctx.logDate());

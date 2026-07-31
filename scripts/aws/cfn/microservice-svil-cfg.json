@@ -13,6 +13,8 @@
     "MaxvCpus": "2",
     "LogSaverExportMaxFileSize": "2MB",
     "AuditStorageOffsetDuration": "1h",
-    "CdcTables": "ALL"
+    "CdcTables": "ALL",
+    "JavaToolOptions": "-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=70 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp",
+    "EphemeralStorageSizeInGiB": "21"
   }
 }

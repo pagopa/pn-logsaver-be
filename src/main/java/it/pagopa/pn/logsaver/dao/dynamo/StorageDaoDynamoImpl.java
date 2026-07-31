@@ -158,12 +158,22 @@ public class StorageDaoDynamoImpl implements StorageDao {
     log.info("New execution for date {} - Offset: {} - entity: {}", logDate, offsetDuration, newExecution);
 
     ExecutionEntity oldExecution = getExecution(logDate);
+    Long previousVersion = Objects.nonNull(oldExecution) ? oldExecution.getVersion() : null;
     if (Objects.nonNull(oldExecution)) {
       newExecution.setRetentionResult(StorageDaoLogicSupport.mergeRetentionResult(
           oldExecution.getRetentionResult(), newExecution.getRetentionResult()));
     }
+    newExecution.setVersion(Objects.isNull(previousVersion) ? 1L : previousVersion + 1);
+    Expression versionCondition = Objects.isNull(previousVersion)
+        ? Expression.builder().expression("attribute_not_exists(#v)")
+            .expressionNames(Map.of("#v", "version")).build()
+        : Expression.builder().expression("#v = :v").expressionNames(Map.of("#v", "version"))
+            .expressionValues(
+                Map.of(":v", AttributeValue.builder().n(previousVersion.toString()).build()))
+            .build();
     TransactUpdateItemEnhancedRequest<ExecutionEntity> executionUpdate =
-        TransactUpdateItemEnhancedRequest.builder(ExecutionEntity.class).item(newExecution).build();
+        TransactUpdateItemEnhancedRequest.builder(ExecutionEntity.class).item(newExecution)
+            .conditionExpression(versionCondition).build();
     final TransactWriteItemsEnhancedRequest.Builder transBuild =
         TransactWriteItemsEnhancedRequest.builder().addUpdateItem(executionTable, executionUpdate);
 

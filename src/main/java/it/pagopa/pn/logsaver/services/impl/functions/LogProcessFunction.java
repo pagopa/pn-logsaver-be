@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver.services.impl.functions;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Iterator;
@@ -44,6 +45,12 @@ public class LogProcessFunction implements BiFunction<LogFileReference, DailyCon
             Retention retention = entryRetentionAudit.getKey();
             return new ClassifiedLogFragment(retention, new ByteArrayInputStream(logToWrite.getBytes()),
                 logFileRef.getFileName());
+          }).onClose(() -> {
+            try {
+              reader.close();
+            } catch (IOException e) {
+              log.warn("Unexpected error closing gzip source reader: {}", e.getMessage());
+            }
           });
 
     } catch (Exception e) {

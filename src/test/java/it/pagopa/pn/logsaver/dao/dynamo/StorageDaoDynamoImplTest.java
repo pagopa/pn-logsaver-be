@@ -278,6 +278,9 @@ class StorageDaoDynamoImplTest {
     // :AMZN_MAPPED_
     assertEquals("2022-07-13", updContinuosExec.get(0).item().get("latestExecutionDate").s());
 
+    assertNotNull(updLastExec.get(0).conditionExpression(),
+        "optimistic lock: l'update dell'esecuzione deve avere una conditionExpression (R14)");
+
   }
 
   @Test

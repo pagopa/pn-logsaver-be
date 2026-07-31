@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -239,6 +240,39 @@ class S3BucketClientImplTest {
         inStream, 4L, "");
 
     verify(clientS3, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+  }
+
+  @Test
+  void findObjects_shouldNotFetchNextPage_untilCurrentPageExhausted() {
+    List<S3Object> page1 = IntStream.range(0, 1000)
+        .mapToObj(i -> S3Object.builder().key("logs/prefix/obj-" + i).build())
+        .collect(Collectors.toList());
+    ListObjectsV2Response truncatedResponse = ListObjectsV2Response.builder()
+        .contents(page1)
+        .isTruncated(true)
+        .nextContinuationToken("tok-page-2")
+        .build();
+
+    ListObjectsV2Response secondResponse = ListObjectsV2Response.builder()
+        .contents(S3Object.builder().key("logs/prefix/obj-1000").build())
+        .isTruncated(false)
+        .build();
+
+    when(clientS3.listObjectsV2(any(ListObjectsV2Request.class)))
+        .thenReturn(truncatedResponse)
+        .thenReturn(secondResponse);
+
+    Iterator<S3Object> it = client.findObjects("logs/prefix/").iterator();
+    for (int i = 0; i < 1000; i++) {
+      assertTrue(it.hasNext());
+      it.next();
+    }
+
+    verify(clientS3, times(1)).listObjectsV2(any(ListObjectsV2Request.class));
+
+    assertTrue(it.hasNext());
+    assertEquals("logs/prefix/obj-1000", it.next().key());
+    verify(clientS3, times(2)).listObjectsV2(any(ListObjectsV2Request.class));
   }
 
 }

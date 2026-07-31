@@ -1,7 +1,6 @@
 package it.pagopa.pn.logsaver.springbootcfg;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +12,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 
 import java.net.URI;
 
@@ -45,6 +45,11 @@ public class AwsServicesClientsConfig {
   @ConditionalOnProperty(name = "aws.use-s3", havingValue = "true", matchIfMissing = true)
   public S3Client s3Client() {
     S3ClientBuilder clientBuilder = configureBuilder( S3Client.builder() );
+
+    if (props != null && StringUtils.isNotBlank(props.getEndpointUrl())) {
+      clientBuilder.serviceConfiguration(
+          S3Configuration.builder().pathStyleAccessEnabled(true).build());
+    }
 
     return clientBuilder.build();
   }

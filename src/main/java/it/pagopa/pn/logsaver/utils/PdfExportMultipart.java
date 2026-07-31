@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -33,11 +34,10 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
   private static final String PARAGRAPH =
       "Questo pdf contiente i file di audit della Piattaforma Notifiche.";
   private static final long FILE_SIZE_EMPTY = 1029L;
-  private static final long METADATA_EMPTY = 1500L;
+  private static final long DICT_ENTRY_OVERHEAD = 32L;
   private final Retention retention;
   private PdfWriter writer;
   private long fileSize = 0L;
-  private String nextEntry;
   private final LocalDate logDate;
 
   public PdfExportMultipart(@NonNull Path folderIn, @NonNull DataSize maxSize,
@@ -71,7 +71,7 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
 
     this.currentFileOut = new Document();
     writer = PdfWriter.getInstance(this.currentFileOut,
-        Files.newOutputStream(fileOut, StandardOpenOption.APPEND, StandardOpenOption.CREATE));
+        Files.newOutputStream(fileOut, StandardOpenOption.APPEND, StandardOpenOption.CREATE_NEW));
     this.currentFileOut.addTitle(TITLE);
     this.currentFileOut.addSubject(String.format(SUBJECT, retention.getText(), logDate.toString()));
     this.currentFileOut.addCreator(CREATOR);
@@ -85,15 +85,27 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
 
   @Override
   protected void addLogFile(File filePath) throws IOException {
-    this.fileSize += nextEntry.length() + filePath.getName().length() + METADATA_EMPTY;
-    currentFileOut.addHeader(filePath.getName(), nextEntry);
+    String entry = handleXmlContent(filePath.toPath(), retention, logDate);
+    this.fileSize +=
+        entry.getBytes(StandardCharsets.UTF_8).length + filePath.getName().length() + DICT_ENTRY_OVERHEAD;
+    currentFileOut.addHeader(filePath.getName(), entry);
     writer.flush();
   }
 
   @Override
-  protected long fileSize(Path pathFile, File nextFile) throws IOException {
-    this.nextEntry = handleXmlContent(nextFile.toPath(), retention, logDate);
-    return fileSize + nextEntry.length() + nextFile.getName().length() + METADATA_EMPTY;
+  protected void addLogEntry(String entryName, InputStream content) throws IOException {
+    byte[] raw = IOUtils.toByteArray(content);
+    String entry = String.format(START_XML_AUDIT, logDate.toString(), entryName, retention.name())
+        + new String(raw, Charset.defaultCharset()) + new String(END_XML_AUDIT);
+    currentFileOut.addHeader(entryName, entry);
+    this.fileSize +=
+        entry.getBytes(StandardCharsets.UTF_8).length + entryName.length() + DICT_ENTRY_OVERHEAD;
+    writer.flush();
+  }
+
+  @Override
+  protected long currentPartSize() {
+    return fileSize;
   }
 
   @Override

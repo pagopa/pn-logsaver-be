@@ -20,6 +20,8 @@ public class ExecutionEntity extends AuditStorageBase {
 
   private BigDecimal expiration;
 
+  private Long version;
+
   @Builder
   public ExecutionEntity(String logDate, Map<String, RetentionResult> retentionResult,
       List<String> logFileTypes, BigDecimal expiration) {

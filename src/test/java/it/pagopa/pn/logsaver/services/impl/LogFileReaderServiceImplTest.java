@@ -1,8 +1,6 @@
 package it.pagopa.pn.logsaver.services.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -12,6 +10,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,7 +19,6 @@ import it.pagopa.pn.logsaver.services.StorageService;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.assertj.core.api.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -225,6 +223,20 @@ System.out.println("pathPrefix: " + pathPrefix);
 
   }
 */
+
+  @Test
+  void findLogFiles_shouldBeLazy_notScanAllSubfolders_whenOnlyFirstConsumed() {
+    when(cfg.getCdcTables()).thenReturn(List.of("NONE"));
+    when(cfg.getLogsMicroservice()).thenReturn(List.of("pnDelivery", "pnDeliveryPush"));
+    when(cfg.getLogsRootPathTemplate()).thenReturn("'logs/ecs/%s/'yyyy/MM/dd");
+    when(clientS3.findObjects(anyString())).thenAnswer(
+        (InvocationOnMock inv) -> Stream.of(S3Object.builder().key(TestCostant.S3_KEY).build()));
+
+    Optional<LogFileReference> first = service.findLogFiles(TestCostant.CTX).findFirst();
+
+    assertTrue(first.isPresent());
+    verify(clientS3, times(1)).findObjects(anyString());
+  }
 
   @Test
   void getItemContent() throws IOException {

@@ -88,7 +88,9 @@ public class FilesUtils {
       MessageDigest md = MessageDigest.getInstance("SHA-256");
       InputStream fileStream = new FileInputStream(filepath.toFile());
       try (DigestInputStream dis = new DigestInputStream(fileStream, md)) {
-        while (dis.read() != -1);
+        byte[] buffer = new byte[8192];
+        while (dis.read(buffer) != -1) {
+        }
         md = dis.getMessageDigest();
       }
       byte[] encodedhash = md.digest();

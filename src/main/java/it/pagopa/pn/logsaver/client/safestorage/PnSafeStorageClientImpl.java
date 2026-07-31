@@ -64,7 +64,8 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
   }
 
-  private String uploadFile(Path filePath, ExportType exportType, Retention retention) {
+  @Override
+  public String uploadFile(Path filePath, ExportType exportType, Retention retention) {
     String mediaType = exportType.getMediaType();
     try {
       String sha256 = FilesUtils.computeSha256(filePath);

@@ -3,12 +3,16 @@ package it.pagopa.pn.logsaver.services.impl.fuctions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -94,6 +98,21 @@ class LogProcessFunctionTest {
     assertEquals(4, logEvtDevList.get(4).size());
     assertEquals(4, logEvtDevList.get(5).size());
 
+  }
+
+  @Test
+  void apply_shouldCloseSourceStream_afterStreamConsumedAndClosed() throws IOException {
+    when(ctx.retentions()).thenReturn(Set.of(Retention.values()));
+    InputStream sourceSpy = spy(s3File.getInputStream());
+    LogFileReference item = LogFileReference.builder().logDate(TestCostant.LOGDATE)
+        .s3Key(TestCostant.S3_KEY).content(sourceSpy).build();
+
+    try (Stream<ClassifiedLogFragment> result = function.apply(item, ctx)) {
+      result.forEach(fragment -> {
+      });
+    }
+
+    verify(sourceSpy, atLeastOnce()).close();
   }
 
   private List<ClassifiedLogFragment> filterResult(List<ClassifiedLogFragment> ret, Retention retention) {

@@ -1,8 +1,10 @@
 package it.pagopa.pn.logsaver.services.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +19,7 @@ import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.TestUtils;
 import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
+import it.pagopa.pn.logsaver.model.AuditStorage;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.DailySaverResultList;
 import it.pagopa.pn.logsaver.model.StorageExecution;
@@ -29,6 +32,7 @@ import it.pagopa.pn.logsaver.services.LogFileReaderService;
 import it.pagopa.pn.logsaver.services.StorageService;
 import it.pagopa.pn.logsaver.utils.DateUtils;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;
+import it.pagopa.pn.logsaver.utils.StreamingExportCoordinator.UploadedPart;
 
 @ExtendWith(MockitoExtension.class)
 class AuditSaverServiceImplTest {
@@ -65,9 +69,9 @@ class AuditSaverServiceImplTest {
 
     when(readerService.findLogFiles(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
 
-    when(procService.process(any(), any())).thenReturn(TestCostant.auditFiles);
+    when(procService.process(any(), any(), any())).thenReturn(List.of());
 
-    when(storageService.store(any(), any())).thenReturn(TestCostant.auditStorage);
+    when(storageService.persist(any(), any(), anyBoolean())).thenReturn(TestCostant.auditStorage);
 
 
     DailySaverResultList res = service.dailySaverFromLatestExecutionToYesterday(
@@ -110,9 +114,9 @@ class AuditSaverServiceImplTest {
 
     when(readerService.findLogFiles(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
 
-    when(procService.process(any(), any())).thenReturn(TestCostant.auditFiles);
+    when(procService.process(any(), any(), any())).thenReturn(List.of());
 
-    when(storageService.store(any(), any())).thenReturn(TestCostant.auditStorage);
+    when(storageService.persist(any(), any(), anyBoolean())).thenReturn(TestCostant.auditStorage);
 
 
     DailySaverResultList res = service.dailySaverFromLatestExecutionToYesterday(
@@ -158,9 +162,9 @@ class AuditSaverServiceImplTest {
 
     when(readerService.findLogFiles(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
 
-    when(procService.process(any(), any())).thenReturn(TestCostant.auditFiles);
+    when(procService.process(any(), any(), any())).thenReturn(List.of());
 
-    when(storageService.store(any(), any())).thenReturn(TestCostant.auditStorage);
+    when(storageService.persist(any(), any(), anyBoolean())).thenReturn(TestCostant.auditStorage);
 
 
     DailySaverResultList res = service.dailySaverFromLatestExecutionToYesterday(
@@ -200,7 +204,7 @@ class AuditSaverServiceImplTest {
 
     when(readerService.findLogFiles(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
 
-    when(procService.process(any(), any())).thenThrow(FileSystemException.class);
+    when(procService.process(any(), any(), any())).thenThrow(FileSystemException.class);
 
 
     DailySaverResultList res = service.dailySaverFromLatestExecutionToYesterday(
@@ -213,5 +217,40 @@ class AuditSaverServiceImplTest {
     assertTrue(res.getResults().get(0).hasErrors());
 
 
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void dailySaver_whenPartUploadFails_stillPersistsRecord_failedRetentionMarkedError() {
+
+    when(storageService.getLatestContinuosExecutionDate())
+        .thenReturn(DateUtils.yesterday().minusDays(3));
+    when(storageService.getStorageExecutionBetween(any(), any()))
+        .thenReturn(List.of(StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
+            .logDate(DateUtils.yesterday().minusDays(3))
+            .details(TestUtils.defaultExecutionDetails()).build()));
+
+    when(readerService.findLogFiles(any())).thenReturn(TestCostant.items.stream());
+
+    UploadedPart okPart =
+        new UploadedPart(Retention.AUDIT10Y, ExportType.ZIP, "key-ok", "part-ok.zip", null);
+    UploadedPart failedPart = new UploadedPart(Retention.DEVELOPER, ExportType.ZIP, null,
+        "part-ko.zip", new RuntimeException("SafeStorage 500"));
+    when(procService.process(any(), any(), any())).thenReturn(List.of(okPart, failedPart));
+
+    ArgumentCaptor<List<AuditStorage>> persistCaptor = ArgumentCaptor.forClass(List.class);
+    when(storageService.persist(persistCaptor.capture(), any(), anyBoolean()))
+        .thenReturn(TestCostant.auditStorage);
+
+    service.dailySaverFromLatestExecutionToYesterday(Set.of(LogFileType.values()),
+        LogSaverUtils.defaultRetentionExportTypeMap());
+
+    List<AuditStorage> persisted = persistCaptor.getValue();
+    AuditStorage dev = persisted.stream().filter(a -> a.retention() == Retention.DEVELOPER)
+        .findFirst().orElseThrow();
+    AuditStorage aud = persisted.stream().filter(a -> a.retention() == Retention.AUDIT10Y)
+        .findFirst().orElseThrow();
+    assertTrue(dev.hasError(), "retention con upload fallito deve avere errore -> CREATED");
+    assertFalse(aud.hasError(), "retention riuscita non deve avere errore -> SENT");
   }
 }

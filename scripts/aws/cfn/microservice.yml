@@ -129,6 +129,18 @@ Parameters:
     Default: 2048
     Description: The memory hard limit (in MiB) present to the container.
 
+  JavaToolOptions:
+    Type: String
+    Default: '-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=70 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp'
+    Description: 'JVM options for the batch container: fail-fast on OOM + heap dump on OOM.'
+
+  EphemeralStorageSizeInGiB:
+    Type: Number
+    Default: 21
+    MinValue: 21
+    MaxValue: 200
+    Description: 'Fargate ephemeral storage size in GiB for the batch container (min 21). Sized for worst-case PDF_SIGNED.'
+
   BatchJobMaxAttempts:
     Type: Number
     Default: 1
@@ -214,6 +226,8 @@ Resources:
             Type: VCPU
           - Value: !Ref Memory
             Type: MEMORY
+        EphemeralStorage:
+          SizeInGiB: !Ref EphemeralStorageSizeInGiB
         JobRoleArn: !GetAtt "BatchTaskExecutionRole.Arn"
         ExecutionRoleArn: !GetAtt "BatchTaskExecutionRole.Arn"
         LogConfiguration:
@@ -255,6 +269,8 @@ Resources:
             Value: !Ref AuditStorageOffsetDuration
           - Name: LOGSAVER_CDC_TABLES
             Value: !Ref CdcTables
+          - Name: JAVA_TOOL_OPTIONS
+            Value: !Ref JavaToolOptions
       PlatformCapabilities:
         - FARGATE
       Tags:
@@ -277,6 +293,8 @@ Resources:
             Type: VCPU
           - Value: !Ref Memory
             Type: MEMORY
+        EphemeralStorage:
+          SizeInGiB: !Ref EphemeralStorageSizeInGiB
         JobRoleArn: !GetAtt "BatchTaskExecutionRole.Arn"
         ExecutionRoleArn: !GetAtt "BatchTaskExecutionRole.Arn"
         LogConfiguration:
@@ -324,6 +342,8 @@ Resources:
             Value: !Ref AuditStorageOffsetDuration
           - Name: LOGSAVER_CDC_TABLES
             Value: !Ref CdcTables
+          - Name: JAVA_TOOL_OPTIONS
+            Value: !Ref JavaToolOptions
       PlatformCapabilities:
         - FARGATE
       Tags:

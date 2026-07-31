@@ -1,5 +1,6 @@
 package it.pagopa.pn.logsaver.services.impl;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,9 +93,18 @@ public class StorageServiceImpl implements StorageService {
   public List<AuditStorage> store(List<AuditFile> files, DailyContextCfg ctx, boolean dailySaverSource) {
     log.info("Start store() with filesList size {}, DailyContext {}, dailySaverSource {}", files.size(), ctx, dailySaverSource);
     List<AuditStorage> auditStored = files.stream().map(this::send).collect(Collectors.toList());
+    return persist(auditStored, ctx, dailySaverSource);
+  }
 
+  @Override
+  public String uploadPart(Path part, Retention retention, ExportType exportType) {
+    return safeStorageClient.uploadFile(part, exportType, retention);
+  }
+
+  @Override
+  public List<AuditStorage> persist(List<AuditStorage> uploaded, DailyContextCfg ctx, boolean dailySaverSource) {
     List<AuditStorageEntity> auditStoredEntity =
-            auditStored.stream().map(AuditStorageMapper::toEntity).collect(Collectors.toList());
+            uploaded.stream().map(AuditStorageMapper::toEntity).collect(Collectors.toList());
 
     auditStoredEntity.forEach(entity -> {
       Retention ret = Retention.valueOf(entity.getRetention());
@@ -108,7 +118,7 @@ public class StorageServiceImpl implements StorageService {
     log.info("Update log-saver execution");
     storageDao.updateExecution(auditStoredEntity, ctx.logDate(), ctx.logFileTypes(), dailySaverSource);
 
-    return auditStored;
+    return uploaded;
   }
 
   private AuditStorage send(AuditFile file) {
