@@ -148,7 +148,8 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
     log.info("Search {} log files for subfolder {}", type.name(), prefix);
 
     return clientS3.findObjects(prefix).map(
-        obj -> LogFileReference.builder().s3Key(obj.key()).type(type).logDate(logDate).build());
+        obj -> LogFileReference.builder().s3Key(obj.key())
+            .size(obj.size() == null ? 0L : obj.size()).type(type).logDate(logDate).build());
   }
 
   private String handleDailyPrefix(String subFolder, LogFileType type, LocalDate logDate) {

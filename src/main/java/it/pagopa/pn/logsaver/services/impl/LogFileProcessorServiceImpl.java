@@ -8,6 +8,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -16,6 +17,7 @@ import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
@@ -39,6 +41,9 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
 
   @Value("${log-saver.process.prefetch:1}")
   private int prefetch;
+
+  @Value("${log-saver.process.prefetch-max-bytes:64MB}")
+  private DataSize prefetchMaxBytes;
 
   @Override
   public List<UploadedPart> process(Stream<LogFileReference> fileStream, DailyContextCfg dailyCtx,
@@ -69,27 +74,37 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     return coordinator.finish();
   }
 
-  private record PendingDownload(LogFileReference ref, Future<byte[]> body) {
+  private record PendingWork(LogFileReference ref, long size,
+      Future<List<ClassifiedLogFragment>> work) {
   }
 
   private void processPrefetch(Stream<LogFileReference> fileStream, DailyContextCfg dailyCtx,
       StreamingExportCoordinator coordinator, AtomicInteger processedCount,
       AtomicInteger errorCount) {
-    log.info("Processing with prefetch={} on virtual threads", prefetch);
+    log.info("Processing with prefetch={} maxBytes={} availableProcessors={} on virtual threads",
+        prefetch, prefetchMaxBytes.toBytes(), Runtime.getRuntime().availableProcessors());
 
     ExecutorService pool = newPool();
-    Deque<PendingDownload> inFlight = new ArrayDeque<>(prefetch);
+    Deque<PendingWork> inFlight = new ArrayDeque<>(prefetch);
+    long inFlightBytes = 0;
     try {
       Iterator<LogFileReference> iterator = fileStream.iterator();
       while (iterator.hasNext()) {
         LogFileReference item = iterator.next();
-        inFlight.addLast(new PendingDownload(item, pool.submit(() -> downloadBody(item))));
-        if (inFlight.size() >= prefetch) {
-          consume(inFlight.pollFirst(), dailyCtx, coordinator, processedCount, errorCount);
+        inFlight.addLast(new PendingWork(item, item.getSize(),
+            pool.submit(() -> prepare(item, dailyCtx))));
+        inFlightBytes += item.getSize();
+        while (!inFlight.isEmpty()
+            && (inFlight.size() >= prefetch || inFlightBytes > prefetchMaxBytes.toBytes())) {
+          PendingWork done = inFlight.pollFirst();
+          inFlightBytes -= done.size();
+          consume(done, coordinator, processedCount, errorCount);
         }
       }
       while (!inFlight.isEmpty()) {
-        consume(inFlight.pollFirst(), dailyCtx, coordinator, processedCount, errorCount);
+        PendingWork done = inFlight.pollFirst();
+        inFlightBytes -= done.size();
+        consume(done, coordinator, processedCount, errorCount);
       }
     } finally {
       pool.shutdownNow();
@@ -108,32 +123,33 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     }
   }
 
-  private void consume(PendingDownload pending, DailyContextCfg dailyCtx,
-      StreamingExportCoordinator coordinator, AtomicInteger processedCount,
-      AtomicInteger errorCount) {
+  private void consume(PendingWork pending, StreamingExportCoordinator coordinator,
+      AtomicInteger processedCount, AtomicInteger errorCount) {
     LogFileReference item = pending.ref();
     try {
-      byte[] body = pending.body().get();
-      filterAccept(item, body, dailyCtx, coordinator);
+      pending.work().get().forEach(coordinator::accept);
       processedCount.incrementAndGet();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IllegalStateException("processing interrupted", e);
+    } catch (ExecutionException e) {
+      errorCount.incrementAndGet();
+      Throwable cause = e.getCause() != null ? e.getCause() : e;
+      log.error("ERRORE: Salto il file {} a causa di: {}", item.getS3Key(), cause.getMessage());
     } catch (Exception e) {
       errorCount.incrementAndGet();
       log.error("ERRORE: Salto il file {} a causa di: {}", item.getS3Key(), e.getMessage());
     }
   }
 
-  private void filterAccept(LogFileReference itemLog, byte[] body, DailyContextCfg dailyCtx,
-      StreamingExportCoordinator coordinator) {
+  private List<ClassifiedLogFragment> prepare(LogFileReference itemLog, DailyContextCfg dailyCtx) {
     LogSaverUtils.initMDC(dailyCtx);
-    log.debug("filterAccept start s3Key={} type={} date={}", itemLog.getS3Key(), itemLog.getType(), dailyCtx.logDate());
+    log.debug("prepare start s3Key={} type={} date={}", itemLog.getS3Key(), itemLog.getType(), dailyCtx.logDate());
 
     try {
-      itemLog.setContent(new ByteArrayInputStream(body));
+      itemLog.setContent(new ByteArrayInputStream(downloadBody(itemLog)));
       try (Stream<ClassifiedLogFragment> fragments = filter(itemLog, dailyCtx)) {
-        fragments.forEach(coordinator::accept);
+        return fragments.toList();
       }
     } finally {
       LogSaverUtils.clearMdcFromForkThread();

@@ -16,6 +16,8 @@ public class LogFileReference {
 
   private String s3Key;
 
+  private long size;
+
   private LogFileType type;
 
   private LocalDate logDate;
