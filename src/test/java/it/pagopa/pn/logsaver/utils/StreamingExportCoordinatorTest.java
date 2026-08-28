@@ -88,6 +88,25 @@ class StreamingExportCoordinatorTest {
   }
 
   @Test
+  void append_whenSameEntryNameRecursNonContiguously_keepsBothContents_underDerivedName()
+      throws IOException {
+    DailyContextCfg ctx = context(Map.of(Retention.AUDIT10Y, Set.of(ExportType.ZIP)));
+
+    StreamingExportCoordinator coord =
+        new StreamingExportCoordinator(ctx, DataSize.of(2, DataUnit.MEGABYTES), uploader);
+    coord.accept(frag(Retention.AUDIT10Y, "FIRST", "same.log"));
+    coord.accept(frag(Retention.AUDIT10Y, "OTHER", "other.log"));
+    coord.accept(frag(Retention.AUDIT10Y, "SECOND", "same.log"));
+
+    List<UploadedPart> res = coord.finish();
+
+    assertEquals(1, res.size());
+    assertEquals(List.of("same.log", "other.log", "same.log~2"),
+        entriesByPart.get(res.get(0).partName()),
+        "nessuna entry deve essere scartata (ZIP) ne sovrascritta (PDF)");
+  }
+
+  @Test
   void accept_routesPerRetention_uploadsAndDeletesParts_withoutSourceStaging() throws IOException {
     DailyContextCfg ctx = context(Map.of(Retention.AUDIT10Y, Set.of(ExportType.ZIP),
         Retention.DEVELOPER, Set.of(ExportType.ZIP)));

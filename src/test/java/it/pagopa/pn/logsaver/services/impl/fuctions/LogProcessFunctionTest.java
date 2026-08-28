@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,10 +23,7 @@ import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonStreamParser;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.exceptions.LogFilterException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
@@ -70,34 +69,17 @@ class LogProcessFunctionTest {
     List<ClassifiedLogFragment> ret = function.apply(item, ctx).sequential().collect(Collectors.toList());
 
     assertNotNull(ret);
-    assertEquals(10, ret.size());
+    assertEquals(3, ret.size());
 
-    assertEquals(2, filterResult(ret, Retention.AUDIT10Y).size());
-    assertEquals(2, filterResult(ret, Retention.AUDIT5Y).size());
-    assertEquals(6, filterResult(ret, Retention.DEVELOPER).size());
+    assertEquals(1, filterResult(ret, Retention.AUDIT10Y).size());
+    assertEquals(1, filterResult(ret, Retention.AUDIT5Y).size());
+    assertEquals(1, filterResult(ret, Retention.DEVELOPER).size());
 
-    List<JsonArray> logEvt10List = filterResult(ret, Retention.AUDIT10Y).stream()
-        .map(ClassifiedLogFragment::getContent).map(this::getLogEvent).collect(Collectors.toList());
+    assertEquals(List.of(4, 4), logEventSizes(ret, Retention.AUDIT10Y));
+    assertEquals(List.of(1, 1), logEventSizes(ret, Retention.AUDIT5Y));
+    assertEquals(List.of(19, 9, 2, 14, 4, 4), logEventSizes(ret, Retention.DEVELOPER));
 
-    List<JsonArray> logEvt5List = filterResult(ret, Retention.AUDIT5Y).stream()
-        .map(ClassifiedLogFragment::getContent).map(this::getLogEvent).collect(Collectors.toList());
-
-    List<JsonArray> logEvtDevList = filterResult(ret, Retention.DEVELOPER).stream()
-        .map(ClassifiedLogFragment::getContent).map(this::getLogEvent).collect(Collectors.toList());
-
-    assertEquals(4, logEvt10List.get(0).size());
-    assertEquals(4, logEvt10List.get(1).size());
-
-    assertEquals(1, logEvt5List.get(0).size());
-    assertEquals(1, logEvt5List.get(1).size());
-
-    assertEquals(19, logEvtDevList.get(0).size());
-    assertEquals(9, logEvtDevList.get(1).size());
-    assertEquals(2, logEvtDevList.get(2).size());
-    assertEquals(14, logEvtDevList.get(3).size());
-    assertEquals(4, logEvtDevList.get(4).size());
-    assertEquals(4, logEvtDevList.get(5).size());
-
+    ret.forEach(fragment -> assertEquals(item.getFileName(), fragment.getFileName()));
   }
 
   @Test
@@ -121,13 +103,18 @@ class LogProcessFunctionTest {
 
   }
 
-  private JsonArray getLogEvent(InputStream in) {
-    JsonObject jsonObject;
+  private List<Integer> logEventSizes(List<ClassifiedLogFragment> ret, Retention retention) {
+    InputStream content = filterResult(ret, retention).get(0).getContent();
+    List<Integer> sizes = new ArrayList<>();
     try {
-      jsonObject = JsonParser.parseString(IOUtils.toString(in)).getAsJsonObject();
-    } catch (JsonSyntaxException | IOException e) {
-      return null;
+      JsonStreamParser parser =
+          new JsonStreamParser(IOUtils.toString(content, StandardCharsets.UTF_8));
+      while (parser.hasNext()) {
+        sizes.add(parser.next().getAsJsonObject().getAsJsonArray("logEvents").size());
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
     }
-    return jsonObject.getAsJsonArray("logEvents");
+    return sizes;
   }
 }

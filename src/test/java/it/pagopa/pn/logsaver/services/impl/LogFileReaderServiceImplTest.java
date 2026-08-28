@@ -239,6 +239,22 @@ System.out.println("pathPrefix: " + pathPrefix);
   }
 
   @Test
+  void findLogFiles_whenLogsTemplateHasNoPlaceholder_scansDailyPrefixOnlyOnce() {
+    when(cfg.getCdcTables()).thenReturn(List.of("NONE"));
+    when(cfg.getLogsMicroservice()).thenReturn(List.of());
+    when(cfg.getLogsRootPathTemplate()).thenReturn("'logsTos3/'yyyy/MM/dd");
+    when(clientS3.findSubFoldersWithPrefix(anyString(), anyString()))
+        .thenReturn(Stream.of("2024", "2025", "2026"));
+    when(clientS3.findObjects(anyString())).thenAnswer(
+        (InvocationOnMock inv) -> Stream.of(S3Object.builder().key(TestCostant.S3_KEY).build()));
+
+    long found = service.findLogFiles(TestCostant.CTX).count();
+
+    verify(clientS3, times(1)).findObjects(anyString());
+    assertEquals(1L, found, "il prefisso giornaliero deve essere elencato una sola volta");
+  }
+
+  @Test
   void getItemContent() throws IOException {
     String mockContent = "TEST";
     when(clientS3.getObjectContent(anyString()))

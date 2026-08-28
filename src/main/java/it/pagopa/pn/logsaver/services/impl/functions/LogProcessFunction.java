@@ -1,12 +1,14 @@
 package it.pagopa.pn.logsaver.services.impl.functions;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -29,35 +31,39 @@ public class LogProcessFunction implements BiFunction<LogFileReference, DailyCon
 
   @Override
   public Stream<ClassifiedLogFragment> apply(LogFileReference logFileRef, DailyContextCfg ctx) {
-    try {
+    try (Reader reader = new InputStreamReader(new GZIPInputStream(logFileRef.getContent()))) {
 
-      Reader reader = new InputStreamReader(new GZIPInputStream(logFileRef.getContent()));
       Iterator<JsonElement> sourceIterator = new JsonStreamParser(reader);
 
       Stream<JsonElement> targetStream =
           StreamSupport.stream(((Iterable<JsonElement>) () -> sourceIterator).spliterator(), false);
 
+      Map<Retention, ByteArrayOutputStream> contentByRetention = new LinkedHashMap<>();
 
-      return targetStream.map(JsonElement::getAsJsonObject)
+      targetStream.map(JsonElement::getAsJsonObject)
           .map(json -> LogsFilterSupport.groupByRetention(json, ctx.retentions()))
-          .map(Map::entrySet).flatMap(Set::stream).map(entryRetentionAudit -> {
-            String logToWrite = entryRetentionAudit.getValue().toString();
-            Retention retention = entryRetentionAudit.getKey();
-            return new ClassifiedLogFragment(retention, new ByteArrayInputStream(logToWrite.getBytes()),
-                logFileRef.getFileName());
-          }).onClose(() -> {
-            try {
-              reader.close();
-            } catch (IOException e) {
-              log.warn("Unexpected error closing gzip source reader: {}", e.getMessage());
-            }
-          });
+          .forEach(byRetention -> byRetention.forEach((retention, logToWrite) -> appendRecord(
+              contentByRetention.computeIfAbsent(retention, ret -> new ByteArrayOutputStream()),
+              logToWrite.toString())));
+
+      return contentByRetention.entrySet().stream()
+          .map(entryRetentionAudit -> new ClassifiedLogFragment(entryRetentionAudit.getKey(),
+              new ByteArrayInputStream(entryRetentionAudit.getValue().toByteArray()),
+              logFileRef.getFileName()));
 
     } catch (Exception e) {
       log.error("Log filtering error. The content of the file is not valid json-stream: {}",
           e.getMessage());
       throw new LogFilterException("Filter error. The content of the file is not valid json-stream",
           e);
+    }
+  }
+
+  private void appendRecord(ByteArrayOutputStream target, String logToWrite) {
+    try {
+      target.write(logToWrite.getBytes());
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
   }
 }

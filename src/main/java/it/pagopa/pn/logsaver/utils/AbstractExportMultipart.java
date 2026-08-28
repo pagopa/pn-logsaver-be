@@ -10,7 +10,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
@@ -28,6 +30,7 @@ abstract class AbstractExportMultipart<T> {
   private DataSize maxSize;
 
   private List<Path> outFileList = new ArrayList<>();
+  private final Set<String> writtenEntryNames = new HashSet<>();
   @NonNull
   private Path folderOut;
   @NonNull
@@ -118,14 +121,29 @@ abstract class AbstractExportMultipart<T> {
   public void append(String entryName, InputStream content) {
     try {
       ensureCurrentPartOpen();
-      addLogEntry(entryName, content);
+      addLogEntry(uniqueEntryName(entryName), content);
       if (currentPartSize() > maxSize.toBytes()) {
         finalizeCurrentPart();
       }
     } catch (Exception e) {
-      log.error("Error appending entry {} to folder {}", entryName, folderOut);
-      throw new FileSystemException("", e);
+      log.error("Error appending entry {} to folder {}", entryName, folderOut, e);
+      throw new FileSystemException("Error appending entry " + entryName, e);
     }
+  }
+
+  private String uniqueEntryName(String entryName) {
+    if (writtenEntryNames.add(entryName)) {
+      return entryName;
+    }
+    String candidate;
+    int suffix = 2;
+    do {
+      candidate = entryName + "~" + suffix++;
+    } while (!writtenEntryNames.add(candidate));
+    log.warn("Entry {} already present in folder {}, stored as {}. "
+        + "The same source file has been processed more than once.", entryName, folderOut,
+        candidate);
+    return candidate;
   }
 
   public void closeStream() {
@@ -134,8 +152,8 @@ abstract class AbstractExportMultipart<T> {
         finalizeCurrentPart();
       }
     } catch (Exception e) {
-      log.error("Error closing stream for folder {}", folderOut);
-      throw new FileSystemException("", e);
+      log.error("Error closing stream for folder {}", folderOut, e);
+      throw new FileSystemException("Error closing stream for folder " + folderOut, e);
     }
   }
 
