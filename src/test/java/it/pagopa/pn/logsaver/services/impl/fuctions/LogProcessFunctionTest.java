@@ -104,16 +104,11 @@ class LogProcessFunctionTest {
   }
 
   private List<Integer> logEventSizes(List<ClassifiedLogFragment> ret, Retention retention) {
-    InputStream content = filterResult(ret, retention).get(0).getContent();
+    byte[] content = filterResult(ret, retention).get(0).getContent();
     List<Integer> sizes = new ArrayList<>();
-    try {
-      JsonStreamParser parser =
-          new JsonStreamParser(IOUtils.toString(content, StandardCharsets.UTF_8));
-      while (parser.hasNext()) {
-        sizes.add(parser.next().getAsJsonObject().getAsJsonArray("logEvents").size());
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
+    JsonStreamParser parser = new JsonStreamParser(new String(content, StandardCharsets.UTF_8));
+    while (parser.hasNext()) {
+      sizes.add(parser.next().getAsJsonObject().getAsJsonArray("logEvents").size());
     }
     return sizes;
   }

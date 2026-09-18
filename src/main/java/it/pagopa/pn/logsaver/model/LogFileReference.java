@@ -22,6 +22,8 @@ public class LogFileReference {
 
   private InputStream content;
 
+  private long size;
+
   public String getFileName() {
     return FilenameUtils.getBaseName(this.getS3Key());
   }
@@ -33,7 +35,7 @@ public class LogFileReference {
 
     private Retention retention;
 
-    private InputStream content;
+    private byte[] content;
 
     private String fileName;
   }

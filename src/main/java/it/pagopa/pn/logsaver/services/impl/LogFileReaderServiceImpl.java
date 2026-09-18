@@ -114,8 +114,7 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
             .filter(subFolder -> !(LogFileType.CDC == type && subFolder.isEmpty()))
             .map(subFolder -> handleDailyPrefix(subFolder, type, dailyCtx.logDate()))
             .distinct()
-            .flatMap(prefix -> listObjects(prefix, type, dailyCtx.logDate())))
-        .peek(ref -> countByType.computeIfAbsent(ref.getType(), t -> new LongAdder()).increment())
+            .flatMap(prefix -> listObjects(prefix, type, dailyCtx.logDate(), countByType)))
         .onClose(() -> {
           long total = countByType.values().stream().mapToLong(LongAdder::sum).sum();
           if (total == 0) {
@@ -142,13 +141,16 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
     return clientS3.getObjectContent(key);
   }
 
-  private Stream<LogFileReference> listObjects(String prefix, LogFileType type,
-      LocalDate logDate) {
+  private Stream<LogFileReference> listObjects(String prefix, LogFileType type, LocalDate logDate,
+      Map<LogFileType, LongAdder> countByType) {
 
     log.info("Search {} log files for subfolder {}", type.name(), prefix);
 
-    return clientS3.findObjects(prefix).map(
-        obj -> LogFileReference.builder().s3Key(obj.key()).type(type).logDate(logDate).build());
+    return clientS3.findObjects(prefix).map(obj -> {
+      countByType.computeIfAbsent(type, t -> new LongAdder()).increment();
+      return LogFileReference.builder().s3Key(obj.key()).type(type).logDate(logDate)
+          .size(obj.size() == null ? 0L : obj.size()).build();
+    });
   }
 
   private String handleDailyPrefix(String subFolder, LogFileType type, LocalDate logDate) {

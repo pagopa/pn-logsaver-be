@@ -60,7 +60,7 @@ class LogFileProcessorServiceImplCharacterizationTest {
 
   @BeforeEach
   void setUp() throws IOException {
-    service = new LogFileProcessorServiceImpl(s3Service);
+    service = new LogFileProcessorServiceImpl(s3Service, cfg);
     tmpBasePath = Files.createTempDirectory("wi0-logprocessor-");
     keepDir = Files.createTempDirectory("wi0-logprocessor-keep-");
   }
@@ -90,16 +90,16 @@ class LogFileProcessorServiceImplCharacterizationTest {
           if ("key-1".equals(in.getS3Key())) {
             return Stream.of(
                 new ClassifiedLogFragment(Retention.AUDIT10Y,
-                    IOUtils.toInputStream("CONTENT-A-10Y", StandardCharsets.US_ASCII), "part1.log"),
+                    "CONTENT-A-10Y".getBytes(StandardCharsets.US_ASCII), "part1.log"),
                 new ClassifiedLogFragment(Retention.DEVELOPER,
-                    IOUtils.toInputStream("CONTENT-A-DEV", StandardCharsets.US_ASCII),
+                    "CONTENT-A-DEV".getBytes(StandardCharsets.US_ASCII),
                     "part1-dev.log"));
           } else {
             return Stream.of(
                 new ClassifiedLogFragment(Retention.AUDIT10Y,
-                    IOUtils.toInputStream("CONTENT-B-10Y", StandardCharsets.US_ASCII), "part2.log"),
+                    "CONTENT-B-10Y".getBytes(StandardCharsets.US_ASCII), "part2.log"),
                 new ClassifiedLogFragment(Retention.DEVELOPER,
-                    IOUtils.toInputStream("CONTENT-B-DEV", StandardCharsets.US_ASCII),
+                    "CONTENT-B-DEV".getBytes(StandardCharsets.US_ASCII),
                     "part2-dev.log"));
           }
         };
@@ -174,13 +174,10 @@ class LogFileProcessorServiceImplCharacterizationTest {
   private Map<String, String> readAllCustomHeaders(List<Path> parts) throws IOException {
     Map<String, String> result = new HashMap<>();
     for (Path part : parts) {
-      PdfReader reader = new PdfReader(part.toString());
-      try {
+      try (PdfReader reader = new PdfReader(part.toString())) {
         Map<String, String> info = reader.getInfo();
         info.entrySet().stream().filter(entry -> !STANDARD_INFO_KEYS.contains(entry.getKey()))
             .forEach(entry -> result.put(entry.getKey(), entry.getValue()));
-      } finally {
-        reader.close();
       }
     }
     return result;

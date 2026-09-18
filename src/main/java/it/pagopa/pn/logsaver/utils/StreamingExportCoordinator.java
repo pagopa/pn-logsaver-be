@@ -2,7 +2,6 @@ package it.pagopa.pn.logsaver.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.apache.commons.io.IOUtils;
 import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
@@ -60,12 +58,7 @@ public class StreamingExportCoordinator {
     if (exportTypes == null || exportTypes.isEmpty()) {
       return;
     }
-    byte[] bytes;
-    try {
-      bytes = IOUtils.toByteArray(fragment.getContent());
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    byte[] bytes = fragment.getContent();
     for (ExportType exportType : exportTypes) {
       AbstractExportMultipart<?> writer =
           writers.computeIfAbsent(new WriterKey(retention, exportType),

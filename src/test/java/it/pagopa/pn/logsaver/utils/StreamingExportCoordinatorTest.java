@@ -61,8 +61,7 @@ class StreamingExportCoordinatorTest {
   }
 
   private ClassifiedLogFragment frag(Retention retention, String content, String name) {
-    InputStream is = IOUtils.toInputStream(content, StandardCharsets.UTF_8);
-    return new ClassifiedLogFragment(retention, is, name);
+    return new ClassifiedLogFragment(retention, content.getBytes(StandardCharsets.UTF_8), name);
   }
 
   private DailyContextCfg context(Map<Retention, Set<ExportType>> map) {

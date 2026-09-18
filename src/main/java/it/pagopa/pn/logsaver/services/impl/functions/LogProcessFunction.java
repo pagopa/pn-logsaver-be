@@ -1,6 +1,5 @@
 package it.pagopa.pn.logsaver.services.impl.functions;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -48,8 +47,7 @@ public class LogProcessFunction implements BiFunction<LogFileReference, DailyCon
 
       return contentByRetention.entrySet().stream()
           .map(entryRetentionAudit -> new ClassifiedLogFragment(entryRetentionAudit.getKey(),
-              new ByteArrayInputStream(entryRetentionAudit.getValue().toByteArray()),
-              logFileRef.getFileName()));
+              entryRetentionAudit.getValue().toByteArray(), logFileRef.getFileName()));
 
     } catch (Exception e) {
       log.error("Log filtering error. The content of the file is not valid json-stream: {}",

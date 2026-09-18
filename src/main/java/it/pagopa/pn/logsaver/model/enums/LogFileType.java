@@ -1,11 +1,14 @@
 package it.pagopa.pn.logsaver.model.enums;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.io.IOUtils;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
@@ -17,8 +20,8 @@ public enum LogFileType {
 
 
   CDC(Set.of(Retention.AUDIT10Y),
-      (in, cfg) -> Stream.of(
-          new ClassifiedLogFragment(Retention.AUDIT10Y, in.getContent(), in.getFileName()))), LOGS(
+      (in, cfg) -> Stream.of(new ClassifiedLogFragment(Retention.AUDIT10Y, readContent(in),
+          in.getFileName()))), LOGS(
               Set.of(Retention.values()), new LogProcessFunction());
 
 
@@ -53,5 +56,13 @@ public enum LogFileType {
 
   public Stream<ClassifiedLogFragment> filter(DailyContextCfg ctx, LogFileReference item) {
     return filter.apply(item, ctx);
+  }
+
+  private static byte[] readContent(LogFileReference item) {
+    try {
+      return IOUtils.toByteArray(item.getContent());
+    } catch (IOException e) {
+      throw new UncheckedIOException("Error reading log file " + item.getS3Key(), e);
+    }
   }
 }

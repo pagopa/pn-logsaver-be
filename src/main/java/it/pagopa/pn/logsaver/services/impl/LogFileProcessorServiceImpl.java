@@ -11,11 +11,12 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
@@ -37,8 +38,8 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
   @NonNull
   private final LogFileReaderService s3Service;
 
-  @Value("${log-saver.process.prefetch:1}")
-  private int prefetch;
+  @NonNull
+  private final LogSaverCfg cfg;
 
   @Override
   public List<UploadedPart> process(Stream<LogFileReference> fileStream, DailyContextCfg dailyCtx,
@@ -49,8 +50,9 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     AtomicInteger processedCount = new AtomicInteger(0);
     AtomicInteger errorCount = new AtomicInteger(0);
 
+    int prefetch = cfg.getProcessPrefetch();
     if (prefetch > 1) {
-      processPrefetch(fileStream, dailyCtx, coordinator, processedCount, errorCount);
+      processPrefetch(fileStream, dailyCtx, coordinator, processedCount, errorCount, prefetch);
     } else {
       fileStream.forEach(item ->
               {
@@ -59,7 +61,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
                   processedCount.incrementAndGet();
                 } catch (Exception e) {
                   errorCount.incrementAndGet();
-                  log.error("ERRORE: Salto il file {} a causa di: {}", item.getS3Key(), e.getMessage());
+                  log.error("ERRORE: Salto il file {} a causa di: {}", item.getS3Key(), e.getMessage(), e);
                 }
               }
       );
@@ -69,35 +71,49 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     return coordinator.finish();
   }
 
-  private record PendingDownload(LogFileReference ref, Future<byte[]> body) {
+  private record PendingDownload(LogFileReference ref, int permits, Future<byte[]> body) {
   }
 
   private void processPrefetch(Stream<LogFileReference> fileStream, DailyContextCfg dailyCtx,
       StreamingExportCoordinator coordinator, AtomicInteger processedCount,
-      AtomicInteger errorCount) {
-    log.info("Processing with prefetch={} on virtual threads", prefetch);
+      AtomicInteger errorCount, int prefetch) {
+    int budgetPermits = (int) Math.min(cfg.getProcessPrefetchMaxBytes().toBytes(), Integer.MAX_VALUE);
+    log.info("Processing with prefetch={} prefetchMaxBytes={} on virtual threads", prefetch,
+        budgetPermits);
 
-    ExecutorService pool = newPool();
+    ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
+    Semaphore budget = new Semaphore(budgetPermits);
     Deque<PendingDownload> inFlight = new ArrayDeque<>(prefetch);
     try {
       Iterator<LogFileReference> iterator = fileStream.iterator();
       while (iterator.hasNext()) {
         LogFileReference item = iterator.next();
-        inFlight.addLast(new PendingDownload(item, pool.submit(() -> downloadBody(item))));
+        int permits = permitsFor(item, budgetPermits);
+        while (!inFlight.isEmpty() && !budget.tryAcquire(permits)) {
+          consume(inFlight.removeFirst(), dailyCtx, coordinator, processedCount, errorCount, budget);
+        }
+        if (inFlight.isEmpty()) {
+          budget.acquireUninterruptibly(permits);
+        }
+        inFlight.addLast(new PendingDownload(item, permits, pool.submit(() -> downloadBody(item))));
         if (inFlight.size() >= prefetch) {
-          consume(inFlight.pollFirst(), dailyCtx, coordinator, processedCount, errorCount);
+          consume(inFlight.removeFirst(), dailyCtx, coordinator, processedCount, errorCount, budget);
         }
       }
       while (!inFlight.isEmpty()) {
-        consume(inFlight.pollFirst(), dailyCtx, coordinator, processedCount, errorCount);
+        consume(inFlight.removeFirst(), dailyCtx, coordinator, processedCount, errorCount, budget);
       }
     } finally {
       pool.shutdownNow();
     }
   }
 
-  private ExecutorService newPool() {
-    return Executors.newVirtualThreadPerTaskExecutor();
+  private int permitsFor(LogFileReference item, int budgetPermits) {
+    long size = item.getSize();
+    if (size <= 0) {
+      return 1;
+    }
+    return (int) Math.min(size, budgetPermits);
   }
 
   private byte[] downloadBody(LogFileReference itemLog) {
@@ -110,7 +126,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
 
   private void consume(PendingDownload pending, DailyContextCfg dailyCtx,
       StreamingExportCoordinator coordinator, AtomicInteger processedCount,
-      AtomicInteger errorCount) {
+      AtomicInteger errorCount, Semaphore budget) {
     LogFileReference item = pending.ref();
     try {
       byte[] body = pending.body().get();
@@ -121,7 +137,9 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
       throw new IllegalStateException("processing interrupted", e);
     } catch (Exception e) {
       errorCount.incrementAndGet();
-      log.error("ERRORE: Salto il file {} a causa di: {}", item.getS3Key(), e.getMessage());
+      log.error("ERRORE: Salto il file {} a causa di: {}", item.getS3Key(), e.getMessage(), e);
+    } finally {
+      budget.release(pending.permits());
     }
   }
 
@@ -130,11 +148,13 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     LogSaverUtils.initMDC(dailyCtx);
     log.debug("filterAccept start s3Key={} type={} date={}", itemLog.getS3Key(), itemLog.getType(), dailyCtx.logDate());
 
-    try {
-      itemLog.setContent(new ByteArrayInputStream(body));
+    try (InputStream content = new ByteArrayInputStream(body)) {
+      itemLog.setContent(content);
       try (Stream<ClassifiedLogFragment> fragments = filter(itemLog, dailyCtx)) {
         fragments.forEach(coordinator::accept);
       }
+    } catch (IOException e) {
+      throw new UncheckedIOException("filterAccept IOException", e);
     } finally {
       LogSaverUtils.clearMdcFromForkThread();
     }
@@ -145,7 +165,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     LogSaverUtils.initMDC(dailyCtx);
     log.debug("downloadFilterAccept start s3Key={} type={} date={}", itemLog.getS3Key(), itemLog.getType(), dailyCtx.logDate());
 
-    try (InputStream content = s3Service.getContent(itemLog.getS3Key());) {
+    try (InputStream content = s3Service.getContent(itemLog.getS3Key())) {
       itemLog.setContent(content);
       try (Stream<ClassifiedLogFragment> fragments = filter(itemLog, dailyCtx)) {
         fragments.forEach(coordinator::accept);

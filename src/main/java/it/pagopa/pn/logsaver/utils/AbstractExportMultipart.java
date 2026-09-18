@@ -115,6 +115,7 @@ abstract class AbstractExportMultipart<T> {
       currentPathFile = newFileOutPathPart(folderOut, patternFileOut, outFileList.size() + 1);
       setCurrentFileOut(currentPathFile);
       outFileList.add(currentPathFile);
+      writtenEntryNames.clear();
     }
   }
 

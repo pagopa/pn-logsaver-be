@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
@@ -59,7 +58,7 @@ class LogFileProcessorServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    this.service = new LogFileProcessorServiceImpl(s3Service);
+    this.service = new LogFileProcessorServiceImpl(s3Service, cfg);
   }
 
   @Test
@@ -105,7 +104,7 @@ class LogFileProcessorServiceImplTest {
     List<LogFileReference> refs = IntStream.range(0, n)
         .mapToObj(k -> LogFileReference.builder().logDate(TestCostant.LOGDATE)
             .type(LogFileType.LOGS).s3Key(TestCostant.S3_KEY).build())
-        .collect(Collectors.toList());
+        .toList();
 
     DailyContextCfg ctx = DailyContextCfg.builder()
         .retentionExportTypeMap(LogSaverUtils.defaultRetentionExportTypeMap())
@@ -169,14 +168,11 @@ class LogFileProcessorServiceImplTest {
   }
 
   private List<ClassifiedLogFragment> childrenList() {
-    InputStream file_1_1 =
-        IOUtils.toInputStream(RandomStringUtils.random(20), Charset.defaultCharset());
-    InputStream file_1_2 =
-        IOUtils.toInputStream(RandomStringUtils.random(20), Charset.defaultCharset());
-    InputStream file_1_3 =
-        IOUtils.toInputStream(RandomStringUtils.random(20), Charset.defaultCharset());
-    return List.of(new ClassifiedLogFragment(Retention.AUDIT10Y, file_1_1, "fileName10"),
-        new ClassifiedLogFragment(Retention.AUDIT5Y, file_1_2, "fileName5"),
-        new ClassifiedLogFragment(Retention.DEVELOPER, file_1_3, "fileNamedev"));
+    byte[] content10 = RandomStringUtils.insecure().next(20).getBytes(Charset.defaultCharset());
+    byte[] content5 = RandomStringUtils.insecure().next(20).getBytes(Charset.defaultCharset());
+    byte[] contentDev = RandomStringUtils.insecure().next(20).getBytes(Charset.defaultCharset());
+    return List.of(new ClassifiedLogFragment(Retention.AUDIT10Y, content10, "fileName10"),
+        new ClassifiedLogFragment(Retention.AUDIT5Y, content5, "fileName5"),
+        new ClassifiedLogFragment(Retention.DEVELOPER, contentDev, "fileNamedev"));
   }
 }

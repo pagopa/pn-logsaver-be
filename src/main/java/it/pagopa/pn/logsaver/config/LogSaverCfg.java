@@ -30,6 +30,12 @@ public class LogSaverCfg {
 
   @Value("${log-saver.export-max-file-size:5MB}")
   private DataSize maxSize;
+
+  @Value("${log-saver.process.prefetch:1}")
+  private int processPrefetch;
+
+  @Value("${log-saver.process.prefetch-max-bytes:32MB}")
+  private DataSize processPrefetchMaxBytes;
   
   @Value("${log-saver.cdc-tables.prefix}")
   private String cdcTablesPrefix;

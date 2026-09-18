@@ -89,6 +89,17 @@ Parameters:
     Default: '5MB'
     Description: Max export file size
 
+  LogSaverProcessPrefetch:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    Description: 'Number of log files downloaded ahead of the single consumer (1 = disabled).'
+
+  LogSaverProcessPrefetchMaxBytes:
+    Type: String
+    Default: '32MB'
+    Description: 'Max total compressed bytes held in memory by the prefetch queue.'
+
   LogsExporterPolicyArn:
     Type: String
     Description: 'Policy per lettura su bucket log'
@@ -265,6 +276,10 @@ Resources:
             Value: !Ref LogSaverDynamoTableName
           - Name: LOGSAVER_EXPORTMAXFILESIZE
             Value: !Ref LogSaverExportMaxFileSize
+          - Name: LOGSAVER_PROCESS_PREFETCH
+            Value: !Ref LogSaverProcessPrefetch
+          - Name: LOGSAVER_PROCESS_PREFETCHMAXBYTES
+            Value: !Ref LogSaverProcessPrefetchMaxBytes
           - Name: LOGSAVER_AUDITSTORAGE_OFFSETDURATION
             Value: !Ref AuditStorageOffsetDuration
           - Name: LOGSAVER_CDC_TABLES
@@ -342,6 +357,10 @@ Resources:
             Value: !Ref AuditStorageOffsetDuration
           - Name: LOGSAVER_CDC_TABLES
             Value: !Ref CdcTables
+          - Name: LOGSAVER_PROCESS_PREFETCH
+            Value: !Ref LogSaverProcessPrefetch
+          - Name: LOGSAVER_PROCESS_PREFETCHMAXBYTES
+            Value: !Ref LogSaverProcessPrefetchMaxBytes
           - Name: JAVA_TOOL_OPTIONS
             Value: !Ref JavaToolOptions
       PlatformCapabilities:
