@@ -149,8 +149,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     log.debug("filterAccept start s3Key={} type={} date={}", itemLog.getS3Key(), itemLog.getType(), dailyCtx.logDate());
 
     try (InputStream content = new ByteArrayInputStream(body)) {
-      itemLog.setContent(content);
-      try (Stream<ClassifiedLogFragment> fragments = filter(itemLog, dailyCtx)) {
+      try (Stream<ClassifiedLogFragment> fragments = filter(itemLog, content, dailyCtx)) {
         fragments.forEach(coordinator::accept);
       }
     } catch (IOException e) {
@@ -166,8 +165,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     log.debug("downloadFilterAccept start s3Key={} type={} date={}", itemLog.getS3Key(), itemLog.getType(), dailyCtx.logDate());
 
     try (InputStream content = s3Service.getContent(itemLog.getS3Key())) {
-      itemLog.setContent(content);
-      try (Stream<ClassifiedLogFragment> fragments = filter(itemLog, dailyCtx)) {
+      try (Stream<ClassifiedLogFragment> fragments = filter(itemLog, content, dailyCtx)) {
         fragments.forEach(coordinator::accept);
       }
 
@@ -179,8 +177,9 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
     }
   }
 
-  private Stream<ClassifiedLogFragment> filter(LogFileReference itemLog, DailyContextCfg dailyCtx) {
-    return itemLog.getType().filter(dailyCtx, itemLog);
+  private Stream<ClassifiedLogFragment> filter(LogFileReference itemLog, InputStream content,
+      DailyContextCfg dailyCtx) {
+    return itemLog.getType().filter(dailyCtx, itemLog, content);
   }
 
 }

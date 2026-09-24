@@ -15,11 +15,11 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,15 +56,27 @@ class LogFileProcessorServiceImplTest {
 
   private LogFileProcessorService service;
 
+  private Object originalLogsFilter;
+
+  private Object originalCdcFilter;
+
   @BeforeEach
   void setUp() {
     this.service = new LogFileProcessorServiceImpl(s3Service, cfg);
+    originalLogsFilter = ReflectionTestUtils.getField(LogFileType.LOGS, "filter");
+    originalCdcFilter = ReflectionTestUtils.getField(LogFileType.CDC, "filter");
+  }
+
+  @AfterEach
+  void tearDown() {
+    ReflectionTestUtils.setField(LogFileType.LOGS, "filter", originalLogsFilter);
+    ReflectionTestUtils.setField(LogFileType.CDC, "filter", originalCdcFilter);
   }
 
   @Test
   void process() {
-    BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> noOpFilter =
-        (in, c) -> childrenList().stream();
+    LogFileType.LogFilter noOpFilter =
+        (in, content, c) -> childrenList().stream();
     ReflectionTestUtils.setField(LogFileType.LOGS, "filter", noOpFilter);
     ReflectionTestUtils.setField(LogFileType.CDC, "filter", noOpFilter);
 
@@ -89,8 +101,8 @@ class LogFileProcessorServiceImplTest {
 
   @Test
   void process_shouldConsumeInputLazily_notMaterializeBeforeFirstDownload() {
-    BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> emptyFilter =
-        (in, c) -> Stream.empty();
+    LogFileType.LogFilter emptyFilter =
+        (in, content, c) -> Stream.empty();
     ReflectionTestUtils.setField(LogFileType.LOGS, "filter", emptyFilter);
 
     AtomicInteger pulled = new AtomicInteger(0);
@@ -123,8 +135,8 @@ class LogFileProcessorServiceImplTest {
 
   @Test
   void process_IOExceptionWhenCloseS3Stream_isIsolated() throws IOException {
-    BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> noOpFilter =
-        (in, c) -> childrenList().stream();
+    LogFileType.LogFilter noOpFilter =
+        (in, content, c) -> childrenList().stream();
     ReflectionTestUtils.setField(LogFileType.LOGS, "filter", noOpFilter);
     ReflectionTestUtils.setField(LogFileType.CDC, "filter", noOpFilter);
     doThrow(IOException.class).when(content).close();
@@ -140,8 +152,8 @@ class LogFileProcessorServiceImplTest {
 
   @Test
   void process_shouldIsolatePerFileError_andContinueWithOtherFiles() {
-    BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> noOpFilter =
-        (in, c) -> childrenList().stream();
+    LogFileType.LogFilter noOpFilter =
+        (in, content, c) -> childrenList().stream();
     ReflectionTestUtils.setField(LogFileType.LOGS, "filter", noOpFilter);
 
     when(s3Service.getContent(anyString())).thenAnswer(i -> {

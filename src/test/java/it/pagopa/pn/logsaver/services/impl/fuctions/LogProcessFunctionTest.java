@@ -56,8 +56,8 @@ class LogProcessFunctionTest {
 
     InputStream in = IOUtils.toInputStream("test");
     LogFileReference item =
-        LogFileReference.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY).content(in).build();
-    assertThrows(LogFilterException.class, () -> function.apply(item, ctx));
+        LogFileReference.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY).build();
+    assertThrows(LogFilterException.class, () -> function.apply(item, in, ctx));
   }
 
 
@@ -65,8 +65,9 @@ class LogProcessFunctionTest {
   void filter() throws IOException {
     when(ctx.retentions()).thenReturn(Set.of(Retention.values()));
     LogFileReference item = LogFileReference.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY)
-        .content(s3File.getInputStream()).build();
-    List<ClassifiedLogFragment> ret = function.apply(item, ctx).sequential().collect(Collectors.toList());
+        .build();
+    List<ClassifiedLogFragment> ret =
+        function.apply(item, s3File.getInputStream(), ctx).sequential().collect(Collectors.toList());
 
     assertNotNull(ret);
     assertEquals(3, ret.size());
@@ -87,9 +88,9 @@ class LogProcessFunctionTest {
     when(ctx.retentions()).thenReturn(Set.of(Retention.values()));
     InputStream sourceSpy = spy(s3File.getInputStream());
     LogFileReference item = LogFileReference.builder().logDate(TestCostant.LOGDATE)
-        .s3Key(TestCostant.S3_KEY).content(sourceSpy).build();
+        .s3Key(TestCostant.S3_KEY).build();
 
-    try (Stream<ClassifiedLogFragment> result = function.apply(item, ctx)) {
+    try (Stream<ClassifiedLogFragment> result = function.apply(item, sourceSpy, ctx)) {
       result.forEach(fragment -> {
       });
     }

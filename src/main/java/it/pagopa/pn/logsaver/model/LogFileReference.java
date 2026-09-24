@@ -1,6 +1,5 @@
 package it.pagopa.pn.logsaver.model;
 
-import java.io.InputStream;
 import java.time.LocalDate;
 import org.apache.commons.io.FilenameUtils;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
@@ -19,8 +18,6 @@ public class LogFileReference {
   private LogFileType type;
 
   private LocalDate logDate;
-
-  private InputStream content;
 
   private long size;
 

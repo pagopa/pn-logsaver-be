@@ -2,13 +2,13 @@ package it.pagopa.pn.logsaver.services.impl.functions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
@@ -18,6 +18,7 @@ import it.pagopa.pn.logsaver.exceptions.LogFilterException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
+import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.model.enums.Retention;
 import it.pagopa.pn.logsaver.services.support.LogsFilterSupport;
 import lombok.RequiredArgsConstructor;
@@ -26,11 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
 @Slf4j
-public class LogProcessFunction implements BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> {
+public class LogProcessFunction implements LogFileType.LogFilter {
 
   @Override
-  public Stream<ClassifiedLogFragment> apply(LogFileReference logFileRef, DailyContextCfg ctx) {
-    try (Reader reader = new InputStreamReader(new GZIPInputStream(logFileRef.getContent()))) {
+  public Stream<ClassifiedLogFragment> apply(LogFileReference logFileRef, InputStream content,
+      DailyContextCfg ctx) {
+    try (Reader reader = new InputStreamReader(new GZIPInputStream(content))) {
 
       Iterator<JsonElement> sourceIterator = new JsonStreamParser(reader);
 

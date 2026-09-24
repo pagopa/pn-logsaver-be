@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
@@ -46,8 +45,8 @@ class LogFileProcessorServiceImplPrefetchTest {
   @BeforeEach
   void setUp() {
     originalLogsFilter = ReflectionTestUtils.getField(LogFileType.LOGS, "filter");
-    BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> oneFragmentPerFile =
-        (in, c) -> Stream.of(new ClassifiedLogFragment(Retention.AUDIT10Y,
+    LogFileType.LogFilter oneFragmentPerFile =
+        (in, content, c) -> Stream.of(new ClassifiedLogFragment(Retention.AUDIT10Y,
             "CONTENT".getBytes(Charset.defaultCharset()), in.getFileName()));
     ReflectionTestUtils.setField(LogFileType.LOGS, "filter", oneFragmentPerFile);
   }

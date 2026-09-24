@@ -15,7 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -63,10 +62,14 @@ class LogFileProcessorServiceImplCharacterizationTest {
     service = new LogFileProcessorServiceImpl(s3Service, cfg);
     tmpBasePath = Files.createTempDirectory("wi0-logprocessor-");
     keepDir = Files.createTempDirectory("wi0-logprocessor-keep-");
+    originalLogsFilter = ReflectionTestUtils.getField(LogFileType.LOGS, "filter");
   }
+
+  private Object originalLogsFilter;
 
   @AfterEach
   void tearDown() throws IOException {
+    ReflectionTestUtils.setField(LogFileType.LOGS, "filter", originalLogsFilter);
     FileUtils.deleteDirectory(tmpBasePath.toFile());
     FileUtils.deleteDirectory(keepDir.toFile());
   }
@@ -85,8 +88,8 @@ class LogFileProcessorServiceImplCharacterizationTest {
     when(s3Service.getContent("key-2"))
         .thenReturn(IOUtils.toInputStream("BUCKETFILE-2", StandardCharsets.US_ASCII));
 
-    BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> fixedFilter =
-        (in, dailyCtx) -> {
+    LogFileType.LogFilter fixedFilter =
+        (in, content, dailyCtx) -> {
           if ("key-1".equals(in.getS3Key())) {
             return Stream.of(
                 new ClassifiedLogFragment(Retention.AUDIT10Y,

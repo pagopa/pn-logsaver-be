@@ -78,12 +78,11 @@ class LogProcessFunctionToWriterJunctionTest {
     ctx.initContext();
 
     LogFileReference item = LogFileReference.builder().logDate(TestCostant.LOGDATE)
-        .type(LogFileType.LOGS).s3Key(TestCostant.S3_KEY)
-        .content(multiRecordFile.getInputStream()).build();
+        .type(LogFileType.LOGS).s3Key(TestCostant.S3_KEY).build();
 
     StreamingExportCoordinator coord =
         new StreamingExportCoordinator(ctx, DataSize.of(2, DataUnit.MEGABYTES), uploader);
-    try (Stream<ClassifiedLogFragment> fragments = new LogProcessFunction().apply(item, ctx)) {
+    try (Stream<ClassifiedLogFragment> fragments = new LogProcessFunction().apply(item, multiRecordFile.getInputStream(), ctx)) {
       fragments.forEach(coord::accept);
     }
     List<UploadedPart> parts = coord.finish();
