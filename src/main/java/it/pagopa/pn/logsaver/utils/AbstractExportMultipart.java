@@ -165,13 +165,17 @@ abstract class AbstractExportMultipart<T> {
     currentFileOut = null;
     outFileList.remove(discarded);
     writtenEntryNames.clear();
+    if (onPartDiscarded != null) {
+      try {
+        onPartDiscarded.accept(discarded, cause);
+      } catch (Exception e) {
+        log.warn("Cannot notify the discarded part {}: {}", discarded, e.getMessage());
+      }
+    }
     try {
       Files.deleteIfExists(discarded);
     } catch (IOException e) {
       log.warn("Cannot delete the compromised part {}: {}", discarded, e.getMessage());
-    }
-    if (onPartDiscarded != null) {
-      onPartDiscarded.accept(discarded, cause);
     }
   }
 

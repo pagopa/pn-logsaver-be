@@ -116,6 +116,23 @@ class StreamingExportCoordinatorTest {
   }
 
   @Test
+  void finish_whenAPartIsDiscarded_itsFootprintIsCountedInThePeak() {
+    DailyContextCfg ctx = context(Map.of(Retention.AUDIT10Y, Set.of(ExportType.ZIP)));
+
+    StreamingExportCoordinator coord =
+        new StreamingExportCoordinator(ctx, DataSize.of(2, DataUnit.MEGABYTES), uploader);
+    coord.accept(frag(Retention.AUDIT10Y, "BUONA", "buona.log"));
+    String nomeNonScrivibile = "x".repeat(70_000).concat(".log");
+    assertThrows(FileSystemException.class,
+        () -> coord.accept(frag(Retention.AUDIT10Y, "ROTTA", nomeNonScrivibile)));
+
+    coord.finish();
+
+    assertTrue(coord.getPeakTmpBytes() > 0,
+        "lo spazio occupato dalla parte scartata non e' entrato nel picco disco");
+  }
+
+  @Test
   void append_whenSameEntryNameRecursNonContiguously_keepsBothContents_underDerivedName()
       throws IOException {
     DailyContextCfg ctx = context(Map.of(Retention.AUDIT10Y, Set.of(ExportType.ZIP)));

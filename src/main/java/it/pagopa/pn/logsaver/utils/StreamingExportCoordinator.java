@@ -148,6 +148,7 @@ public class StreamingExportCoordinator {
     });
 
     writer.setOnPartDiscarded((part, cause) -> {
+      peakTmpBytes = Math.max(peakTmpBytes, currentTmpBytes());
       log.warn("Discarded compromised part {} for retention {} exportType {}: {}",
           part.getFileName(), retention, exportType, cause.getMessage());
       uploaded.add(
