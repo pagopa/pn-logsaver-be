@@ -147,6 +147,13 @@ public class StreamingExportCoordinator {
           new UploadedPart(retention, exportType, storageKey, part.getFileName().toString(), error));
     });
 
+    writer.setOnPartDiscarded((part, cause) -> {
+      log.warn("Discarded compromised part {} for retention {} exportType {}: {}",
+          part.getFileName(), retention, exportType, cause.getMessage());
+      uploaded.add(
+          new UploadedPart(retention, exportType, null, part.getFileName().toString(), cause));
+    });
+
     return writer;
   }
 }

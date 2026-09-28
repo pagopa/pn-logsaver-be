@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.unit.DataSize;
 import org.springframework.util.unit.DataUnit;
+import it.pagopa.pn.logsaver.exceptions.FileSystemException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
 import it.pagopa.pn.logsaver.model.enums.ExportType;
@@ -84,6 +86,33 @@ class StreamingExportCoordinatorTest {
       throw new UncheckedIOException(ex);
     }
     return names;
+  }
+
+  @Test
+  void finish_whenAPartIsDiscarded_reportsTheFailure_andDoesNotUploadIt() {
+    DailyContextCfg ctx = context(Map.of(Retention.AUDIT10Y, Set.of(ExportType.ZIP)));
+
+    StreamingExportCoordinator coord =
+        new StreamingExportCoordinator(ctx, DataSize.of(2, DataUnit.MEGABYTES), uploader);
+    coord.accept(frag(Retention.AUDIT10Y, "BUONA", "buona.log"));
+    String nomeNonScrivibile = "x".repeat(70_000).concat(".log");
+    assertThrows(FileSystemException.class,
+        () -> coord.accept(frag(Retention.AUDIT10Y, "ROTTA", nomeNonScrivibile)));
+    coord.accept(frag(Retention.AUDIT10Y, "TERZA", "terza.log"));
+
+    List<UploadedPart> res = coord.finish();
+
+    UploadedPart scartata =
+        res.stream().filter(part -> part.error() != null).findFirst().orElse(null);
+    assertNotNull(scartata, "la parte compromessa deve comparire fra i risultati, con l'errore");
+    assertNull(scartata.storageKey(), "la parte scartata non deve avere una chiave di storage");
+    assertFalse(
+        uploadedPaths.stream()
+            .anyMatch(path -> path.getFileName().toString().equals(scartata.partName())),
+        "la parte scartata non deve essere stata caricata");
+    assertEquals(List.of("terza.log"), entriesByPart.get(res.stream()
+        .filter(part -> part.error() == null).findFirst().orElseThrow().partName()),
+        "dopo lo scarto la lavorazione prosegue su una parte nuova");
   }
 
   @Test

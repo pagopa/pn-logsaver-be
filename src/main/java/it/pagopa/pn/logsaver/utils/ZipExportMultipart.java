@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -22,9 +23,15 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
 
   private static final long ZIP_ENTRY_OVERHEAD = 76L;
 
+  private static final long ZIP_CENTRAL_DIRECTORY_ENTRY_OVERHEAD = 46L;
+
+  private static final long ZIP_END_OF_CENTRAL_DIRECTORY_SIZE = 22L;
+
   private CountingOutputStream countingOut;
 
   private int entriesInCurrentPart;
+
+  private long centralDirectorySize;
 
   public ZipExportMultipart(@NonNull Path folderIn, @NonNull DataSize maxSize,
       @NonNull Path folderOut, @NonNull String patternFileOut) {
@@ -39,6 +46,7 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
   @Override
   protected void setCurrentFileOut(Path fileOut) throws IOException {
     this.entriesInCurrentPart = 0;
+    this.centralDirectorySize = 0L;
     OutputStream fileStream =
         Files.newOutputStream(fileOut, StandardOpenOption.APPEND, StandardOpenOption.CREATE_NEW);
     this.countingOut = new CountingOutputStream(fileStream);
@@ -54,6 +62,7 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
       IOUtils.copy(fis, currentFileOut);
       currentFileOut.closeEntry();
       this.entriesInCurrentPart++;
+      this.centralDirectorySize += centralDirectoryEntrySize(ze.getName());
     }
     currentFileOut.flush();
   }
@@ -67,6 +76,7 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
     currentFileOut.write(data);
     currentFileOut.closeEntry();
     this.entriesInCurrentPart++;
+    this.centralDirectorySize += centralDirectoryEntrySize(ze.getName());
     currentFileOut.flush();
   }
 
@@ -93,9 +103,14 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
     }
   }
 
+  private static long centralDirectoryEntrySize(String entryName) {
+    return ZIP_CENTRAL_DIRECTORY_ENTRY_OVERHEAD
+        + entryName.getBytes(StandardCharsets.UTF_8).length;
+  }
+
   @Override
   protected long currentPartSize() {
-    return countingOut.getByteCount();
+    return countingOut.getByteCount() + centralDirectorySize + ZIP_END_OF_CENTRAL_DIRECTORY_SIZE;
   }
 
 }

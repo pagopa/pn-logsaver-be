@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
@@ -32,6 +33,7 @@ abstract class AbstractExportMultipart<T> {
   private DataSize maxSize;
 
   private List<Path> outFileList = new ArrayList<>();
+  private int partsOpened = 0;
   private final Set<String> writtenEntryNames = new HashSet<>();
   @NonNull
   private Path folderOut;
@@ -41,6 +43,7 @@ abstract class AbstractExportMultipart<T> {
   protected Path currentPathFile;
 
   private Consumer<Path> onPartClosed;
+  private BiConsumer<Path, Throwable> onPartDiscarded;
 
 
 
@@ -61,6 +64,10 @@ abstract class AbstractExportMultipart<T> {
 
   public void setOnPartClosed(Consumer<Path> onPartClosed) {
     this.onPartClosed = onPartClosed;
+  }
+
+  public void setOnPartDiscarded(BiConsumer<Path, Throwable> onPartDiscarded) {
+    this.onPartDiscarded = onPartDiscarded;
   }
 
 
@@ -121,7 +128,7 @@ abstract class AbstractExportMultipart<T> {
 
   private void ensureCurrentPartOpen() throws IOException {
     if (currentFileOut == null) {
-      currentPathFile = newFileOutPathPart(folderOut, patternFileOut, outFileList.size() + 1);
+      currentPathFile = newFileOutPathPart(folderOut, patternFileOut, ++partsOpened);
       setCurrentFileOut(currentPathFile);
       outFileList.add(currentPathFile);
       writtenEntryNames.clear();
@@ -129,6 +136,7 @@ abstract class AbstractExportMultipart<T> {
   }
 
   public void append(String entryName, InputStream content) {
+    String reservedEntryName = null;
     try {
       byte[] data = IOUtils.toByteArray(content);
       ensureCurrentPartOpen();
@@ -136,10 +144,34 @@ abstract class AbstractExportMultipart<T> {
         finalizeCurrentPart();
         ensureCurrentPartOpen();
       }
-      addLogEntry(uniqueEntryName(entryName), new ByteArrayInputStream(data));
+      reservedEntryName = uniqueEntryName(entryName);
+      addLogEntry(reservedEntryName, new ByteArrayInputStream(data));
     } catch (Exception e) {
+      if (reservedEntryName != null) {
+        discardCurrentPart(e);
+      }
       log.error("Error appending entry {} to folder {}", entryName, folderOut, e);
       throw new FileSystemException("Error appending entry " + entryName, e);
+    }
+  }
+
+  private void discardCurrentPart(Throwable cause) {
+    Path discarded = currentPathFile;
+    try {
+      closeCurrentFile();
+    } catch (Exception e) {
+      log.warn("Cannot close the compromised part {}: {}", discarded, e.getMessage());
+    }
+    currentFileOut = null;
+    outFileList.remove(discarded);
+    writtenEntryNames.clear();
+    try {
+      Files.deleteIfExists(discarded);
+    } catch (IOException e) {
+      log.warn("Cannot delete the compromised part {}: {}", discarded, e.getMessage());
+    }
+    if (onPartDiscarded != null) {
+      onPartDiscarded.accept(discarded, cause);
     }
   }
 

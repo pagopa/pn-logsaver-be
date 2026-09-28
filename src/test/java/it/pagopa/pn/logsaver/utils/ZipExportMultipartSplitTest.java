@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayInputStream;
@@ -114,6 +115,106 @@ class ZipExportMultipartSplitTest {
     assertTrue(tutte.contains("enorme.log"),
         "l'entry piu' grande del limite non deve essere persa: presenti " + tutte);
     assertEquals(3, tutte.size(), "tutte le entry devono essere scritte: " + tutte);
+  }
+
+  @Test
+  void append_whenWriteFails_doesNotPublishCorruptPart() throws IOException {
+    List<Path> closedParts = new ArrayList<>();
+    List<Path> discardedParts = new ArrayList<>();
+    ZipExportMultipart export = exportFallendoSu("rotta", closedParts, discardedParts);
+
+    export.append("buona.log", new ByteArrayInputStream("BUONA".getBytes(StandardCharsets.UTF_8)));
+    assertThrows(FileSystemException.class, () -> export.append("rotta.log",
+        new ByteArrayInputStream("ROTTA".getBytes(StandardCharsets.UTF_8))));
+    export.append("terza.log", new ByteArrayInputStream("TERZA".getBytes(StandardCharsets.UTF_8)));
+    export.closeStream();
+
+    assertEquals(1, discardedParts.size(),
+        "la parte compromessa dalla scrittura interrotta deve essere scartata");
+    assertFalse(Files.exists(discardedParts.get(0)),
+        "la parte scartata deve essere rimossa dal disco");
+    for (Path part : closedParts) {
+      assertFalse(zipEntryNames(part).contains("rotta.log"),
+          "una parte pubblicata contiene la entry scritta a meta': " + part);
+    }
+    assertEquals(List.of("terza.log"), zipEntryNames(closedParts.get(closedParts.size() - 1)),
+        "dopo lo scarto la lavorazione deve proseguire su una parte nuova");
+  }
+
+  @Test
+  void append_whenWriteFails_releasesTheReservedEntryName() throws IOException {
+    List<Path> closedParts = new ArrayList<>();
+    ZipExportMultipart export = exportFallendoSu("primo-tentativo", closedParts,
+        new ArrayList<>());
+
+    assertThrows(FileSystemException.class, () -> export.append("primo-tentativo.log",
+        new ByteArrayInputStream("X".getBytes(StandardCharsets.UTF_8))));
+    export.append("primo-tentativo.log",
+        new ByteArrayInputStream("Y".getBytes(StandardCharsets.UTF_8)));
+    export.closeStream();
+
+    assertEquals(List.of("primo-tentativo.log"), zipEntryNames(closedParts.get(0)),
+        "il nome riservato da un tentativo fallito non e' stato liberato");
+  }
+
+  @Test
+  void append_whenPartIsClosed_theDeclaredSizeMatchesTheFileOnDisk() throws IOException {
+    List<Path> closedParts = new ArrayList<>();
+    ZipExportMultipart export = new ZipExportMultipart(folderIn,
+        DataSize.of(50, DataUnit.MEGABYTES), folderOut, "part%d.zip");
+    export.setOnPartClosed(closedParts::add);
+
+    for (int i = 0; i < 100; i++) {
+      export.append("servizio/anno/mese/giorno/file-di-log-" + i + ".log",
+          new ByteArrayInputStream(("contenuto " + i).getBytes(StandardCharsets.UTF_8)));
+    }
+    long dichiarata = export.currentPartSize();
+    export.closeStream();
+
+    assertEquals(dichiarata, Files.size(closedParts.get(0)),
+        "la dimensione dichiarata durante la scrittura non tiene conto dell'indice finale");
+  }
+
+  @Test
+  void append_manySmallEntries_keepsEveryPartWithinTheLimit() throws IOException {
+    DataSize limite = DataSize.of(200, DataUnit.KILOBYTES);
+    List<Path> closedParts = new ArrayList<>();
+    ZipExportMultipart export =
+        new ZipExportMultipart(folderIn, limite, folderOut, "part%d.zip");
+    export.setOnPartClosed(closedParts::add);
+
+    for (int i = 0; i < 3000; i++) {
+      export.append("servizio/anno/mese/giorno/file-di-log-" + i + ".log",
+          new ByteArrayInputStream(("riga " + i).getBytes(StandardCharsets.UTF_8)));
+    }
+    export.closeStream();
+
+    for (Path part : closedParts) {
+      assertTrue(Files.size(part) <= limite.toBytes(),
+          "parte oltre il limite: " + Files.size(part) + " byte contro " + limite.toBytes());
+    }
+  }
+
+  private ZipExportMultipart exportFallendoSu(String prefissoDaRompere, List<Path> closedParts,
+      List<Path> discardedParts) {
+    ZipExportMultipart export = new ZipExportMultipart(folderIn,
+        DataSize.of(50, DataUnit.MEGABYTES), folderOut, "part%d.zip") {
+      private boolean giaFallito;
+
+      @Override
+      protected void addLogEntry(String entryName, InputStream content) throws IOException {
+        if (entryName.startsWith(prefissoDaRompere) && !giaFallito) {
+          giaFallito = true;
+          currentFileOut.putNextEntry(new ZipEntry(entryName));
+          currentFileOut.write("PARZIALE".getBytes(StandardCharsets.UTF_8));
+          throw new IOException("scrittura interrotta a meta'");
+        }
+        super.addLogEntry(entryName, content);
+      }
+    };
+    export.setOnPartClosed(closedParts::add);
+    export.setOnPartDiscarded((part, cause) -> discardedParts.add(part));
+    return export;
   }
 
   private static byte[] incompressible(int n) {
