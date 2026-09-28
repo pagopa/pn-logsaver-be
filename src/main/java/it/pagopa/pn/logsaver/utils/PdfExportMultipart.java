@@ -38,6 +38,8 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
   private final Retention retention;
   private PdfWriter writer;
   private long fileSize = 0L;
+
+  private int entriesInCurrentPart;
   private final LocalDate logDate;
 
   public PdfExportMultipart(@NonNull Path folderIn, @NonNull DataSize maxSize,
@@ -68,6 +70,7 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
   @Override
   protected void setCurrentFileOut(Path fileOut) throws IOException {
     this.fileSize = FILE_SIZE_EMPTY;
+    this.entriesInCurrentPart = 0;
 
     this.currentFileOut = new Document();
     writer = PdfWriter.getInstance(this.currentFileOut,
@@ -100,7 +103,21 @@ public class PdfExportMultipart extends AbstractExportMultipart<Document> {
     currentFileOut.addHeader(entryName, entry);
     this.fileSize +=
         entry.getBytes(StandardCharsets.UTF_8).length + entryName.length() + DICT_ENTRY_OVERHEAD;
+    this.entriesInCurrentPart++;
     writer.flush();
+  }
+
+  @Override
+  protected long estimatedEntrySize(String entryName, byte[] data) {
+    String entry = String.format(START_XML_AUDIT, logDate.toString(), entryName, retention.name())
+        + new String(data, Charset.defaultCharset()) + new String(END_XML_AUDIT);
+    return entry.getBytes(StandardCharsets.UTF_8).length + entryName.length()
+        + DICT_ENTRY_OVERHEAD;
+  }
+
+  @Override
+  protected boolean isPartEmpty() {
+    return entriesInCurrentPart == 0;
   }
 
   @Override

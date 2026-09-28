@@ -2,11 +2,13 @@ package it.pagopa.pn.logsaver.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -34,6 +36,38 @@ class PdfExportMultipartSplitTest {
   void tearDown() throws IOException {
     FileUtils.deleteDirectory(folderIn.toFile());
     FileUtils.deleteDirectory(folderOut.toFile());
+  }
+
+  @Test
+  void append_shouldNotProduceEmptyPart_whenFirstEntryExceedsMaxSize() throws IOException {
+    PdfExportMultipart export = new PdfExportMultipart(folderIn, DataSize.ofBytes(3000), folderOut,
+        "part%d.pdf", Retention.DEVELOPER, LocalDate.parse("2022-10-02"));
+    List<Path> closedParts = new ArrayList<>();
+    export.setOnPartClosed(closedParts::add);
+
+    export.append("enorme.log", new ByteArrayInputStream(new byte[5000]));
+    export.append("piccola.log",
+        new ByteArrayInputStream("PICCOLA".getBytes(StandardCharsets.US_ASCII)));
+    export.closeStream();
+
+    assertEquals(2, closedParts.size(),
+        "una parte e' stata chiusa senza contenuto: attese 2 parti, prodotte " + closedParts.size());
+  }
+
+  @Test
+  void append_shouldNotProduceEmptyParts_whenEveryEntryExceedsMaxSize() throws IOException {
+    PdfExportMultipart export = new PdfExportMultipart(folderIn, DataSize.ofBytes(3000), folderOut,
+        "part%d.pdf", Retention.DEVELOPER, LocalDate.parse("2022-10-02"));
+    List<Path> closedParts = new ArrayList<>();
+    export.setOnPartClosed(closedParts::add);
+
+    export.append("prima.log", new ByteArrayInputStream(new byte[5000]));
+    export.append("seconda.log", new ByteArrayInputStream(new byte[5000]));
+    export.closeStream();
+
+    assertEquals(2, closedParts.size(),
+        "ogni entry sovradimensionata deve occupare una sola parte: prodotte "
+            + closedParts.size());
   }
 
   @Test

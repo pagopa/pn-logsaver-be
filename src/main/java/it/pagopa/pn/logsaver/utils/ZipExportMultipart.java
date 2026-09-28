@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.IOUtils;
@@ -19,7 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream> {
 
+  private static final long ZIP_ENTRY_OVERHEAD = 76L;
+
   private CountingOutputStream countingOut;
+
+  private int entriesInCurrentPart;
 
   public ZipExportMultipart(@NonNull Path folderIn, @NonNull DataSize maxSize,
       @NonNull Path folderOut, @NonNull String patternFileOut) {
@@ -27,7 +32,13 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
   }
 
   @Override
+  protected boolean isPartEmpty() {
+    return entriesInCurrentPart == 0;
+  }
+
+  @Override
   protected void setCurrentFileOut(Path fileOut) throws IOException {
+    this.entriesInCurrentPart = 0;
     OutputStream fileStream =
         Files.newOutputStream(fileOut, StandardOpenOption.APPEND, StandardOpenOption.CREATE_NEW);
     this.countingOut = new CountingOutputStream(fileStream);
@@ -42,6 +53,7 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
     try (FileInputStream fis = new FileInputStream(filePath);) {
       IOUtils.copy(fis, currentFileOut);
       currentFileOut.closeEntry();
+      this.entriesInCurrentPart++;
     }
     currentFileOut.flush();
   }
@@ -54,6 +66,7 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
     currentFileOut.putNextEntry(ze);
     currentFileOut.write(data);
     currentFileOut.closeEntry();
+    this.entriesInCurrentPart++;
     currentFileOut.flush();
   }
 
@@ -61,6 +74,23 @@ public class ZipExportMultipart extends AbstractExportMultipart<ZipOutputStream>
   protected void closeCurrentFile() throws IOException {
     currentFileOut.close();
 
+  }
+
+  @Override
+  protected long estimatedEntrySize(String entryName, byte[] data) {
+    Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+    try {
+      deflater.setInput(data);
+      deflater.finish();
+      byte[] buffer = new byte[8192];
+      long compressed = 0L;
+      while (!deflater.finished()) {
+        compressed += deflater.deflate(buffer);
+      }
+      return compressed + ZIP_ENTRY_OVERHEAD + 2L * entryName.length();
+    } finally {
+      deflater.end();
+    }
   }
 
   @Override

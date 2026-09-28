@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.commons.io.FileUtils;
@@ -70,6 +71,55 @@ class ZipExportMultipartSplitTest {
     assertEquals(1, closedParts.size(), "attesa 1 parte chiusa");
     assertEquals(List.of("a.log", "c.log"), zipEntryNames(closedParts.get(0)),
         "entry spuria/troncata prodotta da un fragment fallito in lettura");
+  }
+
+  @Test
+  void append_shouldNotExceedMaxSize_whenEachEntryFitsIndividually() throws IOException {
+    DataSize limit = DataSize.of(50, DataUnit.KILOBYTES);
+    ZipExportMultipart export =
+        new ZipExportMultipart(folderIn, limit, folderOut, "part%d.zip");
+    List<Path> closedParts = new ArrayList<>();
+    export.setOnPartClosed(closedParts::add);
+
+    for (int i = 0; i < 10; i++) {
+      export.append("e" + i + ".log", new ByteArrayInputStream(incompressible(20_000)));
+    }
+    export.closeStream();
+
+    for (Path part : closedParts) {
+      long size = Files.size(part);
+      assertTrue(size <= limit.toBytes(), "parte oltre il limite configurato: "
+          + part.getFileName() + " occupa " + size + " byte contro " + limit.toBytes());
+    }
+  }
+
+  @Test
+  void append_shouldKeepOversizedEntry_inItsOwnPart() throws IOException {
+    DataSize limit = DataSize.of(20, DataUnit.KILOBYTES);
+    ZipExportMultipart export =
+        new ZipExportMultipart(folderIn, limit, folderOut, "part%d.zip");
+    List<Path> closedParts = new ArrayList<>();
+    export.setOnPartClosed(closedParts::add);
+
+    export.append("piccola.log", new ByteArrayInputStream(incompressible(1_000)));
+    export.append("enorme.log", new ByteArrayInputStream(incompressible(100_000)));
+    export.append("coda.log", new ByteArrayInputStream(incompressible(1_000)));
+    export.closeStream();
+
+    List<String> tutte = new ArrayList<>();
+    for (Path part : closedParts) {
+      assertTrue(countZipEntries(part) > 0, "parte zip senza entry: " + part);
+      tutte.addAll(zipEntryNames(part));
+    }
+    assertTrue(tutte.contains("enorme.log"),
+        "l'entry piu' grande del limite non deve essere persa: presenti " + tutte);
+    assertEquals(3, tutte.size(), "tutte le entry devono essere scritte: " + tutte);
+  }
+
+  private static byte[] incompressible(int n) {
+    byte[] data = new byte[n];
+    new Random(42L).nextBytes(data);
+    return data;
   }
 
   private static InputStream failingInputStream() {

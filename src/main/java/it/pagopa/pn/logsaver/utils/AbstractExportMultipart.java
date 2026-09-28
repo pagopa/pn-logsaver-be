@@ -1,5 +1,6 @@
 package it.pagopa.pn.logsaver.utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.exceptions.FileSystemException;
+import org.apache.commons.io.IOUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +53,11 @@ abstract class AbstractExportMultipart<T> {
   protected abstract void closeCurrentFile() throws IOException;
 
   protected abstract long currentPartSize() throws IOException;
+
+  protected abstract long estimatedEntrySize(String entryName, byte[] data)
+      throws IOException;
+
+  protected abstract boolean isPartEmpty();
 
   public void setOnPartClosed(Consumer<Path> onPartClosed) {
     this.onPartClosed = onPartClosed;
@@ -99,11 +106,13 @@ abstract class AbstractExportMultipart<T> {
           exportFolder(filePath);
         } else {
           ensureCurrentPartOpen();
-          addLogFile(filePath);
-          if (currentPartSize() > maxSize.toBytes()) {
+          if (exceedsMaxSize(estimatedEntrySize(filePath.getName(),
+              Files.readAllBytes(filePath.toPath())))) {
             closeCurrentFile();
             currentFileOut = null;
+            ensureCurrentPartOpen();
           }
+          addLogFile(filePath);
         }
       }
   }
@@ -121,11 +130,13 @@ abstract class AbstractExportMultipart<T> {
 
   public void append(String entryName, InputStream content) {
     try {
+      byte[] data = IOUtils.toByteArray(content);
       ensureCurrentPartOpen();
-      addLogEntry(uniqueEntryName(entryName), content);
-      if (currentPartSize() > maxSize.toBytes()) {
+      if (exceedsMaxSize(estimatedEntrySize(entryName, data))) {
         finalizeCurrentPart();
+        ensureCurrentPartOpen();
       }
+      addLogEntry(uniqueEntryName(entryName), new ByteArrayInputStream(data));
     } catch (Exception e) {
       log.error("Error appending entry {} to folder {}", entryName, folderOut, e);
       throw new FileSystemException("Error appending entry " + entryName, e);
@@ -156,6 +167,10 @@ abstract class AbstractExportMultipart<T> {
       log.error("Error closing stream for folder {}", folderOut, e);
       throw new FileSystemException("Error closing stream for folder " + folderOut, e);
     }
+  }
+
+  private boolean exceedsMaxSize(long estimatedEntrySize) throws IOException {
+    return !isPartEmpty() && currentPartSize() + estimatedEntrySize > maxSize.toBytes();
   }
 
   private void finalizeCurrentPart() throws IOException {
