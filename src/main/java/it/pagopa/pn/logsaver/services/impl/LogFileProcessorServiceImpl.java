@@ -111,7 +111,7 @@ public class LogFileProcessorServiceImpl implements LogFileProcessorService {
   private int permitsFor(LogFileReference item, int budgetPermits) {
     long size = item.getSize();
     if (size <= 0) {
-      return 1;
+      return budgetPermits;
     }
     return (int) Math.min(size, budgetPermits);
   }

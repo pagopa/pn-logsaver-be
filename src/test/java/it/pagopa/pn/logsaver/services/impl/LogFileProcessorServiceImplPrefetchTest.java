@@ -91,7 +91,8 @@ class LogFileProcessorServiceImplPrefetchTest {
 
     CountDownLatch rendezvous = new CountDownLatch(bound);
     List<String> keys = keys(24);
-    runCollectingNames(keys, bound, key -> trackedBody(inFlight, maxInFlight, rendezvous));
+    runCollectingNames(keys, bound, DataSize.ofMegabytes(32), 1_000L,
+        key -> trackedBody(inFlight, maxInFlight, rendezvous));
 
     assertTrue(maxInFlight.get() <= bound,
         "download simultanei " + maxInFlight.get() + " oltre il limite " + bound);
@@ -113,6 +114,21 @@ class LogFileProcessorServiceImplPrefetchTest {
 
     assertEquals(1, maxInFlight.get(), "con prefetch=1 nessun file deve essere scaricato in anticipo");
   }
+
+  @Test
+  void prefetch_unknownFileSize_isTreatedAsCostly_andProcessedAlone() {
+    AtomicInteger inFlight = new AtomicInteger(0);
+    AtomicInteger maxInFlight = new AtomicInteger(0);
+
+    CountDownLatch rendezvous = new CountDownLatch(2);
+    runCollectingNames(keys(3), 8, DataSize.ofBytes(4_000), 0L,
+        key -> trackedBody(inFlight, maxInFlight, rendezvous));
+
+    assertEquals(1, maxInFlight.get(),
+        "una dimensione ignota deve costare l'intero budget: in volo contemporaneamente "
+            + maxInFlight.get() + " file di dimensione non dichiarata");
+  }
+
 
   private List<String> runCollectingNames(List<String> keys, int prefetch,
       java.util.function.Function<String, InputStream> bodySupplier) {
