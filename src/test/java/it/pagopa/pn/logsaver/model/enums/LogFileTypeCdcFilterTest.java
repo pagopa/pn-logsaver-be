@@ -78,8 +78,10 @@ class LogFileTypeCdcFilterTest {
       }
     };
 
+    DailyContextCfg ctx = ctx();
+
     UncheckedIOException thrown = assertThrows(UncheckedIOException.class,
-        () -> LogFileType.CDC.filter(ctx(), item, failing));
+        () -> LogFileType.CDC.filter(ctx, item, failing));
 
     assertTrue(thrown.getMessage().contains(TestCostant.S3_KEY));
   }
