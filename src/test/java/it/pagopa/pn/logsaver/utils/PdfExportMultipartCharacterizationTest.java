@@ -85,13 +85,10 @@ class PdfExportMultipartCharacterizationTest {
   private Map<String, String> readAllCustomHeaders(List<Path> parts) throws IOException {
     Map<String, String> result = new HashMap<>();
     for (Path part : parts) {
-      PdfReader reader = new PdfReader(part.toString());
-      try {
+      try (PdfReader reader = new PdfReader(part.toString())) {
         Map<String, String> info = reader.getInfo();
         info.entrySet().stream().filter(entry -> !STANDARD_INFO_KEYS.contains(entry.getKey()))
             .forEach(entry -> result.put(entry.getKey(), entry.getValue()));
-      } finally {
-        reader.close();
       }
     }
     return result;

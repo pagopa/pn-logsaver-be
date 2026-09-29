@@ -64,8 +64,8 @@ class ZipExportMultipartSplitTest {
     export.setOnPartClosed(closedParts::add);
 
     export.append("a.log", new ByteArrayInputStream("AAA".getBytes(StandardCharsets.UTF_8)));
-    assertThrows(FileSystemException.class,
-        () -> export.append("bad.log", failingInputStream()));
+    InputStream failingStream = failingInputStream();
+    assertThrows(FileSystemException.class, () -> export.append("bad.log", failingStream));
     export.append("c.log", new ByteArrayInputStream("CCC".getBytes(StandardCharsets.UTF_8)));
     export.closeStream();
 
@@ -102,31 +102,31 @@ class ZipExportMultipartSplitTest {
     List<Path> closedParts = new ArrayList<>();
     export.setOnPartClosed(closedParts::add);
 
-    export.append("piccola.log", new ByteArrayInputStream(incompressible(1_000)));
-    export.append("enorme.log", new ByteArrayInputStream(incompressible(100_000)));
+    export.append("small.log", new ByteArrayInputStream(incompressible(1_000)));
+    export.append("oversized.log", new ByteArrayInputStream(incompressible(100_000)));
     export.append("coda.log", new ByteArrayInputStream(incompressible(1_000)));
     export.closeStream();
 
-    List<String> tutte = new ArrayList<>();
+    List<String> allEntryNames = new ArrayList<>();
     for (Path part : closedParts) {
       assertTrue(countZipEntries(part) > 0, "parte zip senza entry: " + part);
-      tutte.addAll(zipEntryNames(part));
+      allEntryNames.addAll(zipEntryNames(part));
     }
-    assertTrue(tutte.contains("enorme.log"),
-        "l'entry piu' grande del limite non deve essere persa: presenti " + tutte);
-    assertEquals(3, tutte.size(), "tutte le entry devono essere scritte: " + tutte);
+    assertTrue(allEntryNames.contains("oversized.log"),
+        "l'entry piu' grande del limite non deve essere persa: presenti " + allEntryNames);
+    assertEquals(3, allEntryNames.size(), "tutte le entry devono essere scritte: " + allEntryNames);
   }
 
   @Test
   void append_whenWriteFails_doesNotPublishCorruptPart() throws IOException {
     List<Path> closedParts = new ArrayList<>();
     List<Path> discardedParts = new ArrayList<>();
-    ZipExportMultipart export = exportFallendoSu("rotta", closedParts, discardedParts);
+    ZipExportMultipart export = exportFailingOn("ko", closedParts, discardedParts);
 
-    export.append("buona.log", new ByteArrayInputStream("BUONA".getBytes(StandardCharsets.UTF_8)));
-    assertThrows(FileSystemException.class, () -> export.append("rotta.log",
-        new ByteArrayInputStream("ROTTA".getBytes(StandardCharsets.UTF_8))));
-    export.append("terza.log", new ByteArrayInputStream("TERZA".getBytes(StandardCharsets.UTF_8)));
+    export.append("ok.log", new ByteArrayInputStream("OK".getBytes(StandardCharsets.UTF_8)));
+    InputStream brokenContent = new ByteArrayInputStream("KO".getBytes(StandardCharsets.UTF_8));
+    assertThrows(FileSystemException.class, () -> export.append("ko.log", brokenContent));
+    export.append("third.log", new ByteArrayInputStream("THIRD".getBytes(StandardCharsets.UTF_8)));
     export.closeStream();
 
     assertEquals(1, discardedParts.size(),
@@ -134,26 +134,27 @@ class ZipExportMultipartSplitTest {
     assertFalse(Files.exists(discardedParts.get(0)),
         "la parte scartata deve essere rimossa dal disco");
     for (Path part : closedParts) {
-      assertFalse(zipEntryNames(part).contains("rotta.log"),
+      assertFalse(zipEntryNames(part).contains("ko.log"),
           "una parte pubblicata contiene la entry scritta a meta': " + part);
     }
-    assertEquals(List.of("terza.log"), zipEntryNames(closedParts.get(closedParts.size() - 1)),
+    assertEquals(List.of("third.log"), zipEntryNames(closedParts.get(closedParts.size() - 1)),
         "dopo lo scarto la lavorazione deve proseguire su una parte nuova");
   }
 
   @Test
   void append_whenWriteFails_releasesTheReservedEntryName() throws IOException {
     List<Path> closedParts = new ArrayList<>();
-    ZipExportMultipart export = exportFallendoSu("primo-tentativo", closedParts,
+    ZipExportMultipart export = exportFailingOn("first-attempt", closedParts,
         new ArrayList<>());
 
-    assertThrows(FileSystemException.class, () -> export.append("primo-tentativo.log",
-        new ByteArrayInputStream("X".getBytes(StandardCharsets.UTF_8))));
-    export.append("primo-tentativo.log",
+    InputStream firstContent = new ByteArrayInputStream("X".getBytes(StandardCharsets.UTF_8));
+    assertThrows(FileSystemException.class,
+        () -> export.append("first-attempt.log", firstContent));
+    export.append("first-attempt.log",
         new ByteArrayInputStream("Y".getBytes(StandardCharsets.UTF_8)));
     export.closeStream();
 
-    assertEquals(List.of("primo-tentativo.log"), zipEntryNames(closedParts.get(0)),
+    assertEquals(List.of("first-attempt.log"), zipEntryNames(closedParts.get(0)),
         "il nome riservato da un tentativo fallito non e' stato liberato");
   }
 
@@ -165,49 +166,49 @@ class ZipExportMultipartSplitTest {
     export.setOnPartClosed(closedParts::add);
 
     for (int i = 0; i < 100; i++) {
-      export.append("servizio/anno/mese/giorno/file-di-log-" + i + ".log",
-          new ByteArrayInputStream(("contenuto " + i).getBytes(StandardCharsets.UTF_8)));
+      export.append("logs/ecs/pnDelivery/2022/07/11/12/log-" + i + ".log",
+          new ByteArrayInputStream(("content " + i).getBytes(StandardCharsets.UTF_8)));
     }
-    long dichiarata = export.currentPartSize();
+    long declaredSize = export.currentPartSize();
     export.closeStream();
 
-    assertEquals(dichiarata, Files.size(closedParts.get(0)),
+    assertEquals(declaredSize, Files.size(closedParts.get(0)),
         "la dimensione dichiarata durante la scrittura non tiene conto dell'indice finale");
   }
 
   @Test
   void append_manySmallEntries_keepsEveryPartWithinTheLimit() throws IOException {
-    DataSize limite = DataSize.of(200, DataUnit.KILOBYTES);
+    DataSize limit = DataSize.of(200, DataUnit.KILOBYTES);
     List<Path> closedParts = new ArrayList<>();
     ZipExportMultipart export =
-        new ZipExportMultipart(folderIn, limite, folderOut, "part%d.zip");
+        new ZipExportMultipart(folderIn, limit, folderOut, "part%d.zip");
     export.setOnPartClosed(closedParts::add);
 
     for (int i = 0; i < 3000; i++) {
-      export.append("servizio/anno/mese/giorno/file-di-log-" + i + ".log",
-          new ByteArrayInputStream(("riga " + i).getBytes(StandardCharsets.UTF_8)));
+      export.append("logs/ecs/pnDelivery/2022/07/11/12/log-" + i + ".log",
+          new ByteArrayInputStream(("line " + i).getBytes(StandardCharsets.UTF_8)));
     }
     export.closeStream();
 
     for (Path part : closedParts) {
-      assertTrue(Files.size(part) <= limite.toBytes(),
-          "parte oltre il limite: " + Files.size(part) + " byte contro " + limite.toBytes());
+      assertTrue(Files.size(part) <= limit.toBytes(),
+          "parte oltre il limite: " + Files.size(part) + " byte contro " + limit.toBytes());
     }
   }
 
-  private ZipExportMultipart exportFallendoSu(String prefissoDaRompere, List<Path> closedParts,
+  private ZipExportMultipart exportFailingOn(String prefixToFail, List<Path> closedParts,
       List<Path> discardedParts) {
     ZipExportMultipart export = new ZipExportMultipart(folderIn,
         DataSize.of(50, DataUnit.MEGABYTES), folderOut, "part%d.zip") {
-      private boolean giaFallito;
+      private boolean alreadyFailed;
 
       @Override
       protected void addLogEntry(String entryName, InputStream content) throws IOException {
-        if (entryName.startsWith(prefissoDaRompere) && !giaFallito) {
-          giaFallito = true;
+        if (entryName.startsWith(prefixToFail) && !alreadyFailed) {
+          alreadyFailed = true;
           currentFileOut.putNextEntry(new ZipEntry(entryName));
-          currentFileOut.write("PARZIALE".getBytes(StandardCharsets.UTF_8));
-          throw new IOException("scrittura interrotta a meta'");
+          currentFileOut.write("PARTIAL".getBytes(StandardCharsets.UTF_8));
+          throw new IOException("write interrupted halfway");
         }
         super.addLogEntry(entryName, content);
       }

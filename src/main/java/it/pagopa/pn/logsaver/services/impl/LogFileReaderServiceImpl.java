@@ -72,12 +72,6 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
    * @return Stream<String>: stream di subFolders
    */
   private Stream<String> findSubfoldersS3(LogFileType type, LocalDate logDate) {
-    /*String subFolderFilter = StringUtils.substringBefore(
-        LogFileType.CDC == type ? cfg.getCdcRootPathTemplate() : cfg.getLogsRootPathTemplate(), "/")
-        .replace("'", "").concat("/");
-    List<String> subFolderList = clientS3
-        .findSubFolders(subFolderFilter, DateUtils.getYear(logDate)).collect(Collectors.toList());*/
-
     // getCdcRootPathTemplate : 'cdcTos3/%s/'yyyy/MM/dd  --> pathPrefix : cdcTos3/
     //                        : 'logsTos3/'yyyy/MM/dd    --> pathPrefix : logsTos3/
 	  String pathPrefix = StringUtils.substringBefore(

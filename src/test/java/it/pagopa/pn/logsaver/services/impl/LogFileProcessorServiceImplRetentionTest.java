@@ -19,7 +19,6 @@ import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference;
-import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.services.LogFileReaderService;
 import it.pagopa.pn.logsaver.utils.LogSaverUtils;

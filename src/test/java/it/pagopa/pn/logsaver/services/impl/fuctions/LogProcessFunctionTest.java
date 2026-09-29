@@ -67,7 +67,7 @@ class LogProcessFunctionTest {
     LogFileReference item = LogFileReference.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY)
         .build();
     List<ClassifiedLogFragment> ret =
-        function.apply(item, s3File.getInputStream(), ctx).sequential().collect(Collectors.toList());
+        function.apply(item, s3File.getInputStream(), ctx).sequential().toList();
 
     assertNotNull(ret);
     assertEquals(3, ret.size());

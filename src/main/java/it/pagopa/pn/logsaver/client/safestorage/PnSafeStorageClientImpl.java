@@ -51,7 +51,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
   public AuditStorage uploadFiles(AuditStorage audit) {
 
     try {
-      audit.filePath().stream()
+      audit.filePath()
               .forEach(fileUpload -> audit.uploadKey().put(fileUpload.getFileName().toString(),
                       uploadFile(fileUpload, audit.exportType(), audit.retention())));
 

@@ -104,7 +104,7 @@ public class StorageServiceImpl implements StorageService {
   @Override
   public List<AuditStorage> persist(List<AuditStorage> uploaded, DailyContextCfg ctx, boolean dailySaverSource) {
     List<AuditStorageEntity> auditStoredEntity =
-            uploaded.stream().map(AuditStorageMapper::toEntity).collect(Collectors.toList());
+            uploaded.stream().map(AuditStorageMapper::toEntity).toList();
 
     auditStoredEntity.forEach(entity -> {
       Retention ret = Retention.valueOf(entity.getRetention());

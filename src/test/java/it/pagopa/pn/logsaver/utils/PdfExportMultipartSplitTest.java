@@ -39,14 +39,14 @@ class PdfExportMultipartSplitTest {
   }
 
   @Test
-  void append_shouldNotProduceEmptyPart_whenFirstEntryExceedsMaxSize() throws IOException {
+  void append_shouldNotProduceEmptyPart_whenFirstEntryExceedsMaxSize() {
     PdfExportMultipart export = new PdfExportMultipart(folderIn, DataSize.ofBytes(3000), folderOut,
         "part%d.pdf", Retention.DEVELOPER, LocalDate.parse("2022-10-02"));
     List<Path> closedParts = new ArrayList<>();
     export.setOnPartClosed(closedParts::add);
 
-    export.append("enorme.log", new ByteArrayInputStream(new byte[5000]));
-    export.append("piccola.log",
+    export.append("oversized.log", new ByteArrayInputStream(new byte[5000]));
+    export.append("small.log",
         new ByteArrayInputStream("PICCOLA".getBytes(StandardCharsets.US_ASCII)));
     export.closeStream();
 
@@ -55,7 +55,7 @@ class PdfExportMultipartSplitTest {
   }
 
   @Test
-  void append_shouldNotProduceEmptyParts_whenEveryEntryExceedsMaxSize() throws IOException {
+  void append_shouldNotProduceEmptyParts_whenEveryEntryExceedsMaxSize() {
     PdfExportMultipart export = new PdfExportMultipart(folderIn, DataSize.ofBytes(3000), folderOut,
         "part%d.pdf", Retention.DEVELOPER, LocalDate.parse("2022-10-02"));
     List<Path> closedParts = new ArrayList<>();

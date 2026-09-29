@@ -23,7 +23,6 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,23 +93,23 @@ class StreamingExportCoordinatorTest {
 
     StreamingExportCoordinator coord =
         new StreamingExportCoordinator(ctx, DataSize.of(2, DataUnit.MEGABYTES), uploader);
-    coord.accept(frag(Retention.AUDIT10Y, "BUONA", "buona.log"));
-    String nomeNonScrivibile = "x".repeat(70_000).concat(".log");
-    assertThrows(FileSystemException.class,
-        () -> coord.accept(frag(Retention.AUDIT10Y, "ROTTA", nomeNonScrivibile)));
-    coord.accept(frag(Retention.AUDIT10Y, "TERZA", "terza.log"));
+    coord.accept(frag(Retention.AUDIT10Y, "OK", "ok.log"));
+    String unwritableName = "x".repeat(70_000).concat(".log");
+    ClassifiedLogFragment broken = frag(Retention.AUDIT10Y, "KO", unwritableName);
+    assertThrows(FileSystemException.class, () -> coord.accept(broken));
+    coord.accept(frag(Retention.AUDIT10Y, "THIRD", "third.log"));
 
     List<UploadedPart> res = coord.finish();
 
-    UploadedPart scartata =
+    UploadedPart discardedPart =
         res.stream().filter(part -> part.error() != null).findFirst().orElse(null);
-    assertNotNull(scartata, "la parte compromessa deve comparire fra i risultati, con l'errore");
-    assertNull(scartata.storageKey(), "la parte scartata non deve avere una chiave di storage");
+    assertNotNull(discardedPart, "la parte compromessa deve comparire fra i risultati, con l'errore");
+    assertNull(discardedPart.storageKey(), "la parte scartata non deve avere una chiave di storage");
     assertFalse(
         uploadedPaths.stream()
-            .anyMatch(path -> path.getFileName().toString().equals(scartata.partName())),
+            .anyMatch(path -> path.getFileName().toString().equals(discardedPart.partName())),
         "la parte scartata non deve essere stata caricata");
-    assertEquals(List.of("terza.log"), entriesByPart.get(res.stream()
+    assertEquals(List.of("third.log"), entriesByPart.get(res.stream()
         .filter(part -> part.error() == null).findFirst().orElseThrow().partName()),
         "dopo lo scarto la lavorazione prosegue su una parte nuova");
   }
@@ -121,10 +120,10 @@ class StreamingExportCoordinatorTest {
 
     StreamingExportCoordinator coord =
         new StreamingExportCoordinator(ctx, DataSize.of(2, DataUnit.MEGABYTES), uploader);
-    coord.accept(frag(Retention.AUDIT10Y, "BUONA", "buona.log"));
-    String nomeNonScrivibile = "x".repeat(70_000).concat(".log");
-    assertThrows(FileSystemException.class,
-        () -> coord.accept(frag(Retention.AUDIT10Y, "ROTTA", nomeNonScrivibile)));
+    coord.accept(frag(Retention.AUDIT10Y, "OK", "ok.log"));
+    String unwritableName = "x".repeat(70_000).concat(".log");
+    ClassifiedLogFragment broken = frag(Retention.AUDIT10Y, "KO", unwritableName);
+    assertThrows(FileSystemException.class, () -> coord.accept(broken));
 
     coord.finish();
 
@@ -133,8 +132,7 @@ class StreamingExportCoordinatorTest {
   }
 
   @Test
-  void append_whenSameEntryNameRecursNonContiguously_keepsBothContents_underDerivedName()
-      throws IOException {
+  void append_whenSameEntryNameRecursNonContiguously_keepsBothContents_underDerivedName() {
     DailyContextCfg ctx = context(Map.of(Retention.AUDIT10Y, Set.of(ExportType.ZIP)));
 
     StreamingExportCoordinator coord =

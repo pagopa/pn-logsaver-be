@@ -2,8 +2,8 @@ package it.pagopa.pn.logsaver.services.impl;
 
 import static java.util.stream.Collectors.toCollection;
 
-import java.time.Duration;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,7 +64,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
     Map<LocalDate, StorageExecution> executionMap = new HashMap<>();
     // se yesterday-lastContExecDate > 1 sono presenti esecuzioni non processate correttamente o
     // date senza esecuzione
-    if (Duration.between(lastContExecDate.atStartOfDay(), today.atStartOfDay()).toDays() >= 1) {
+    if (ChronoUnit.DAYS.between(lastContExecDate, today) >= 1) {
       // Recupero date da elaborare:
       // Leggo tutte le esecuzioni registrate da lastContExecDate a yesterday
       //
@@ -244,7 +244,7 @@ public class AuditSaverServiceImpl implements AuditSaverService {
       }
       auditStorage.status(error != null ? AuditStorageStatus.CREATED : AuditStorageStatus.SENT);
       return auditStorage;
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
   @Override

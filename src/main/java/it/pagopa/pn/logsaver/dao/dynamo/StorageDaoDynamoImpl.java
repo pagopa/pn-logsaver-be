@@ -2,6 +2,7 @@ package it.pagopa.pn.logsaver.dao.dynamo;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -182,8 +183,8 @@ public class StorageDaoDynamoImpl implements StorageDao {
     // Aggiorno La data ultima esecuzione continua se:
     // Tutti i file sono stati inviati
     // se la differenza tra la logDate e la data ultima esecuzione continua è 1
-    if (!StorageDaoLogicSupport.hasErrors(newExecution) && Duration
-        .between(lastContinuosExecutionReg.atStartOfDay(), logDate.atStartOfDay()).toDays() == 1 && dailySaverSource) {
+    if (!StorageDaoLogicSupport.hasErrors(newExecution)
+        && ChronoUnit.DAYS.between(lastContinuosExecutionReg, logDate) == 1 && dailySaverSource) {
 
       // Determino la data esecuzione continua
       List<ExecutionEntity> execList = this.executionFrom(logDate);
@@ -197,7 +198,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
       transBuild.addPutItem(continuosExecutionTable, condtionalUpdate);
     }
     // Una riga per ogni file generato
-    auditList.stream().forEach(entity -> transBuild.addPutItem(auditStorageTable, entity));
+    auditList.forEach(entity -> transBuild.addPutItem(auditStorageTable, entity));
 
     enhancedClient.transactWriteItems(transBuild.build());
 

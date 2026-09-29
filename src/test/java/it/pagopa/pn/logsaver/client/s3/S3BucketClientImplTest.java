@@ -48,7 +48,7 @@ class S3BucketClientImplTest {
   private S3BucketClient client;
 
   @BeforeEach
-  public void createService() {
+  void createService() {
     this.client = new S3BucketClientImpl(clientS3, awsCfg);
     when(awsCfg.getS3BucketName()).thenReturn(TestCostant.BUCKET_NAME);
   }
@@ -246,7 +246,7 @@ class S3BucketClientImplTest {
   void findObjects_shouldNotFetchNextPage_untilCurrentPageExhausted() {
     List<S3Object> page1 = IntStream.range(0, 1000)
         .mapToObj(i -> S3Object.builder().key("logs/prefix/obj-" + i).build())
-        .collect(Collectors.toList());
+        .toList();
     ListObjectsV2Response truncatedResponse = ListObjectsV2Response.builder()
         .contents(page1)
         .isTruncated(true)

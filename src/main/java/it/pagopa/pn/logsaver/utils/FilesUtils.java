@@ -54,7 +54,7 @@ public class FilesUtils {
   }
 
   public static void createDirectories(Collection<Path> pathList) {
-    pathList.stream().forEach(FilesUtils::createDirectory);
+    pathList.forEach(FilesUtils::createDirectory);
   }
 
   public static void createDirectory(Path path) {
@@ -90,6 +90,7 @@ public class FilesUtils {
       try (DigestInputStream dis = new DigestInputStream(fileStream, md)) {
         byte[] buffer = new byte[8192];
         while (dis.read(buffer) != -1) {
+          // Reading is enough: DigestInputStream updates the digest, bytes are not needed
         }
         md = dis.getMessageDigest();
       }

@@ -11,7 +11,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import it.pagopa.pn.logsaver.TestCostant;
@@ -44,7 +43,7 @@ class LogFileTypeCdcFilterTest {
 
     List<ClassifiedLogFragment> fragments;
     try (Stream<ClassifiedLogFragment> stream = LogFileType.CDC.filter(ctx(), item, content)) {
-      fragments = stream.collect(Collectors.toList());
+      fragments = stream.toList();
     }
 
     assertEquals(1, fragments.size());
@@ -62,7 +61,7 @@ class LogFileTypeCdcFilterTest {
     List<ClassifiedLogFragment> fragments;
     try (Stream<ClassifiedLogFragment> stream =
         LogFileType.CDC.filter(ctx(), item, new ByteArrayInputStream(otherBody))) {
-      fragments = stream.collect(Collectors.toList());
+      fragments = stream.toList();
     }
 
     assertEquals(1, fragments.size());
@@ -80,7 +79,7 @@ class LogFileTypeCdcFilterTest {
     };
 
     UncheckedIOException thrown = assertThrows(UncheckedIOException.class,
-        () -> LogFileType.CDC.filter(ctx(), item, failing).close());
+        () -> LogFileType.CDC.filter(ctx(), item, failing));
 
     assertTrue(thrown.getMessage().contains(TestCostant.S3_KEY));
   }
