@@ -80,7 +80,7 @@ public class LogsFilterSupport {
         }
       }
     } catch (Exception e) {
-      log.trace("error parsing log event message unknow format: {} ", logEvt.toString());
+      log.warn("error parsing log event message unknow format: {} ", logEvt.toString());
     }
     return retentionToExport.contains(Retention.DEVELOPER) ? Retention.DEVELOPER : null;
 

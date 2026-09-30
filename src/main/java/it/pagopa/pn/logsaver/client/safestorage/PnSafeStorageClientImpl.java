@@ -51,7 +51,7 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
   public AuditStorage uploadFiles(AuditStorage audit) {
 
     try {
-      audit.filePath().stream()
+      audit.filePath()
               .forEach(fileUpload -> audit.uploadKey().put(fileUpload.getFileName().toString(),
                       uploadFile(fileUpload, audit.exportType(), audit.retention())));
 
@@ -64,7 +64,8 @@ public class PnSafeStorageClientImpl implements PnSafeStorageClient {
 
   }
 
-  private String uploadFile(Path filePath, ExportType exportType, Retention retention) {
+  @Override
+  public String uploadFile(Path filePath, ExportType exportType, Retention retention) {
     String mediaType = exportType.getMediaType();
     try {
       String sha256 = FilesUtils.computeSha256(filePath);

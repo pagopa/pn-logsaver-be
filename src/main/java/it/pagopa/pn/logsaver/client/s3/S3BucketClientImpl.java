@@ -1,11 +1,16 @@
 package it.pagopa.pn.logsaver.client.s3;
 
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
@@ -105,20 +110,40 @@ public class S3BucketClientImpl implements S3BucketClient {
   private <T> Stream<T> paginatedList(
       Function<String, ListObjectsV2Request> requestBuilder,
       Function<ListObjectsV2Response, List<T>> extractor) {
-    List<T> allItems = new ArrayList<>();
-    String continuationToken = null;
-    int page = 1;
-    do {
-      ListObjectsV2Response response = clientS3.listObjectsV2(requestBuilder.apply(continuationToken));
-      allItems.addAll(extractor.apply(response));
-      continuationToken = Boolean.TRUE.equals(response.isTruncated())
-          ? response.nextContinuationToken() : null;
-      if (continuationToken != null) {
-        log.debug("paginatedList fetching page {}", ++page);
-      }
-    } while (continuationToken != null);
+    Iterator<T> lazyIterator = new Iterator<>() {
+      private Iterator<T> currentPage = Collections.emptyIterator();
+      private String continuationToken = null;
+      private boolean firstPage = true;
+      private int page = 1;
 
-    return allItems.stream();
+      @Override
+      public boolean hasNext() {
+        while (!currentPage.hasNext() && (firstPage || continuationToken != null)) {
+          ListObjectsV2Response response =
+              clientS3.listObjectsV2(requestBuilder.apply(continuationToken));
+          firstPage = false;
+          continuationToken = Boolean.TRUE.equals(response.isTruncated())
+              ? response.nextContinuationToken() : null;
+          if (continuationToken != null) {
+            log.debug("paginatedList fetching page {}", ++page);
+          }
+          currentPage = extractor.apply(response).iterator();
+        }
+        return currentPage.hasNext();
+      }
+
+      @Override
+      public T next() {
+        if (!hasNext()) {
+          throw new NoSuchElementException();
+        }
+        return currentPage.next();
+      }
+    };
+
+    return StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(lazyIterator, Spliterator.ORDERED | Spliterator.NONNULL),
+        false);
   }
 
 

@@ -1,11 +1,14 @@
 package it.pagopa.pn.logsaver.model.enums;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.io.IOUtils;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.LogFileReference.ClassifiedLogFragment;
@@ -17,18 +20,23 @@ public enum LogFileType {
 
 
   CDC(Set.of(Retention.AUDIT10Y),
-      (in, cfg) -> Stream.of(
-          new ClassifiedLogFragment(Retention.AUDIT10Y, in.getContent(), in.getFileName()))), LOGS(
+      (in, content, cfg) -> Stream.of(new ClassifiedLogFragment(Retention.AUDIT10Y,
+          readContent(in, content), in.getFileName()))), LOGS(
               Set.of(Retention.values()), new LogProcessFunction());
 
 
+  @FunctionalInterface
+  public interface LogFilter {
+    Stream<ClassifiedLogFragment> apply(LogFileReference item, InputStream content,
+        DailyContextCfg ctx);
+  }
+
   private Set<Retention> retentions;
-  private BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> filter;
+  private LogFilter filter;
 
 
 
-  private LogFileType(Set<Retention> retentions,
-      BiFunction<LogFileReference, DailyContextCfg, Stream<ClassifiedLogFragment>> filter) {
+  private LogFileType(Set<Retention> retentions, LogFilter filter) {
     this.retentions = retentions;
     this.filter = filter;
 
@@ -51,7 +59,16 @@ public enum LogFileType {
   }
 
 
-  public Stream<ClassifiedLogFragment> filter(DailyContextCfg ctx, LogFileReference item) {
-    return filter.apply(item, ctx);
+  public Stream<ClassifiedLogFragment> filter(DailyContextCfg ctx, LogFileReference item,
+      InputStream content) {
+    return filter.apply(item, content, ctx);
+  }
+
+  private static byte[] readContent(LogFileReference item, InputStream content) {
+    try {
+      return IOUtils.toByteArray(content);
+    } catch (IOException e) {
+      throw new UncheckedIOException("Error reading log file " + item.getS3Key(), e);
+    }
   }
 }

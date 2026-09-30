@@ -1,6 +1,5 @@
 package it.pagopa.pn.logsaver.model;
 
-import java.io.InputStream;
 import java.time.LocalDate;
 import org.apache.commons.io.FilenameUtils;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
@@ -20,7 +19,7 @@ public class LogFileReference {
 
   private LocalDate logDate;
 
-  private InputStream content;
+  private long size;
 
   public String getFileName() {
     return FilenameUtils.getBaseName(this.getS3Key());
@@ -33,7 +32,7 @@ public class LogFileReference {
 
     private Retention retention;
 
-    private InputStream content;
+    private byte[] content;
 
     private String fileName;
   }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,7 +27,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.util.ReflectionUtils;
 import it.pagopa.pn.logsaver.TestCostant;
@@ -83,10 +83,10 @@ class StorageDaoDynamoImplTest {
   @BeforeEach
   void init() {
     when(awsCfg.getDynamoDbTableName()).thenReturn("audit_storage");
-    enhancedClient = Mockito.mock(DynamoDbEnhancedClient.class);
-    auditStorageTable = Mockito.mock(DynamoDbTable.class);
-    executionTable = Mockito.mock(DynamoDbTable.class);
-    continuosExecutionTable = Mockito.mock(DynamoDbTable.class);
+    enhancedClient = mock(DynamoDbEnhancedClient.class);
+    auditStorageTable = mock(DynamoDbTable.class);
+    executionTable = mock(DynamoDbTable.class);
+    continuosExecutionTable = mock(DynamoDbTable.class);
     when(enhancedClient.table(anyString(), any())).then(in -> {
       BeanTableSchema schema = in.getArgument(1);
       if (schema.itemType().rawClass().equals(AuditStorageEntity.class)) {
@@ -129,10 +129,7 @@ class StorageDaoDynamoImplTest {
   }
 
   private PageIterable<ExecutionEntity> execListMock(List<ExecutionEntity> mockList) {
-    return new PageIterable<ExecutionEntity>() {
-      @Override
-      public Iterator<Page<ExecutionEntity>> iterator() {
-        return new Iterator<Page<ExecutionEntity>>() {
+    return () -> new Iterator<Page<ExecutionEntity>>() {
 
           private Page<ExecutionEntity> page = Page.create(mockList);
           private Iterator iterable = page.items().iterator();
@@ -147,9 +144,6 @@ class StorageDaoDynamoImplTest {
           public Page<ExecutionEntity> next() {
             return cnt++ < mockList.size() ? page : null;
           }
-        };
-      }
-
     };
 
   }
@@ -178,10 +172,7 @@ class StorageDaoDynamoImplTest {
 
   private PageIterable<ContinuosExecutionEntity> continuosExecListMock(
       List<ContinuosExecutionEntity> mockList) {
-    return new PageIterable<ContinuosExecutionEntity>() {
-      @Override
-      public Iterator<Page<ContinuosExecutionEntity>> iterator() {
-        return new Iterator<Page<ContinuosExecutionEntity>>() {
+    return () -> new Iterator<Page<ContinuosExecutionEntity>>() {
           private Page<ContinuosExecutionEntity> page = Page.create(mockList);
           private Iterator iterable = page.items().iterator();
           int cnt = 0;
@@ -195,8 +186,6 @@ class StorageDaoDynamoImplTest {
           public Page<ContinuosExecutionEntity> next() {
             return cnt++ < mockList.size() ? page : null;
           }
-        };
-      }
     };
   }
 
@@ -278,6 +267,9 @@ class StorageDaoDynamoImplTest {
     // :AMZN_MAPPED_
     assertEquals("2022-07-13", updContinuosExec.get(0).item().get("latestExecutionDate").s());
 
+    assertNotNull(updLastExec.get(0).conditionExpression(),
+        "optimistic lock: l'update dell'esecuzione deve avere una conditionExpression (R14)");
+
   }
 
   @Test
@@ -293,10 +285,7 @@ class StorageDaoDynamoImplTest {
   }
 
   private PageIterable<AuditStorageEntity> execListMockAudit(List<AuditStorageEntity> mockList) {
-    return new PageIterable<AuditStorageEntity>() {
-      @Override
-      public Iterator<Page<AuditStorageEntity>> iterator() {
-        return new Iterator<Page<AuditStorageEntity>>() {
+    return () -> new Iterator<Page<AuditStorageEntity>>() {
 
           private Page<AuditStorageEntity> page = Page.create(mockList);
           private Iterator iterable = page.items().iterator();
@@ -311,9 +300,6 @@ class StorageDaoDynamoImplTest {
           public Page<AuditStorageEntity> next() {
             return cnt++ < mockList.size() ? page : null;
           }
-        };
-      }
-
     };
 
   }

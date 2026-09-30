@@ -54,7 +54,7 @@ public class FilesUtils {
   }
 
   public static void createDirectories(Collection<Path> pathList) {
-    pathList.stream().forEach(FilesUtils::createDirectory);
+    pathList.forEach(FilesUtils::createDirectory);
   }
 
   public static void createDirectory(Path path) {
@@ -88,7 +88,10 @@ public class FilesUtils {
       MessageDigest md = MessageDigest.getInstance("SHA-256");
       InputStream fileStream = new FileInputStream(filepath.toFile());
       try (DigestInputStream dis = new DigestInputStream(fileStream, md)) {
-        while (dis.read() != -1);
+        byte[] buffer = new byte[8192];
+        while (dis.read(buffer) != -1) {
+          // Reading is enough: DigestInputStream updates the digest, bytes are not needed
+        }
         md = dis.getMessageDigest();
       }
       byte[] encodedhash = md.digest();

@@ -3,12 +3,18 @@ package it.pagopa.pn.logsaver.services.impl.fuctions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,10 +23,7 @@ import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonStreamParser;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.exceptions.LogFilterException;
 import it.pagopa.pn.logsaver.model.DailyContextCfg;
@@ -53,8 +56,8 @@ class LogProcessFunctionTest {
 
     InputStream in = IOUtils.toInputStream("test");
     LogFileReference item =
-        LogFileReference.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY).content(in).build();
-    assertThrows(LogFilterException.class, () -> function.apply(item, ctx));
+        LogFileReference.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY).build();
+    assertThrows(LogFilterException.class, () -> function.apply(item, in, ctx));
   }
 
 
@@ -62,38 +65,37 @@ class LogProcessFunctionTest {
   void filter() throws IOException {
     when(ctx.retentions()).thenReturn(Set.of(Retention.values()));
     LogFileReference item = LogFileReference.builder().logDate(TestCostant.LOGDATE).s3Key(TestCostant.S3_KEY)
-        .content(s3File.getInputStream()).build();
-    List<ClassifiedLogFragment> ret = function.apply(item, ctx).sequential().collect(Collectors.toList());
+        .build();
+    List<ClassifiedLogFragment> ret =
+        function.apply(item, s3File.getInputStream(), ctx).sequential().toList();
 
     assertNotNull(ret);
-    assertEquals(10, ret.size());
+    assertEquals(3, ret.size());
 
-    assertEquals(2, filterResult(ret, Retention.AUDIT10Y).size());
-    assertEquals(2, filterResult(ret, Retention.AUDIT5Y).size());
-    assertEquals(6, filterResult(ret, Retention.DEVELOPER).size());
+    assertEquals(1, filterResult(ret, Retention.AUDIT10Y).size());
+    assertEquals(1, filterResult(ret, Retention.AUDIT5Y).size());
+    assertEquals(1, filterResult(ret, Retention.DEVELOPER).size());
 
-    List<JsonArray> logEvt10List = filterResult(ret, Retention.AUDIT10Y).stream()
-        .map(ClassifiedLogFragment::getContent).map(this::getLogEvent).collect(Collectors.toList());
+    assertEquals(List.of(4, 4), logEventSizes(ret, Retention.AUDIT10Y));
+    assertEquals(List.of(1, 1), logEventSizes(ret, Retention.AUDIT5Y));
+    assertEquals(List.of(19, 9, 2, 14, 4, 4), logEventSizes(ret, Retention.DEVELOPER));
 
-    List<JsonArray> logEvt5List = filterResult(ret, Retention.AUDIT5Y).stream()
-        .map(ClassifiedLogFragment::getContent).map(this::getLogEvent).collect(Collectors.toList());
+    ret.forEach(fragment -> assertEquals(item.getFileName(), fragment.getFileName()));
+  }
 
-    List<JsonArray> logEvtDevList = filterResult(ret, Retention.DEVELOPER).stream()
-        .map(ClassifiedLogFragment::getContent).map(this::getLogEvent).collect(Collectors.toList());
+  @Test
+  void apply_shouldCloseSourceStream_afterStreamConsumedAndClosed() throws IOException {
+    when(ctx.retentions()).thenReturn(Set.of(Retention.values()));
+    InputStream sourceSpy = spy(s3File.getInputStream());
+    LogFileReference item = LogFileReference.builder().logDate(TestCostant.LOGDATE)
+        .s3Key(TestCostant.S3_KEY).build();
 
-    assertEquals(4, logEvt10List.get(0).size());
-    assertEquals(4, logEvt10List.get(1).size());
+    try (Stream<ClassifiedLogFragment> result = function.apply(item, sourceSpy, ctx)) {
+      result.forEach(fragment -> {
+      });
+    }
 
-    assertEquals(1, logEvt5List.get(0).size());
-    assertEquals(1, logEvt5List.get(1).size());
-
-    assertEquals(19, logEvtDevList.get(0).size());
-    assertEquals(9, logEvtDevList.get(1).size());
-    assertEquals(2, logEvtDevList.get(2).size());
-    assertEquals(14, logEvtDevList.get(3).size());
-    assertEquals(4, logEvtDevList.get(4).size());
-    assertEquals(4, logEvtDevList.get(5).size());
-
+    verify(sourceSpy, atLeastOnce()).close();
   }
 
   private List<ClassifiedLogFragment> filterResult(List<ClassifiedLogFragment> ret, Retention retention) {
@@ -102,13 +104,13 @@ class LogProcessFunctionTest {
 
   }
 
-  private JsonArray getLogEvent(InputStream in) {
-    JsonObject jsonObject;
-    try {
-      jsonObject = JsonParser.parseString(IOUtils.toString(in)).getAsJsonObject();
-    } catch (JsonSyntaxException | IOException e) {
-      return null;
+  private List<Integer> logEventSizes(List<ClassifiedLogFragment> ret, Retention retention) {
+    byte[] content = filterResult(ret, retention).get(0).getContent();
+    List<Integer> sizes = new ArrayList<>();
+    JsonStreamParser parser = new JsonStreamParser(new String(content, StandardCharsets.UTF_8));
+    while (parser.hasNext()) {
+      sizes.add(parser.next().getAsJsonObject().getAsJsonArray("logEvents").size());
     }
-    return jsonObject.getAsJsonArray("logEvents");
+    return sizes;
   }
 }

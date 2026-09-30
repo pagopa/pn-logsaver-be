@@ -5,7 +5,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,10 +21,8 @@ import it.pagopa.pn.logsaver.model.DailyContextCfg;
 import it.pagopa.pn.logsaver.model.LogFileReference;
 import it.pagopa.pn.logsaver.model.enums.LogFileType;
 import it.pagopa.pn.logsaver.services.LogFileReaderService;
-import it.pagopa.pn.logsaver.utils.DateUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.services.s3.model.S3Object;
 
 
 
@@ -73,12 +72,6 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
    * @return Stream<String>: stream di subFolders
    */
   private Stream<String> findSubfoldersS3(LogFileType type, LocalDate logDate) {
-    /*String subFolderFilter = StringUtils.substringBefore(
-        LogFileType.CDC == type ? cfg.getCdcRootPathTemplate() : cfg.getLogsRootPathTemplate(), "/")
-        .replace("'", "").concat("/");
-    List<String> subFolderList = clientS3
-        .findSubFolders(subFolderFilter, DateUtils.getYear(logDate)).collect(Collectors.toList());*/
-
     // getCdcRootPathTemplate : 'cdcTos3/%s/'yyyy/MM/dd  --> pathPrefix : cdcTos3/
     //                        : 'logsTos3/'yyyy/MM/dd    --> pathPrefix : logsTos3/
 	  String pathPrefix = StringUtils.substringBefore(
@@ -86,7 +79,7 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
 		        .replace("'", "").concat("/");
 
       // getCdcTablesPrefix : TABLE_NAME_
-      String subFolderPrefix = LogFileType.CDC == type ? cfg.getCdcTablesPrefix() : "";
+      String subFolderPrefix = "";
 
     if(LogFileType.CDC == type ) {
       //pathPrefix = pathPrefix.substring(0, pathPrefix.indexOf("/")+1);
@@ -107,22 +100,23 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
   public Stream<LogFileReference> findLogFiles(DailyContextCfg dailyCtx) {
     log.info("findLogFiles start date={} retentions={} logFileTypes={}", dailyCtx.logDate(), dailyCtx.retentions(), dailyCtx.logFileTypes());
 
-    List<LogFileReference> files = Stream.of(LogFileType.values())
+    Map<LogFileType, LongAdder> countByType = new ConcurrentHashMap<>();
+
+    return Stream.of(LogFileType.values())
         .filter(type -> type.containsRetentions(dailyCtx.retentions()))
         .flatMap(type -> findSubfolders(type, dailyCtx.logDate())
-            .flatMap(subFolder -> handleLogFileReference(subFolder, type, dailyCtx.logDate())))
-        .collect(Collectors.toList());
-
-    Map<LogFileType, Long> countByType = files.stream()
-        .collect(Collectors.groupingBy(LogFileReference::getType, Collectors.counting()));
-
-    log.info("findLogFiles date={} files found per type: {}", dailyCtx.logDate(), countByType);
-
-    if (files.isEmpty()) {
-      log.warn("findLogFiles date={} no files found, check S3 path configuration and subfolder discovery", dailyCtx.logDate());
-    }
-
-    return files.stream();
+            .filter(subFolder -> !(LogFileType.CDC == type && subFolder.isEmpty()))
+            .map(subFolder -> handleDailyPrefix(subFolder, type, dailyCtx.logDate()))
+            .distinct()
+            .flatMap(prefix -> listObjects(prefix, type, dailyCtx.logDate(), countByType)))
+        .onClose(() -> {
+          long total = countByType.values().stream().mapToLong(LongAdder::sum).sum();
+          if (total == 0) {
+            log.warn("findLogFiles date={} no files found, check S3 path configuration and subfolder discovery", dailyCtx.logDate());
+          } else {
+            log.info("findLogFiles date={} files found per type: {}", dailyCtx.logDate(), countByType);
+          }
+        });
   }
 
   /**
@@ -141,22 +135,16 @@ public class LogFileReaderServiceImpl implements LogFileReaderService {
     return clientS3.getObjectContent(key);
   }
 
-  private Stream<LogFileReference> handleLogFileReference(String subFolder, LogFileType type,
-      LocalDate logDate) {
+  private Stream<LogFileReference> listObjects(String prefix, LogFileType type, LocalDate logDate,
+      Map<LogFileType, LongAdder> countByType) {
 
-    if(LogFileType.CDC == type && subFolder.isEmpty())
-      return Stream.empty();
-    String prefix = handleDailyPrefix(subFolder, type, logDate);
     log.info("Search {} log files for subfolder {}", type.name(), prefix);
 
-    List<S3Object> objList = clientS3.findObjects(prefix).collect(Collectors.toList());
-
-    if (objList.isEmpty()) {
-      log.warn("handleLogFileReference type={} date={} prefix={} no objects found on S3", type.name(), logDate, prefix);
-    }
-
-    return objList.stream().map(
-        obj -> LogFileReference.builder().s3Key(obj.key()).type(type).logDate(logDate).build());
+    return clientS3.findObjects(prefix).map(obj -> {
+      countByType.computeIfAbsent(type, t -> new LongAdder()).increment();
+      return LogFileReference.builder().s3Key(obj.key()).type(type).logDate(logDate)
+          .size(obj.size() == null ? 0L : obj.size()).build();
+    });
   }
 
   private String handleDailyPrefix(String subFolder, LogFileType type, LocalDate logDate) {
