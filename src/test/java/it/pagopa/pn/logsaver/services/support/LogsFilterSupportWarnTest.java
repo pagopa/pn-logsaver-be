@@ -72,7 +72,7 @@ class LogsFilterSupportWarnTest {
     ILoggingEvent warn = singleWarn();
     String msg = warn.getFormattedMessage();
     assertTrue(msg.length() < MAX_WARN_LENGTH, "WARN troppo grande: " + msg.length());
-    assertTrue(msg.startsWith("error parsing log event message unknow format"));
+    assertTrue(msg.startsWith("Error parsing log event message - unknown format"));
     assertTrue(msg.contains("logGroup=" + LOG_GROUP));
     assertTrue(msg.contains("logStream=" + LOG_STREAM));
     assertTrue(msg.contains("id=" + EVENT_ID));

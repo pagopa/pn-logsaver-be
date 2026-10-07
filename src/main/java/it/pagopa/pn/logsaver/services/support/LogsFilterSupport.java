@@ -87,7 +87,7 @@ public class LogsFilterSupport {
       }
     } catch (Exception e) {
       log.warn(
-          "error parsing log event message unknow format: logGroup={} logStream={} id={} timestamp={} messageLength={} cause={} preview={}",
+          "Error parsing log event message - unknown format: logGroup={} logStream={} id={} timestamp={} messageLength={} cause={} preview={}",
           getString(parent, FIELD_LOG_GROUP), getString(parent, FIELD_LOG_STREAM),
           getString(logEvt, FIELD_LOG_ID), getString(logEvt, FIELD_LOG_TIMESTAMP),
           logEvtMsgStr == null ? -1 : logEvtMsgStr.length(),
