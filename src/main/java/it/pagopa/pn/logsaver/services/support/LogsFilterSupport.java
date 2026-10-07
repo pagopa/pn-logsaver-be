@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -23,6 +24,11 @@ public class LogsFilterSupport {
   private static final String FIELD_LOG_EVENTS = "logEvents";
   private static final String FIELD_LOG_MESSAGE = "message";
   private static final String FIELD_LOG_TAGS = "tags";
+  private static final String FIELD_LOG_ID = "id";
+  private static final String FIELD_LOG_TIMESTAMP = "timestamp";
+  private static final String FIELD_LOG_GROUP = "logGroup";
+  private static final String FIELD_LOG_STREAM = "logStream";
+  private static final int MAX_MSG_PREVIEW = 200;
 
   public static Map<Retention, JsonObject> groupByRetention(JsonObject parent,
       Set<Retention> retentionToExport) {
@@ -41,7 +47,7 @@ public class LogsFilterSupport {
   private static void splitLogByRetention(JsonObject parent, Map<Retention, JsonObject> groupedLog,
       JsonObject logEvent, Set<Retention> retentionToExport) {
     try {
-      Retention retention = getRetention(logEvent, retentionToExport);
+      Retention retention = getRetention(parent, logEvent, retentionToExport);
       if (Objects.nonNull(retention)) {
         JsonObject objByRetention =
             groupedLog.computeIfAbsent(retention, ret -> createEmptyLog(parent.getAsJsonObject()));
@@ -53,11 +59,11 @@ public class LogsFilterSupport {
 
   }
 
-  private static Retention getRetention(JsonElement logEvt, Set<Retention> retentionToExport) {
+  private static Retention getRetention(JsonObject parent, JsonObject logEvt, Set<Retention> retentionToExport) {
 
+    String logEvtMsgStr = null;
     try {
-      String logEvtMsgStr =
-          logEvt.getAsJsonObject().getAsJsonPrimitive(FIELD_LOG_MESSAGE).getAsString();
+      logEvtMsgStr = logEvt.getAsJsonPrimitive(FIELD_LOG_MESSAGE).getAsString();
 
       JsonObject logEvtMsg = JsonParser.parseString(logEvtMsgStr).getAsJsonObject();
 
@@ -80,10 +86,22 @@ public class LogsFilterSupport {
         }
       }
     } catch (Exception e) {
-      log.warn("error parsing log event message unknow format: {} ", logEvt.toString());
+      log.warn(
+          "error parsing log event message unknow format: logGroup={} logStream={} id={} timestamp={} messageLength={} cause={} preview={}",
+          getString(parent, FIELD_LOG_GROUP), getString(parent, FIELD_LOG_STREAM),
+          getString(logEvt, FIELD_LOG_ID), getString(logEvt, FIELD_LOG_TIMESTAMP),
+          logEvtMsgStr == null ? -1 : logEvtMsgStr.length(),
+          e.getClass().getSimpleName(),
+          StringUtils.abbreviate(logEvtMsgStr, MAX_MSG_PREVIEW)
+      );
     }
     return retentionToExport.contains(Retention.DEVELOPER) ? Retention.DEVELOPER : null;
 
+  }
+
+  private static String getString(JsonObject obj, String field) {
+    JsonElement el = obj.get(field);
+    return Objects.nonNull(el) && el.isJsonPrimitive() ? el.getAsString() : null;
   }
 
   private static JsonObject createEmptyLog(JsonObject jsonEl) {
