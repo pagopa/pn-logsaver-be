@@ -1,9 +1,13 @@
 package it.pagopa.pn.logsaver.config;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.convert.ApplicationConversionService;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
@@ -58,5 +62,28 @@ class LogSaverCfgTest {
     LogSaverCfg cfg = cfg(8, DataSize.ofMegabytes(32));
 
     assertDoesNotThrow(cfg::validateProcessConfiguration);
+  }
+
+  private ApplicationContextRunner runner(String... extraProperties) {
+    return new ApplicationContextRunner()
+        .withInitializer(ctx -> ctx.getBeanFactory()
+            .setConversionService(ApplicationConversionService.getSharedInstance()))
+        .withUserConfiguration(LogSaverCfg.class)
+        .withPropertyValues("log-saver.tmp-folder=/tmp", "log-saver.logs-root-path-template=logs",
+            "log-saver.cdc-root-path-template=cdc", "log-saver.cdc-tables.prefix=T_",
+            "log-saver.audit-storage.offset-duration=PT1H")
+        .withPropertyValues(extraProperties);
+  }
+
+  @Test
+  void firstStartDay_propertyAbsent_defaultsTo20230301() {
+    runner().run(ctx -> assertEquals(LocalDate.parse("2023-03-01"),
+        ctx.getBean(LogSaverCfg.class).getFirstStartDay()));
+  }
+
+  @Test
+  void firstStartDay_propertyPresent_bindsConfiguredValue() {
+    runner("log-saver.first-start-day=2024-05-10").run(ctx -> assertEquals(
+        LocalDate.parse("2024-05-10"), ctx.getBean(LogSaverCfg.class).getFirstStartDay()));
   }
 }

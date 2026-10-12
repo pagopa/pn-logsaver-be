@@ -36,7 +36,7 @@ public class StorageDaoInMemoryImpl implements StorageDao {
   void init() {
 
     execution.put(LocalDate.from(FIRST_START_DAY_MOCK),
-        StorageDaoLogicSupport.firstExececutionRow());
+        StorageDaoLogicSupport.firstExececutionRow(FIRST_START_DAY_MOCK));
   }
 
 

@@ -11,8 +11,6 @@ import lombok.NonNull;
 
 
 public interface StorageDao {
-  public static final String FIRST_START_DAY = "2023-03-01"; //"2022-11-01"
-
   ExecutionEntity getLatestExecution();
 
   List<ExecutionEntity> getExecutionBetween(LocalDate dateFrom, LocalDate dateTo);

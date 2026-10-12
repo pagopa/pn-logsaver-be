@@ -1,7 +1,6 @@
 package it.pagopa.pn.logsaver.dao.support;
 
 import it.pagopa.pn.logsaver.dao.AuditStorageMapper;
-import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ExecutionEntity;
 import it.pagopa.pn.logsaver.dao.entity.RetentionResult;
@@ -51,10 +50,10 @@ public class StorageDaoLogicSupport {
 
 
 
-  public static ExecutionEntity firstExececutionRow() {
+  public static ExecutionEntity firstExececutionRow(LocalDate firstStartDay) {
     Map<String, RetentionResult> def = StorageDaoLogicSupport.defaultResultMap();
 
-    return ExecutionEntity.builder().logDate(StorageDao.FIRST_START_DAY)
+    return ExecutionEntity.builder().logDate(DateUtils.format(firstStartDay))
         .logFileTypes(LogFileType.valuesAsString()).retentionResult(def).build();
   }
 

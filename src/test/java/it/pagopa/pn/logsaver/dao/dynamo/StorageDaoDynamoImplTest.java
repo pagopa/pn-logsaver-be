@@ -32,6 +32,7 @@ import org.springframework.util.ReflectionUtils;
 import it.pagopa.pn.logsaver.TestCostant;
 import it.pagopa.pn.logsaver.TestUtils;
 import it.pagopa.pn.logsaver.config.ClApplicationArguments;
+import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
 import it.pagopa.pn.logsaver.dao.entity.ContinuosExecutionEntity;
@@ -72,6 +73,8 @@ class StorageDaoDynamoImplTest {
   @Mock
   private ClApplicationArguments args;
   @Mock
+  private LogSaverCfg logSaverCfg;
+  @Mock
   private TTLService ttlService;
 
   @Captor
@@ -83,6 +86,7 @@ class StorageDaoDynamoImplTest {
   @BeforeEach
   void init() {
     when(awsCfg.getDynamoDbTableName()).thenReturn("audit_storage");
+    when(logSaverCfg.getFirstStartDay()).thenReturn(LocalDate.parse("2023-03-01"));
     enhancedClient = mock(DynamoDbEnhancedClient.class);
     auditStorageTable = mock(DynamoDbTable.class);
     executionTable = mock(DynamoDbTable.class);
@@ -98,7 +102,7 @@ class StorageDaoDynamoImplTest {
       }
     });
 
-    storageDao = new StorageDaoDynamoImpl(awsCfg, args, enhancedClient, ttlService);
+    storageDao = new StorageDaoDynamoImpl(awsCfg, args, logSaverCfg, enhancedClient, ttlService);
     Method init = ReflectionUtils.findMethod(StorageDaoDynamoImpl.class, "init");
     ReflectionUtils.makeAccessible(init);
     ReflectionUtils.invokeMethod(init, storageDao);

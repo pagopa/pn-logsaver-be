@@ -1,6 +1,7 @@
 package it.pagopa.pn.logsaver.config;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -44,6 +45,9 @@ public class LogSaverCfg {
 
   @Value("${log-saver.audit-storage.offset-duration}")
   private Duration auditStorageOffsetDuration;
+
+  @Value("${log-saver.first-start-day:2023-03-01}")
+  private LocalDate firstStartDay;
 
   @PostConstruct
   void validateProcessConfiguration() {
