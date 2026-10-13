@@ -50,10 +50,10 @@ public class StorageDaoLogicSupport {
 
 
 
-  public static ExecutionEntity firstExececutionRow(LocalDate firstStartDay) {
+  public static ExecutionEntity firstExececutionRow(LocalDate lastCoveredDay) {
     Map<String, RetentionResult> def = StorageDaoLogicSupport.defaultResultMap();
 
-    return ExecutionEntity.builder().logDate(DateUtils.format(firstStartDay))
+    return ExecutionEntity.builder().logDate(DateUtils.format(lastCoveredDay))
         .logFileTypes(LogFileType.valuesAsString()).retentionResult(def).build();
   }
 

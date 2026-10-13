@@ -86,7 +86,7 @@ class StorageDaoDynamoImplTest {
   @BeforeEach
   void init() {
     when(awsCfg.getDynamoDbTableName()).thenReturn("audit_storage");
-    when(logSaverCfg.getFirstStartDay()).thenReturn(LocalDate.parse("2023-03-01"));
+    when(logSaverCfg.getFirstStartDay()).thenReturn(LocalDate.parse("2023-03-02"));
     enhancedClient = mock(DynamoDbEnhancedClient.class);
     auditStorageTable = mock(DynamoDbTable.class);
     executionTable = mock(DynamoDbTable.class);

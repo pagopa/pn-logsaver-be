@@ -18,6 +18,13 @@ class LogSaverCfgTest {
     LogSaverCfg cfg = new LogSaverCfg();
     ReflectionTestUtils.setField(cfg, "processPrefetch", prefetch);
     ReflectionTestUtils.setField(cfg, "processPrefetchMaxBytes", maxBytes);
+    ReflectionTestUtils.setField(cfg, "firstStartDay", LocalDate.parse("2023-03-02"));
+    return cfg;
+  }
+
+  private LogSaverCfg cfgWithFirstStartDay(LocalDate firstStartDay) {
+    LogSaverCfg cfg = cfg(8, DataSize.ofMegabytes(32));
+    ReflectionTestUtils.setField(cfg, "firstStartDay", firstStartDay);
     return cfg;
   }
 
@@ -53,6 +60,33 @@ class LogSaverCfgTest {
   @Test
   void validate_acceptsSmallestUsefulBudget() {
     LogSaverCfg cfg = cfg(1, DataSize.ofBytes(1));
+
+    assertDoesNotThrow(cfg::validateProcessConfiguration);
+  }
+
+  @Test
+  void validate_rejectsNullFirstStartDay() {
+    LogSaverCfg cfg = cfgWithFirstStartDay(null);
+
+    InternalException thrown =
+        assertThrows(InternalException.class, cfg::validateProcessConfiguration);
+
+    assertTrue(thrown.getMessage().contains("first-start-day"), thrown.getMessage());
+  }
+
+  @Test
+  void validate_rejectsFutureFirstStartDay() {
+    LogSaverCfg cfg = cfgWithFirstStartDay(LocalDate.now().plusDays(1));
+
+    InternalException thrown =
+        assertThrows(InternalException.class, cfg::validateProcessConfiguration);
+
+    assertTrue(thrown.getMessage().contains("first-start-day"), thrown.getMessage());
+  }
+
+  @Test
+  void validate_acceptsTodayAsFirstStartDay() {
+    LogSaverCfg cfg = cfgWithFirstStartDay(LocalDate.now());
 
     assertDoesNotThrow(cfg::validateProcessConfiguration);
   }

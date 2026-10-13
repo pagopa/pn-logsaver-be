@@ -174,7 +174,7 @@ Parameters:
     Type: String
     Default: '2023-03-02'
     AllowedPattern: '^\d{4}-\d{2}-\d{2}$'
-    Description: "[ContinuosExecution] First day to process (yyyy-MM-dd), used only when the CONTINUOS_EXECUTION record does not exist. Must be a past date: with a future date the job processes nothing until that date"
+    Description: "[ContinuosExecution] First day to process (yyyy-MM-dd), used only when the CONTINUOS_EXECUTION record does not exist. Must not be after today, otherwise the job fails at startup"
 
   CdcTables:
     Type: String

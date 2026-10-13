@@ -76,9 +76,9 @@ class StorageDaoLogicSupportCharacterizationTest {
 
   @Test
   void firstExececutionRow_givenDate_usesItAsLogDateWithAllSentAndNoExpiration() {
-    LocalDate firstStartDay = LocalDate.parse("2024-05-10");
+    LocalDate lastCoveredDay = LocalDate.parse("2024-05-10");
 
-    ExecutionEntity row = StorageDaoLogicSupport.firstExececutionRow(firstStartDay);
+    ExecutionEntity row = StorageDaoLogicSupport.firstExececutionRow(lastCoveredDay);
 
     assertEquals("2024-05-10", row.getLogDate());
     assertEquals(null, row.getExpiration());

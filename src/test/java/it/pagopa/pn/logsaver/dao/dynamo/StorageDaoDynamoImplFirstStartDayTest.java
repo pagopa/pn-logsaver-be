@@ -100,6 +100,25 @@ class StorageDaoDynamoImplFirstStartDayTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  void init_recordMissingWithDefaultFirstStartDay_writesSameRowsAsHardcodedDate() {
+    when(logSaverCfg.getFirstStartDay()).thenReturn(LocalDate.parse("2023-03-02"));
+
+    invokeInit();
+
+    ArgumentCaptor<PutItemEnhancedRequest<ExecutionEntity>> anchorPut =
+        ArgumentCaptor.forClass(PutItemEnhancedRequest.class);
+    verify(executionTable, times(1)).putItem(anchorPut.capture());
+    ArgumentCaptor<PutItemEnhancedRequest<ContinuosExecutionEntity>> continuosPut =
+        ArgumentCaptor.forClass(PutItemEnhancedRequest.class);
+    verify(continuosExecutionTable, times(1)).putItem(continuosPut.capture());
+
+    assertEquals("2023-03-01", anchorPut.getValue().item().getLogDate());
+    assertEquals(LocalDate.parse("2023-03-01"), continuosPut.getValue().item().getLatestExecutionDate());
+    assertEquals("2023-03-01", continuosPut.getValue().item().getLogDate());
+  }
+
+  @Test
   void init_recordPresent_doesNotWriteAnything() {
     when(continuosExecutionTable.getItem(any(Key.class)))
         .thenReturn(new ContinuosExecutionEntity(LocalDate.parse("2026-10-01")));

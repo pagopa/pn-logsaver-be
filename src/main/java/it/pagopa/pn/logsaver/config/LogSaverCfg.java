@@ -61,6 +61,11 @@ public class LogSaverCfg {
           "Invalid configuration log-saver.process.prefetch-max-bytes: must be at least 1 byte, found "
               + (processPrefetchMaxBytes == null ? "none" : processPrefetchMaxBytes.toBytes()));
     }
+    if (firstStartDay == null || firstStartDay.isAfter(LocalDate.now())) {
+      throw new InternalException(
+          "Invalid configuration log-saver.first-start-day: must be a date not after today, found "
+              + (firstStartDay == null ? "none" : firstStartDay));
+    }
   }
 
 }
