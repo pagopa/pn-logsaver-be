@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.util.ReflectionUtils;
@@ -27,6 +30,7 @@ import it.pagopa.pn.logsaver.services.TTLService;
 import it.pagopa.pn.logsaver.springbootcfg.AwsConfigs;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.BeanTableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
@@ -53,7 +57,7 @@ class StorageDaoDynamoImplFirstStartDayTest {
   @SuppressWarnings("unchecked")
   void setUp() {
     when(awsCfg.getDynamoDbTableName()).thenReturn("audit_storage");
-    when(logSaverCfg.getFirstStartDay()).thenReturn(CONFIGURED_FIRST_START_DAY);
+    lenient().when(logSaverCfg.getFirstStartDay()).thenReturn(CONFIGURED_FIRST_START_DAY);
     DynamoDbEnhancedClient enhancedClient = mock(DynamoDbEnhancedClient.class);
     DynamoDbTable<AuditStorageEntity> auditStorageTable = mock(DynamoDbTable.class);
     executionTable = mock(DynamoDbTable.class);
@@ -78,30 +82,41 @@ class StorageDaoDynamoImplFirstStartDayTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void init_recordMissing_insertsContinuosAndAnchorWithConfiguredFirstStartDay() {
+  void init_recordMissing_insertsAnchorThenContinuosWithConfiguredFirstStartDay() {
     invokeInit();
 
+    InOrder order = inOrder(executionTable, continuosExecutionTable);
+    ArgumentCaptor<PutItemEnhancedRequest<ExecutionEntity>> anchorPut =
+        ArgumentCaptor.forClass(PutItemEnhancedRequest.class);
+    order.verify(executionTable, times(1)).putItem(anchorPut.capture());
     ArgumentCaptor<PutItemEnhancedRequest<ContinuosExecutionEntity>> continuosPut =
         ArgumentCaptor.forClass(PutItemEnhancedRequest.class);
-    verify(continuosExecutionTable, times(1)).putItem(continuosPut.capture());
+    order.verify(continuosExecutionTable, times(1)).putItem(continuosPut.capture());
+
+    assertEquals(CONFIGURED_FIRST_START_DAY.toString(), anchorPut.getValue().item().getLogDate());
     ContinuosExecutionEntity continuos = continuosPut.getValue().item();
     assertEquals(CONFIGURED_FIRST_START_DAY, continuos.getLatestExecutionDate());
     assertEquals("2023-03-01", continuos.getLogDate());
-
-    ArgumentCaptor<PutItemEnhancedRequest<ExecutionEntity>> anchorPut =
-        ArgumentCaptor.forClass(PutItemEnhancedRequest.class);
-    verify(executionTable, times(1)).putItem(anchorPut.capture());
-    assertEquals(CONFIGURED_FIRST_START_DAY.toString(), anchorPut.getValue().item().getLogDate());
   }
 
   @Test
-  void init_recordPresent_doesNotInsertAnchor() {
+  void init_recordPresent_doesNotWriteAnything() {
+    when(continuosExecutionTable.getItem(any(Key.class)))
+        .thenReturn(new ContinuosExecutionEntity(LocalDate.parse("2026-10-01")));
+
+    invokeInit();
+
+    verify(continuosExecutionTable, never()).putItem(any(PutItemEnhancedRequest.class));
+    verify(executionTable, never()).putItem(any(PutItemEnhancedRequest.class));
+  }
+
+  @Test
+  void init_recordMissingAndAnchorAlreadyPresent_insertsContinuos() {
     doThrow(ConditionalCheckFailedException.builder().message("exists").build())
-        .when(continuosExecutionTable).putItem(any(PutItemEnhancedRequest.class));
+        .when(executionTable).putItem(any(PutItemEnhancedRequest.class));
 
     invokeInit();
 
     verify(continuosExecutionTable, times(1)).putItem(any(PutItemEnhancedRequest.class));
-    verify(executionTable, never()).putItem(any(PutItemEnhancedRequest.class));
   }
 }

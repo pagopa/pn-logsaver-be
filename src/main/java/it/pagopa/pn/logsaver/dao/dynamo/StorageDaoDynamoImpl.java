@@ -68,8 +68,11 @@ public class StorageDaoDynamoImpl implements StorageDao {
         TableSchema.fromBean(ExecutionEntity.class));
     continuosExecutionTable = enhancedClient.table(cfg.getDynamoDbTableName(),
         TableSchema.fromBean(ContinuosExecutionEntity.class));
-    if (insertFirstContinuosExecution()) {
+    if (Objects.isNull(getContinuosExecution())) {
       insertFirtsExecution();
+      insertFirstContinuosExecution();
+    } else {
+      log.info("Continuos execution date in the table.");
     }
   }
 
@@ -134,7 +137,13 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
 
-  private boolean insertFirstContinuosExecution() {
+  private ContinuosExecutionEntity getContinuosExecution() {
+    return continuosExecutionTable.getItem(Key.builder()
+        .partitionValue(ExtraType.CONTINUOS_EXECUTION.name())
+        .sortValue(ContinuosExecutionEntity.FIXED_SORT_KEY).build());
+  }
+
+  private void insertFirstContinuosExecution() {
 
     PutItemEnhancedRequest<ContinuosExecutionEntity> insert =
         PutItemEnhancedRequest.builder(ContinuosExecutionEntity.class)
@@ -146,10 +155,8 @@ public class StorageDaoDynamoImpl implements StorageDao {
     try {
       continuosExecutionTable.putItem(insert);
       log.info("Insert first continuos execution with date {}", logSaverCfg.getFirstStartDay());
-      return true;
     } catch (ConditionalCheckFailedException e) {
       log.info("Continuos execution date in the table.");
-      return false;
     }
   }
 
