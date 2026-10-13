@@ -69,8 +69,9 @@ public class StorageDaoDynamoImpl implements StorageDao {
     continuosExecutionTable = enhancedClient.table(cfg.getDynamoDbTableName(),
         TableSchema.fromBean(ContinuosExecutionEntity.class));
     if (Objects.isNull(getContinuosExecution())) {
-      insertFirtsExecution();
-      insertFirstContinuosExecution();
+      LocalDate lastCoveredDay = logSaverCfg.getFirstStartDay().minusDays(1);
+      insertFirtsExecution(lastCoveredDay);
+      insertFirstContinuosExecution(lastCoveredDay);
     } else {
       log.info("Continuos execution date in the table.");
     }
@@ -92,9 +93,9 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
 
-  private ExecutionEntity insertFirtsExecution() {
+  private ExecutionEntity insertFirtsExecution(LocalDate lastCoveredDay) {
     ExecutionEntity first =
-        StorageDaoLogicSupport.firstExececutionRow(logSaverCfg.getFirstStartDay());
+        StorageDaoLogicSupport.firstExececutionRow(lastCoveredDay);
     if (Objects.nonNull(args.getRetentionExportTypesMap())) {
       first.setRetentionResult(AuditStorageMapper.toEntity(args.getRetentionExportTypesMap()));
     }
@@ -143,7 +144,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
         .sortValue(ContinuosExecutionEntity.FIXED_SORT_KEY).build());
   }
 
-  private void insertFirstContinuosExecution() {
+  private void insertFirstContinuosExecution(LocalDate lastCoveredDay) {
 
     PutItemEnhancedRequest<ContinuosExecutionEntity> insert =
         PutItemEnhancedRequest.builder(ContinuosExecutionEntity.class)
@@ -151,10 +152,10 @@ public class StorageDaoDynamoImpl implements StorageDao {
                 .expression("attribute_not_exists( "
                     .concat(ContinuosExecutionEntity.FIELD_EXECUTION_DATE).concat(" )"))
                 .build())
-            .item(new ContinuosExecutionEntity(logSaverCfg.getFirstStartDay())).build();
+            .item(new ContinuosExecutionEntity(lastCoveredDay)).build();
     try {
       continuosExecutionTable.putItem(insert);
-      log.info("Insert first continuos execution with date {}", logSaverCfg.getFirstStartDay());
+      log.info("Insert first continuos execution with date {}", lastCoveredDay);
     } catch (ConditionalCheckFailedException e) {
       log.info("Continuos execution date in the table.");
     }

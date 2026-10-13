@@ -172,9 +172,9 @@ Parameters:
 
   LogSaverFirstStartDay:
     Type: String
-    Default: '2023-03-01'
+    Default: '2023-03-02'
     AllowedPattern: '^\d{4}-\d{2}-\d{2}$'
-    Description: "[ContinuosExecution] Last day considered already processed (yyyy-MM-dd), used only when the CONTINUOS_EXECUTION record does not exist: the first processed day is the next one. Must be a past date: with a future date the job processes nothing until that date"
+    Description: "[ContinuosExecution] First day to process (yyyy-MM-dd), used only when the CONTINUOS_EXECUTION record does not exist. Must be a past date: with a future date the job processes nothing until that date"
 
   CdcTables:
     Type: String

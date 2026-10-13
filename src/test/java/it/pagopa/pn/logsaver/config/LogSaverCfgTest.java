@@ -76,8 +76,8 @@ class LogSaverCfgTest {
   }
 
   @Test
-  void firstStartDay_propertyAbsent_defaultsTo20230301() {
-    runner().run(ctx -> assertEquals(LocalDate.parse("2023-03-01"),
+  void firstStartDay_propertyAbsent_defaultsTo20230302() {
+    runner().run(ctx -> assertEquals(LocalDate.parse("2023-03-02"),
         ctx.getBean(LogSaverCfg.class).getFirstStartDay()));
   }
 

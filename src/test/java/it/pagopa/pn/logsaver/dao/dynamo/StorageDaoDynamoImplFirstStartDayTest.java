@@ -82,7 +82,7 @@ class StorageDaoDynamoImplFirstStartDayTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void init_recordMissing_insertsAnchorThenContinuosWithConfiguredFirstStartDay() {
+  void init_recordMissing_insertsAnchorThenContinuosOnTheDayBeforeConfiguredFirstStartDay() {
     invokeInit();
 
     InOrder order = inOrder(executionTable, continuosExecutionTable);
@@ -93,9 +93,9 @@ class StorageDaoDynamoImplFirstStartDayTest {
         ArgumentCaptor.forClass(PutItemEnhancedRequest.class);
     order.verify(continuosExecutionTable, times(1)).putItem(continuosPut.capture());
 
-    assertEquals(CONFIGURED_FIRST_START_DAY.toString(), anchorPut.getValue().item().getLogDate());
+    assertEquals("2024-05-09", anchorPut.getValue().item().getLogDate());
     ContinuosExecutionEntity continuos = continuosPut.getValue().item();
-    assertEquals(CONFIGURED_FIRST_START_DAY, continuos.getLatestExecutionDate());
+    assertEquals(LocalDate.parse("2024-05-09"), continuos.getLatestExecutionDate());
     assertEquals("2023-03-01", continuos.getLogDate());
   }
 

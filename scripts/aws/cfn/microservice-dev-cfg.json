@@ -17,7 +17,7 @@
     "LogSaverProcessPrefetchMaxBytes": "32MB",
     "AuditStorageOffsetDuration": "1h",
     "CdcTables": "ALL",
-    "LogSaverFirstStartDay": "2023-03-01",
+    "LogSaverFirstStartDay": "2023-03-02",
     "JavaToolOptions": "-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=70 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp",
     "EphemeralStorageSizeInGiB": "21"
   }

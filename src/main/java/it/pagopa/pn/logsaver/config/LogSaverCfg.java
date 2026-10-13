@@ -46,7 +46,7 @@ public class LogSaverCfg {
   @Value("${log-saver.audit-storage.offset-duration}")
   private Duration auditStorageOffsetDuration;
 
-  @Value("${log-saver.first-start-day:2023-03-01}")
+  @Value("${log-saver.first-start-day:2023-03-02}")
   private LocalDate firstStartDay;
 
   @PostConstruct
