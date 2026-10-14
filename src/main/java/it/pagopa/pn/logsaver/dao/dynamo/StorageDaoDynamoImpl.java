@@ -16,6 +16,7 @@ import it.pagopa.pn.logsaver.services.TTLService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import it.pagopa.pn.logsaver.config.ClApplicationArguments;
+import it.pagopa.pn.logsaver.config.LogSaverCfg;
 import it.pagopa.pn.logsaver.dao.AuditStorageMapper;
 import it.pagopa.pn.logsaver.dao.StorageDao;
 import it.pagopa.pn.logsaver.dao.entity.AuditStorageEntity;
@@ -50,6 +51,8 @@ public class StorageDaoDynamoImpl implements StorageDao {
   @NonNull
   private final ClApplicationArguments args;
   @NonNull
+  private final LogSaverCfg logSaverCfg;
+  @NonNull
   private final DynamoDbEnhancedClient enhancedClient;
   private DynamoDbTable<AuditStorageEntity> auditStorageTable;
   private DynamoDbTable<ExecutionEntity> executionTable;
@@ -65,8 +68,13 @@ public class StorageDaoDynamoImpl implements StorageDao {
         TableSchema.fromBean(ExecutionEntity.class));
     continuosExecutionTable = enhancedClient.table(cfg.getDynamoDbTableName(),
         TableSchema.fromBean(ContinuosExecutionEntity.class));
-    insertFirstContinuosExecution();
-    insertFirtsExecution();
+    if (Objects.isNull(getContinuosExecution())) {
+      LocalDate lastCoveredDay = logSaverCfg.getFirstStartDay().minusDays(1);
+      insertFirtsExecution(lastCoveredDay);
+      insertFirstContinuosExecution(lastCoveredDay);
+    } else {
+      log.info("Continuos execution date in the table.");
+    }
   }
 
 
@@ -85,8 +93,9 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
 
-  private ExecutionEntity insertFirtsExecution() {
-    ExecutionEntity first = StorageDaoLogicSupport.firstExececutionRow();
+  private ExecutionEntity insertFirtsExecution(LocalDate lastCoveredDay) {
+    ExecutionEntity first =
+        StorageDaoLogicSupport.firstExececutionRow(lastCoveredDay);
     if (Objects.nonNull(args.getRetentionExportTypesMap())) {
       first.setRetentionResult(AuditStorageMapper.toEntity(args.getRetentionExportTypesMap()));
     }
@@ -105,7 +114,7 @@ public class StorageDaoDynamoImpl implements StorageDao {
         .item(first).build();
     try {
       executionTable.putItem(insert);
-      log.info("Insert first execution with date {}", FIRST_START_DAY);
+      log.info("Insert first execution with date {}", first.getLogDate());
     } catch (ConditionalCheckFailedException e) {
       log.info("Execution date in the table. ");
     }
@@ -129,7 +138,13 @@ public class StorageDaoDynamoImpl implements StorageDao {
 
 
 
-  private void insertFirstContinuosExecution() {
+  private ContinuosExecutionEntity getContinuosExecution() {
+    return continuosExecutionTable.getItem(Key.builder()
+        .partitionValue(ExtraType.CONTINUOS_EXECUTION.name())
+        .sortValue(ContinuosExecutionEntity.FIXED_SORT_KEY).build());
+  }
+
+  private void insertFirstContinuosExecution(LocalDate lastCoveredDay) {
 
     PutItemEnhancedRequest<ContinuosExecutionEntity> insert =
         PutItemEnhancedRequest.builder(ContinuosExecutionEntity.class)
@@ -137,10 +152,10 @@ public class StorageDaoDynamoImpl implements StorageDao {
                 .expression("attribute_not_exists( "
                     .concat(ContinuosExecutionEntity.FIELD_EXECUTION_DATE).concat(" )"))
                 .build())
-            .item(new ContinuosExecutionEntity(DateUtils.parse(FIRST_START_DAY))).build();
+            .item(new ContinuosExecutionEntity(lastCoveredDay)).build();
     try {
       continuosExecutionTable.putItem(insert);
-      log.info("Insert first continuos execution with date {}", FIRST_START_DAY);
+      log.info("Insert first continuos execution with date {}", lastCoveredDay);
     } catch (ConditionalCheckFailedException e) {
       log.info("Continuos execution date in the table.");
     }

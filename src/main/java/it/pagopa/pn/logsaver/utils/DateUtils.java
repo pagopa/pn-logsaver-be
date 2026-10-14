@@ -22,6 +22,10 @@ public class DateUtils {
     return date.format(DateTimeFormatter.ISO_DATE);
   }
 
+  public static LocalDate today() {
+    return LocalDate.now(italianZoneId);
+  }
+
   public static LocalDate yesterday() {
     return LocalDate.now(italianZoneId).minusDays(1);
   }

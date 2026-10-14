@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +92,30 @@ class AuditSaverServiceImplTest {
   }
 
 
+
+  @Test
+  void dailySaverFromLatestExecutionToYesterday_fromInitialAnchor_firstProcessedDayIsFirstStartDay() {
+    LocalDate firstStartDay = DateUtils.yesterday().minusDays(1);
+    LocalDate lastCoveredDay = firstStartDay.minusDays(1);
+
+    when(storageService.getLatestContinuosExecutionDate()).thenReturn(lastCoveredDay);
+    when(storageService.getStorageExecutionBetween(any(), any()))
+        .thenReturn(List.of(StorageExecution.builder().logFileTypes(Set.of(LogFileType.values()))
+            .logDate(lastCoveredDay).details(TestUtils.defaultExecutionDetails()).build()));
+
+    when(readerService.findLogFiles(ctxCaptor.capture())).thenReturn(TestCostant.items.stream());
+
+    when(procService.process(any(), any(), any())).thenReturn(List.of());
+
+    when(storageService.persist(any(), any(), anyBoolean())).thenReturn(TestCostant.auditStorage);
+
+    service.dailySaverFromLatestExecutionToYesterday(Set.of(LogFileType.values()),
+        LogSaverUtils.defaultRetentionExportTypeMap());
+
+    List<LocalDate> processedDays = ctxCaptor.getAllValues().stream()
+        .map(DailyContextCfg::logDate).toList();
+    assertEquals(List.of(firstStartDay, DateUtils.yesterday()), processedDays);
+  }
 
   @Test
   void dailySaverFromLatestExecutionToYesterday_WithOneDayToRecover() {

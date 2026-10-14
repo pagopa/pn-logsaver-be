@@ -73,4 +73,17 @@ class StorageDaoLogicSupportCharacterizationTest {
         BigDecimal.valueOf(base.plus(offsetDuration).toInstant().getEpochSecond());
     assertEquals(expectedExpiration, result.getExpiration());
   }
+
+  @Test
+  void firstExececutionRow_givenDate_usesItAsLogDateWithAllSentAndNoExpiration() {
+    LocalDate lastCoveredDay = LocalDate.parse("2024-05-10");
+
+    ExecutionEntity row = StorageDaoLogicSupport.firstExececutionRow(lastCoveredDay);
+
+    assertEquals("2024-05-10", row.getLogDate());
+    assertEquals(null, row.getExpiration());
+    assertEquals(LogFileType.valuesAsString(), row.getLogFileTypes());
+    assertTrue(row.getRetentionResult().values().stream()
+        .allMatch(r -> AuditStorageStatus.SENT.name().equals(r.getResult())));
+  }
 }

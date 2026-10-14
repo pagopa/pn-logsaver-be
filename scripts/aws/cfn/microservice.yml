@@ -170,6 +170,12 @@ Parameters:
     Description: "[AuditStorage] Offset used for deleting logs on RetentionType code"
     Default: '1h'
 
+  LogSaverFirstStartDay:
+    Type: String
+    Default: '2023-03-02'
+    AllowedPattern: '^\d{4}-\d{2}-\d{2}$'
+    Description: "[ContinuosExecution] First day to process (yyyy-MM-dd), used only when the CONTINUOS_EXECUTION record does not exist. Must not be after today, otherwise the job fails at startup"
+
   CdcTables:
     Type: String
     Default: 'ALL'
@@ -284,6 +290,8 @@ Resources:
             Value: !Ref AuditStorageOffsetDuration
           - Name: LOGSAVER_CDC_TABLES
             Value: !Ref CdcTables
+          - Name: LOGSAVER_FIRSTSTARTDAY
+            Value: !Ref LogSaverFirstStartDay
           - Name: JAVA_TOOL_OPTIONS
             Value: !Ref JavaToolOptions
       PlatformCapabilities:
@@ -357,6 +365,8 @@ Resources:
             Value: !Ref AuditStorageOffsetDuration
           - Name: LOGSAVER_CDC_TABLES
             Value: !Ref CdcTables
+          - Name: LOGSAVER_FIRSTSTARTDAY
+            Value: !Ref LogSaverFirstStartDay
           - Name: LOGSAVER_PROCESS_PREFETCH
             Value: !Ref LogSaverProcessPrefetch
           - Name: LOGSAVER_PROCESS_PREFETCHMAXBYTES

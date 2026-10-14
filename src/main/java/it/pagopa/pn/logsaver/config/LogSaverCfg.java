@@ -1,11 +1,13 @@
 package it.pagopa.pn.logsaver.config;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
+import it.pagopa.pn.logsaver.utils.DateUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 
@@ -45,6 +47,9 @@ public class LogSaverCfg {
   @Value("${log-saver.audit-storage.offset-duration}")
   private Duration auditStorageOffsetDuration;
 
+  @Value("${log-saver.first-start-day:2023-03-02}")
+  private LocalDate firstStartDay;
+
   @PostConstruct
   void validateProcessConfiguration() {
     if (processPrefetch < 1) {
@@ -56,6 +61,11 @@ public class LogSaverCfg {
       throw new InternalException(
           "Invalid configuration log-saver.process.prefetch-max-bytes: must be at least 1 byte, found "
               + (processPrefetchMaxBytes == null ? "none" : processPrefetchMaxBytes.toBytes()));
+    }
+    if (firstStartDay == null || firstStartDay.isAfter(DateUtils.today())) {
+      throw new InternalException(
+          "Invalid configuration log-saver.first-start-day: must be a date not after today, found "
+              + (firstStartDay == null ? "none" : firstStartDay));
     }
   }
 
