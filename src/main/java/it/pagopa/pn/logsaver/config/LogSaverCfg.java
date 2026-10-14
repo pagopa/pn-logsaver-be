@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
+import it.pagopa.pn.logsaver.utils.DateUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 
@@ -61,7 +62,7 @@ public class LogSaverCfg {
           "Invalid configuration log-saver.process.prefetch-max-bytes: must be at least 1 byte, found "
               + (processPrefetchMaxBytes == null ? "none" : processPrefetchMaxBytes.toBytes()));
     }
-    if (firstStartDay == null || firstStartDay.isAfter(LocalDate.now())) {
+    if (firstStartDay == null || firstStartDay.isAfter(DateUtils.today())) {
       throw new InternalException(
           "Invalid configuration log-saver.first-start-day: must be a date not after today, found "
               + (firstStartDay == null ? "none" : firstStartDay));

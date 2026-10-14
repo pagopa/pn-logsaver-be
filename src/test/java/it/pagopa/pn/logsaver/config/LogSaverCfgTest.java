@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.unit.DataSize;
 import it.pagopa.pn.logsaver.exceptions.InternalException;
+import it.pagopa.pn.logsaver.utils.DateUtils;
 
 class LogSaverCfgTest {
 
@@ -76,7 +77,7 @@ class LogSaverCfgTest {
 
   @Test
   void validate_rejectsFutureFirstStartDay() {
-    LogSaverCfg cfg = cfgWithFirstStartDay(LocalDate.now().plusDays(1));
+    LogSaverCfg cfg = cfgWithFirstStartDay(DateUtils.today().plusDays(1));
 
     InternalException thrown =
         assertThrows(InternalException.class, cfg::validateProcessConfiguration);
@@ -86,7 +87,7 @@ class LogSaverCfgTest {
 
   @Test
   void validate_acceptsTodayAsFirstStartDay() {
-    LogSaverCfg cfg = cfgWithFirstStartDay(LocalDate.now());
+    LogSaverCfg cfg = cfgWithFirstStartDay(DateUtils.today());
 
     assertDoesNotThrow(cfg::validateProcessConfiguration);
   }
