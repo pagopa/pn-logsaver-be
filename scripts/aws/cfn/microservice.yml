@@ -189,12 +189,11 @@ Parameters:
 Resources:
 
   ## Compute Environment
-  ComputeEnvironment:
+  PnLogsaverComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
       Type: MANAGED
       ServiceRole: !Ref BatchServiceRole
-      ComputeEnvironmentName: !Sub '${ProjectName}-${AppName}-compute-environment'
       ComputeResources:
         MaxvCpus: !Ref MaxvCpus
         Type: !Ref ComputeResourceType
@@ -425,7 +424,7 @@ Resources:
     Properties:
       ComputeEnvironmentOrder:
         - Order: 1
-          ComputeEnvironment: !Ref ComputeEnvironment
+          ComputeEnvironment: !Ref PnLogsaverComputeEnvironment
       State: ENABLED
       Priority: 1
       JobQueueName: !Sub '${ProjectName}-${AppName}-job-queue'
