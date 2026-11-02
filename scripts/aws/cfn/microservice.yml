@@ -194,7 +194,6 @@ Resources:
     Properties:
       Type: MANAGED
       ServiceRole: !Ref BatchServiceRole
-      ComputeEnvironmentName: !Sub '${ProjectName}-${AppName}-compute-environment'
       ComputeResources:
         MaxvCpus: !Ref MaxvCpus
         Type: !Ref ComputeResourceType
