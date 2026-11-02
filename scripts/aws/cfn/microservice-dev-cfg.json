@@ -12,6 +12,8 @@
     "RetentionExportTypes": "AUDIT10Y$ZIP,AUDIT5Y$ZIP,AUDIT2Y$ZIP",
     "BatchJobMaxAttempts": "1",
     "MaxvCpus": "2",
+    "VCPU": "2",
+    "Memory": "4096",
     "LogSaverExportMaxFileSize": "2MB",
     "LogSaverProcessPrefetch": "8",
     "LogSaverProcessPrefetchMaxBytes": "32MB",
