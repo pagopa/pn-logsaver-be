@@ -14,6 +14,7 @@
     "MaxvCpus": "2",
     "VCPU": "2",
     "Memory": "4096",
+    "ComputeResourceType": "FARGATE",
     "LogSaverExportMaxFileSize": "2MB",
     "LogSaverProcessPrefetch": "8",
     "LogSaverProcessPrefetchMaxBytes": "32MB",
