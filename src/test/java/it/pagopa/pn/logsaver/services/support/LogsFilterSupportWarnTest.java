@@ -29,15 +29,18 @@ class LogsFilterSupportWarnTest {
   private static final String EVENT_ID = "38545123456789012345678901234567890123456789012345678901";
   private static final long EVENT_TIMESTAMP = 1759528020000L;
   private static final String TAIL_MARKER = "TAIL_MARKER";
-  private static final int MAX_WARN_LENGTH = 1024;
+  private static final int MAX_TRACE_LENGTH = 1024;
   private static final int AWSLOGS_SPLIT_THRESHOLD = 16 * 1024;
 
   private Logger logger;
+  private Level previousLevel;
   private ListAppender<ILoggingEvent> appender;
 
   @BeforeEach
   void setUp() {
     logger = (Logger) LoggerFactory.getLogger(LogsFilterSupport.class);
+    previousLevel = logger.getLevel();
+    logger.setLevel(Level.TRACE);
     appender = new ListAppender<>();
     appender.start();
     logger.addAppender(appender);
@@ -46,10 +49,11 @@ class LogsFilterSupportWarnTest {
   @AfterEach
   void tearDown() {
     logger.detachAppender(appender);
+    logger.setLevel(previousLevel);
   }
 
   @Test
-  void groupByRetention_shouldWarn_whenLogEventMessageIsMalformed() {
+  void groupByRetention_shouldTrace_whenLogEventMessageIsMalformed() {
     JsonObject event = new JsonObject();
     event.addProperty("message", "not-a-json-object");
     JsonArray events = new JsonArray();
@@ -59,52 +63,52 @@ class LogsFilterSupportWarnTest {
 
     LogsFilterSupport.groupByRetention(parent, Set.of(Retention.values()));
 
-    boolean warned = appender.list.stream().anyMatch(e -> e.getLevel() == Level.WARN);
-    assertTrue(warned, "atteso un WARN sul messaggio malformato (declassamento non silenzioso)");
+    boolean traced = appender.list.stream().anyMatch(e -> e.getLevel() == Level.TRACE);
+    assertTrue(traced, "atteso un TRACE sul messaggio malformato");
   }
 
   @Test
-  void groupByRetention_shouldWarnWithoutPayload_whenMessageIsLargeFragment() {
+  void groupByRetention_shouldTraceWithoutPayload_whenMessageIsLargeFragment() {
     String fragment = largeFragment(300_000);
 
     LogsFilterSupport.groupByRetention(parentWith(event(fragment)), ALL);
 
-    ILoggingEvent warn = singleWarn();
-    String msg = warn.getFormattedMessage();
-    assertTrue(msg.length() < MAX_WARN_LENGTH, "WARN troppo grande: " + msg.length());
+    ILoggingEvent trace = singleTrace();
+    String msg = trace.getFormattedMessage();
+    assertTrue(msg.length() < MAX_TRACE_LENGTH, "TRACE troppo grande: " + msg.length());
     assertTrue(msg.startsWith("Error parsing log event message - unknown format"));
     assertTrue(msg.contains("logGroup=" + LOG_GROUP));
     assertTrue(msg.contains("logStream=" + LOG_STREAM));
     assertTrue(msg.contains("id=" + EVENT_ID));
     assertTrue(msg.contains("timestamp=" + EVENT_TIMESTAMP));
     assertTrue(msg.contains("messageLength=300000"));
-    assertFalse(msg.contains(TAIL_MARKER), "il WARN non deve contenere il payload completo");
-    assertNull(warn.getThrowableProxy(), "l'eccezione non va allegata al WARN");
+    assertFalse(msg.contains(TAIL_MARKER), "il TRACE non deve contenere il payload completo");
+    assertNull(trace.getThrowableProxy(), "l'eccezione non va allegata al TRACE");
   }
 
   @Test
-  void groupByRetention_shouldWarn_whenMessageIsMissing() {
+  void groupByRetention_shouldTrace_whenMessageIsMissing() {
     JsonObject event = new JsonObject();
     event.addProperty("id", EVENT_ID);
 
     Map<Retention, JsonObject> grouped = LogsFilterSupport.groupByRetention(parentWith(event), ALL);
 
-    assertTrue(singleWarn().getFormattedMessage().contains("messageLength=-1"));
+    assertTrue(singleTrace().getFormattedMessage().contains("messageLength=-1"));
     assertEquals(1, grouped.get(Retention.DEVELOPER).getAsJsonArray("logEvents").size());
   }
 
   @Test
-  void groupByRetention_shouldNotWarnAgain_whenReprocessingItsOwnWarn() {
+  void groupByRetention_shouldNotTraceAgain_whenReprocessingItsOwnTrace() {
     LogsFilterSupport.groupByRetention(parentWith(event(largeFragment(300_000))), ALL);
-    String stdoutLine = encodeAsLogstashLine(singleWarn());
+    String stdoutLine = encodeAsLogstashLine(singleTrace());
     assertTrue(stdoutLine.length() < AWSLOGS_SPLIT_THRESHOLD,
-        "la riga di WARN verrebbe spezzata da awslogs: " + stdoutLine.length());
+        "la riga di TRACE verrebbe spezzata da awslogs: " + stdoutLine.length());
 
     appender.list.clear();
     Map<Retention, JsonObject> grouped =
         LogsFilterSupport.groupByRetention(parentWith(event(stdoutLine)), ALL);
 
-    assertTrue(warns().isEmpty(), "la rielaborazione del WARN non deve generare un nuovo WARN");
+    assertTrue(traces().isEmpty(), "la rielaborazione del TRACE non deve generare un nuovo TRACE");
     assertEquals(1, grouped.get(Retention.DEVELOPER).getAsJsonArray("logEvents").size());
   }
 
@@ -137,14 +141,14 @@ class LogsFilterSupportWarnTest {
     return sb.append(TAIL_MARKER).toString();
   }
 
-  private List<ILoggingEvent> warns() {
-    return appender.list.stream().filter(e -> e.getLevel() == Level.WARN).toList();
+  private List<ILoggingEvent> traces() {
+    return appender.list.stream().filter(e -> e.getLevel() == Level.TRACE).toList();
   }
 
-  private ILoggingEvent singleWarn() {
-    List<ILoggingEvent> warns = warns();
-    assertEquals(1, warns.size());
-    return warns.get(0);
+  private ILoggingEvent singleTrace() {
+    List<ILoggingEvent> traces = traces();
+    assertEquals(1, traces.size());
+    return traces.get(0);
   }
 
   private String encodeAsLogstashLine(ILoggingEvent evt) {
